@@ -1,0 +1,62 @@
+= Changes
+
+== 2011-11-03 (0.0.11)
+* Added LICENSE file and licensing headers to source. No feature changes.
+
+== 2011-10-13 (0.0.10)
+* Support for multi-homed VMs: The --networks option for the <tt>server create</tt> command takes a comma-separated list
+  of network offering names. The created VM will have one nic per network, with nics assigned to networks in the order
+  specified (e.g. the first network in the list will be assigned to eth0, the second to eth1 and so on). The --networks
+  option replaces the --network option, which supported a single network name.
+* The <tt>server list</tt> command now shows the VM 'displayname' in parentheses when the displayname is defined and is
+  different than the VM name.
+* Public IP logic has been updated to support multi-homed VMs. It now uses the first nic attached to a network with the
+  'default' value set to true as the primary interface.
+   
+== 2011-08-30 (0.0.9)
+* Added subcommands: <tt>server start</tt>, <tt>server stop</tt> and <tt>server reboot</tt>.
+* Updated the <tt>hosts</tt> command to return short hostnames and FQDNs. Also added comments where needed so the output
+  can be directly pasted into /etc/hosts.
+
+== 2011-08-06 (0.0.8)
+* Changed cloudstack async command timeout from 60 to 300 seconds.
+
+== 2011-07-21 (0.0.7)
+* Fixed http_request actions in <tt>stack create</tt>.
+
+== 2011-07-15 (0.0.6)
+* The <tt>server delete</tt> command now deletes the chef node and client if their names match the fqdn of the server.
+* Added the <tt>stack create</tt> and <tt>stack delete</tt> commands for bulk creation and deletion of servers using a
+  JSON definition file. These commands are still experimental and subject to change. See README.rdoc for details.
+* Added a <tt>hosts</tt> command, which lists the public ip address and fqdn of all servers in /etc/hosts file format.
+* Fixed nil reference bug in <tt>server list</tt> command.
+
+== 2011-06-05 (0.0.5)
+* Added <tt>--port-rules</tt> option to the <tt>cs server create</tt> command. It accepts a list of port forwarding
+  rules to be created for the server (only applies to servers on a virtual network). See 'Port forwarding rules for
+  virtual networks' in README.rdoc for details.
+
+== 2011-06-01 (0.0.4)
+* Fixed ssh detection bug.
+
+== 2011-05-30 (0.0.3)
+
+* Added support for virtual networks. A public IP address is allocated for each new server in a virtual network
+  and an ssh port forwarding rule is created. The IP is released when the server is destroyed as long as it doesn't
+  have forwarding rules for any servers other than the one being deleted.
+* Default network is now detected automatically. If there is more than one network marked as 'default' for an
+  account, the first Direct network is preferred.
+
+== 2011-05-22 (0.0.2)
+
+* Added subcommands: <tt>service list</tt>, <tt>template list</tt>, <tt>network list</tt> and <tt>zone list</tt>.
+* Removed -H (and --hostname) option from the <tt>cs server create</tt> command. The host name is now the first
+  argument to the command: <tt>knife cs server create myhostname</tt>. If a host name is not specified, CloudStack
+  will use an auto-generated name.
+* Added --no-bootstrap option to the server create command. This prevents Chef from being installed on the new server.
+* Fixed help banners (commands were shown as <tt>knife cloudstack ...</tt> instead of <tt>knife cs ...</tt>).
+* Added README.rdoc.
+
+== 2011-05-15 (0.0.1)
+
+* Initial release

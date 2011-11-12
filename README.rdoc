@@ -1,0 +1,211 @@
+= knife-cloudstack
+
+== DESCRIPTION:
+
+This is the Edmunds Knife plugin for CloudStack. This plugin gives Knife the ability to create, bootstrap and manage
+CloudStack instances.
+
+== INSTALLATION:
+This plugin is distributed as a Ruby Gem. To install it, run:
+
+    gem install knife-cloudstack
+
+Depending on your system's configuration, you may need to run this command with root privileges.
+
+== CONFIGURATION:
+In order to communicate with the CloudStack API you will have to tell Knife about your CloudStack API Key, your Secret Key and the URL of the API endpoint.
+The easiest way to accomplish this is to create some entries in your <tt>knife.rb</tt> file:
+
+    knife[:cloudstack_url] = "http://yourcloudstackserver.com:8080/client/api
+    knife[:cloudstack_api_key]  = "Your CloudStack API Key"
+    knife[:cloudstack_secret_key] = "Your CloudStack Secret Key"
+
+If your knife.rb file will be checked into a SCM system (ie readable by others) you may want to read the values from environment variables:
+
+    knife[:cloudstack_url] = "#{ENV['CLOUDSTACK_URL']}"
+    knife[:cloudstack_api_key] = "#{ENV['CLOUDSTACK_API_KEY']}"
+    knife[:cloudstack_secret_key] = "#{ENV['CLOUDSTACK_SECRET_KEY']}"
+
+You also have the option of passing your CloudStack URL and API/Secret Keys into the individual knife subcommands using the <tt>-U</tt> (or <tt>--cloudstack-url</tt>),
+<tt>-A</tt> (or <tt>--cloudstack-api-key </tt>) <tt>-K</tt> (or <tt>--cloudstack-secret-key</tt>) command options
+    # provision a new small RHEL 5.6 webserver
+    knife cs server create my-server -r 'role[webserver]' -S "small" -T "RHEL 5.6 Base" -A 'Your CloudStack API Key' -K "Your CloudStack Secret Key" --distro "rhel5-gems"
+
+Additionally the following options may be set in your <tt>knife.rb</tt>:
+
+* knife[:cloudstack_service]
+* knife[:cloudstack_template]
+* knife[:cloudstack_zone]
+* knife[:distro]
+* knife[:template_file]
+
+
+== SUBCOMMANDS:
+
+This plugin provides the following Knife subcommands.  Specific command options can be found by invoking the subcommand with a <tt>--help</tt> flag
+
+=== knife cs server create
+
+Provisions a new server in CloudStack and then performs a Chef bootstrap (using the SSH protocol).  The goal of the bootstrap is to get Chef installed on the target
+system so it can run Chef Client with a Chef Server. The main assumption is a baseline OS installation exists (provided by the provisioning). It is primarily
+intended for Chef Client systems that talk to a Chef server.  By default the server is bootstrapped using the {ubuntu10.04-gems}[https://github.com/opscode/chef/bl
+ob/master/chef/lib/chef/knife/bootstrap/ubuntu10.04-gems.erb] template.  This can be overridden using the <tt>-d</tt> or <tt>--template-file</tt> command options.
+
+==== Port forwarding rules for virtual networks
+The <tt>--port-rules</tt> option takes a comma separated list of port forwarding rules. These rules are created on the
+virtual public ip address of the server. Note that this option only applies to servers using a virtual network; it is
+ignored if the server's public ip address is on a direct attached network.
+
+Port forwarding rules have the syntax <tt>PUBLIC_PORT[:PRIVATE_PORT[:PROTOCOL]]</tt>. <tt>PRIVATE_PORT</tt> and
+<tt>PROTOCOL</tt> are optional. The default value of <tt>PRIVATE_PORT</tt> is <tt>PUBLIC_PORT</tt> and the default
+<tt>PROTOCOL</tt> is 'TCP'.
+For example, a rule to forward from public port 80 to private port 7000 would look like <tt>80:7000:TCP</tt>.
+Since 'TCP' is the default protocol, the rule can be shortened to <tt>80:7000</tt>. A rule can even be shortened to a
+single number when the public and private ports are the same. For example, a rule to forward from public port 25 to
+private port 25 can be stated as simply <tt>25</tt>. A list of such rules for a webserver might look like
+<tt>80,443</tt>.
+
+=== knife cs server delete
+
+Deletes an existing server in the currently configured CloudStack account.  <b>PLEASE NOTE</b> - this does not delete
+the associated node and client objects from the Chef server.
+
+=== knife cs server list
+
+Displays a list of all servers in the currently configured CloudStack account.  <b>PLEASE NOTE</b> - this shows all
+servers associated with the cloudstack account including servers that are not registered with a Chef server.
+
+=== knife cs network list
+Displays a list of all networks available in the currently configured CloudStack account. A network can be specified
+when creating a new server by passing the network name as an argument to the -W (or --network) option of the
+<tt>knife cs server create</tt> command.
+
+=== knife cs service list
+Displays a list of all service offerings available in the currently configured CloudStack account. A service offering
+can be specified when creating a new server by passing the name as an argument to the -S (or --service) option of the
+<tt>knife cs server create</tt> command.
+
+=== knife cs template list
+Displays a list of all templates in the currently configured CloudStack account. Featured templates are displayed by default.
+Use the -F (or --filter) option to use a different filter. The allowable filter values are:
+
+* featured - templates that are featured and are public (this is the default)
+* self - templates that have been registered/created by the owner
+* self-executable - templates that have been registered/created by the owner that can be used to deploy a new VM
+* executable - all templates that can be used to deploy a new VM
+* community - templates that are public
+
+A template can be specified when creating a new server by passing the template name as an argument to the -T
+(or --template) option of the <tt>knife cs server create</tt> command.
+
+=== knife cs zone list
+Displays a list of all zones available in the currently configured CloudStack account. A zone can be specified
+when creating a new server by passing the zone name as an argument to the -Z (or --zone) option of the
+<tt>knife cs server create</tt> command.
+
+=== knife cs hosts
+Convenience command that displays the public ip address and fqdn for all servers. Matches /etc/hosts file format.
+
+=== knife cs stack create
+Creates a "stack" of servers based on a JSON definition file. Simple orchestration can be performed by
+specifying one or more actions to be executed after a server (or group of servers) is created.
+
+==== Example Stack Definition File:
+<tt>
+{
+  "name": "hadoop_cluster_a",
+  "description": "A small hadoop cluster with hbase",
+  "version": "1.0",
+  "environment": "production",
+  "servers": [
+    {
+      "name": "zookeeper-a, zookeeper-b, zookeeper-c",
+      "description": "Zookeeper nodes",
+      "template": "rhel-5.6-base",
+      "service": "small",
+      "port_rules": "2181",
+      "run_list": "role[cluster_a], role[zookeeper_server]",
+      "actions": [
+        { "knife_ssh": ["role:zookeeper_server", "sudo chef-client"] }
+      ]
+    },
+    {
+      "name": "hadoop-master",
+      "description": "Hadoop master node",
+      "template": "rhel-5.6-base",
+      "service": "large",
+      "networks": "app-net, storage-net",
+      "port_rules": "50070, 50030, 60010",
+      "run_list": "role[cluster_a], role[hadoop_master], role[hbase_master]"
+    },
+    {
+      "name": "hadoop-worker-a hadoop-worker-b hadoop-worker-c",
+      "description": "Hadoop worker nodes",
+      "template": "rhel-5.6-base",
+      "service": "medium",
+      "port_rules": "50075, 50060, 60030",
+      "run_list": "role[cluster_a], role[hadoop_worker], role[hbase_regionserver]",
+      "actions": [
+        { "knife_ssh": ["role:hadoop_master", "sudo chef-client"] },
+        { "http_request": "http://${hadoop-master}:50070/index.jsp" }
+      ]
+    }
+}
+</tt>
+
+==== Stack Attributes
+name:: Stack name. May be used in the future to e.g. look up a stack in a databag.
+version:: Stack version. This attribute is not currently used.
+environment:: Chef environment used for all servers in the stack.
+servers:: List of servers to create.
+
+==== Server Attributes
+name:: The name of the new server. Specify a list of names separated by commas and/or spaces to create multiple servers.
+description:: Server description.
+template:: Cloudstack template name.
+service:: Cloudstack service offering name.
+port_rules:: Port forwarding rules for virtual networks. These are ignored when using direct or other network types.
+run_list:: Chef run list.
+actions:: List of actions to perform after the server (or group of servers) is created.
+
+==== Actions
+knife-ssh:: Performs a knife-ssh command. Takes the search query and the command to execute as an array of arguments.
+http_request:: Performs an http request. Supports references to server names in the stack with ${server_name}.
+
+==== Upcoming Actions
+The following actions are under development:
+
+runlist_add:: Adds an entry from the run list.
+runlist_remove:: Removes an entry from the run list.
+
+=== knife cs stack delete
+Deletes all servers in the specified stack definition.
+
+=== knife cs server start
+Starts the specified virtual machine(s).
+
+=== knife cs server stop
+Stops the specified virtual machine(s). Force stop is optional.
+
+=== knife cs server reboot
+Reboots the specified virtual machines(s).
+
+== LICENSE:
+
+Author:: Ryan Holmes <rholmes@edmunds.com> 
+Author:: KC Braunschweig <kbraunschweig@edmunds.com>
+Copyright:: Copyright (c) 2011 Edmunds, Inc.
+License:: Apache License, Version 2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
