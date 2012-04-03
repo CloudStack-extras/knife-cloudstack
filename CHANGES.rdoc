@@ -1,5 +1,8 @@
 = Changes
 
+== 2012-04-02 (0.0.12)
+* Add data disk creation to server create code.
+
 == 2011-11-03 (0.0.11)
 * Added LICENSE file and licensing headers to source. No feature changes.
 

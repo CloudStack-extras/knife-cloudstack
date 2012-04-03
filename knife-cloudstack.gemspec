@@ -1,9 +1,9 @@
 Gem::Specification.new do |s|
   s.name = %q{knife-cloudstack}
-  s.version = "0.0.11"
-  s.date = %q{2011-11-03}
-  s.authors = ['Ryan Holmes', 'KC Braunschweig']
-  s.email = ['rholmes@edmunds.com', 'kbraunschweig@edmunds.com']
+  s.version = "0.0.12"
+  s.date = %q{2012-04-02}
+  s.authors = ['Ryan Holmes', 'KC Braunschweig', 'David Hudson', 'Julian Cardona']
+  s.email = ['rholmes@edmunds.com', 'kbraunschweig@edmunds.com', 'dhudson@edmunds.com', 'jcardona@edmunds.com']
   s.summary = %q{A knife plugin for the CloudStack API}
   s.homepage = %q{http://www.edmunds.com/}
   s.description = %q{A Knife plugin to create, list and manage CloudStack servers}
