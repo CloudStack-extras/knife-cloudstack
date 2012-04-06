@@ -62,7 +62,7 @@ module KnifeCloudstack
            :short => "-W NETWORKS",
            :long => "--networks NETWORK",
            :description => "Comma separated list of CloudStack network names",
-           :proc => lambda { |n| n.split(/[\s,]+/) },
+           :proc => lambda { |n| n.split(',').map {|sn| sn.strip}} ,
            :default => []
 
     option :chef_node_name,
@@ -310,6 +310,3 @@ module KnifeCloudstack
 
   end # class
 end
-
-
-
