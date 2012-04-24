@@ -62,7 +62,7 @@ module KnifeCloudstack
            :short => "-W NETWORKS",
            :long => "--networks NETWORK",
            :description => "Comma separated list of CloudStack network names",
-           :proc => lambda { |n| n.split(/[\s,]+/) },
+           :proc => lambda { |n| n.split(',').map {|sn| sn.strip}} ,
            :default => []
 
     option :cloudstack_data_disk,
@@ -70,6 +70,12 @@ module KnifeCloudstack
            :long => "--data-disk DISK_SIZE",
            :description => "Size in GB (no suffixes) of the (optional) data disk (NOT the root disk)",
            :default => nil
+
+    option :public_ip,
+           :long => "--[no-]public-ip",
+           :description => "Allocate a public IP for this server",
+           :boolean => true,
+           :default => true
 
     option :chef_node_name,
            :short => "-N NAME",
@@ -254,15 +260,15 @@ module KnifeCloudstack
 
     def find_or_create_public_ip(server, connection)
       nic = connection.get_server_default_nic(server) || {}
-      if nic['type'] == 'Virtual' then
+      #puts "#{ui.color("Not allocating public IP for server", :red)}" unless config[:public_ip]
+      if (config[:public_ip] == false) || (nic['type'] != 'Virtual') then
+        nic['ipaddress']
+      else
         # create ip address, ssh forwarding rule and optional forwarding rules
         ip_address = connection.associate_ip_address(server['zoneid'])
         ssh_rule = connection.create_port_forwarding_rule(ip_address['id'], "22", "TCP", "22", server['id'])
         create_port_forwarding_rules(ip_address['id'], server['id'], connection)
         ssh_rule['ipaddress']
-      else
-        # otherwise return the nic ip address
-        nic['ipaddress']
       end
     end
 
@@ -336,6 +342,3 @@ module KnifeCloudstack
 
   end # class
 end
-
-
-

@@ -51,6 +51,8 @@ system so it can run Chef Client with a Chef Server. The main assumption is a ba
 intended for Chef Client systems that talk to a Chef server.  By default the server is bootstrapped using the {ubuntu10.04-gems}[https://github.com/opscode/chef/bl
 ob/master/chef/lib/chef/knife/bootstrap/ubuntu10.04-gems.erb] template.  This can be overridden using the <tt>-d</tt> or <tt>--template-file</tt> command options.
 
+By default, new servers are allocated a public IP address mapping to the CloudStack private IP address. If you do not want this behavior, pass the <tt>--no-public-ip</tt> option.
+
 ==== Port forwarding rules for virtual networks
 The <tt>--port-rules</tt> option takes a comma separated list of port forwarding rules. These rules are created on the
 virtual public ip address of the server. Note that this option only applies to servers using a virtual network; it is
