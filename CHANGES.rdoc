@@ -1,5 +1,11 @@
 = Changes
 
+== 2012-05-17 (0.0.12)
+* Adding option to disable public IP allocation on server create
+  https://github.com/CloudStack/knife-cloudstack/pull/8
+* Fix whitespace issue in network names
+  https://github.com/CloudStack/knife-cloudstack/pull/7
+
 == 2011-11-03 (0.0.11)
 * Added LICENSE file and licensing headers to source. No feature changes.
 
