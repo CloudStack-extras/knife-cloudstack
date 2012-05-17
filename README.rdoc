@@ -196,6 +196,8 @@ Reboots the specified virtual machines(s).
 
 Author:: Ryan Holmes <rholmes@edmunds.com> 
 Author:: KC Braunschweig <kbraunschweig@edmunds.com>
+Author:: John E. Vincent <lusis.org+github.com@gmail.com>
+
 Copyright:: Copyright (c) 2011 Edmunds, Inc.
 License:: Apache License, Version 2.0
 
