@@ -65,6 +65,12 @@ module KnifeCloudstack
            :proc => lambda { |n| n.split(',').map {|sn| sn.strip}} ,
            :default => []
 
+    option :cloudstack_data_disk,
+           :short => "-D DISK_SIZE",
+           :long => "--data-disk DISK_SIZE",
+           :description => "Size in GB (no suffixes) of the (optional) data disk (NOT the root disk)",
+           :default => nil
+
     option :public_ip,
            :long => "--[no-]public-ip",
            :description => "Allocate a public IP for this server",
@@ -185,11 +191,31 @@ module KnifeCloudstack
           locate_config_value(:cloudstack_networks)
       )
 
+      disk_size = locate_config_value(:cloudstack_data_disk)
+      if disk_size
+        disk_name = "#{hostname}-1"
+        disk = connection.create_disk(
+            disk_name,
+            disk_size,
+            locate_config_value(:cloudstack_zone)
+        )
+        connection.stop_server(hostname)
+        connection.attach_disk(hostname, disk_name)
+        connection.start_server(hostname)
+      end
+
       public_ip = find_or_create_public_ip(server, connection)
 
       puts "\n\n"
       puts "#{ui.color("Name", :cyan)}: #{server['name']}"
       puts "#{ui.color("Public IP", :cyan)}: #{public_ip}"
+      if disk_size
+        if disk
+          puts "#{ui.color("Data disk", :cyan)}: #{disk_name} (#{disk['id']})"
+        else
+          puts "#{ui.color("Requested data disk could not be allocated", :red)}"
+        end
+      end
 
       return if config[:no_bootstrap]
 
