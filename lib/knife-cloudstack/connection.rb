@@ -1,6 +1,6 @@
 #
 # Author:: Ryan Holmes (<rholmes@edmunds.com>)
-# Author:: KC Braunschweig (<kbraunschweig@edmunds.com>)
+# Author:: KC Braunschweig (<kcbraunschweig@gmail.com>)
 # Author:: Julian Cardona (<jcardona@edmunds.com>)
 # Copyright:: Copyright (c) 2011, 2012 Edmunds, Inc.
 # License:: Apache License, Version 2.0
