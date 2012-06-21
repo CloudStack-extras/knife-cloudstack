@@ -110,7 +110,7 @@ module CloudstackClient
     ##
     # Deploys a new server using the specified parameters.
 
-    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[])
+    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[], data_disk=nil)
 
       if host_name then
         if get_server(host_name) then
@@ -166,6 +166,15 @@ module CloudstackClient
           'networkids' => network_ids.join(',')
       }
       params['name'] = host_name if host_name
+      if data_disk
+        params['size'] = data_disk
+        offering = get_customized_disk_offering
+        if !offering then
+          puts "Error: Customized disk offering has not been defined"
+          exit 1
+        end
+        params['diskofferingid'] = offering['id']
+      end
 
       json = send_async_request(params)
       json['virtualmachine']
