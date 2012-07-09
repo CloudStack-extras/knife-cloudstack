@@ -109,7 +109,7 @@ module CloudstackClient
     ##
     # Deploys a new server using the specified parameters.
 
-    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[])
+    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[], public_ip=nil)
 
       if host_name then
         if get_server(host_name) then
@@ -161,9 +161,10 @@ module CloudstackClient
           'command' => 'deployVirtualMachine',
           'serviceOfferingId' => service['id'],
           'templateId' => template['id'],
-          'zoneId' => zone['id'],
-          'networkids' => network_ids.join(',')
+          'zoneId' => zone['id']
       }
+      params.merge!('networkids' => network_ids.join(',')) if public_ip
+      
       params['name'] = host_name if host_name
 
       json = send_async_request(params)
