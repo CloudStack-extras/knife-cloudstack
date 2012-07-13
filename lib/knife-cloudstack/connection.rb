@@ -1,7 +1,8 @@
 #
 # Author:: Ryan Holmes (<rholmes@edmunds.com>)
 # Author:: KC Braunschweig (<kcbraunschweig@gmail.com>)
-# Copyright:: Copyright (c) 2011 Edmunds, Inc.
+# Author:: Julian Cardona (<jcardona@edmunds.com>)
+# Copyright:: Copyright (c) 2011, 2012 Edmunds, Inc.
 # License:: Apache License, Version 2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -109,7 +110,7 @@ module CloudstackClient
     ##
     # Deploys a new server using the specified parameters.
 
-    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[])
+    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[], data_disk=nil)
 
       if host_name then
         if get_server(host_name) then
@@ -165,6 +166,15 @@ module CloudstackClient
           'networkids' => network_ids.join(',')
       }
       params['name'] = host_name if host_name
+      if data_disk
+        params['size'] = data_disk
+        offering = get_customized_disk_offering
+        if !offering then
+          puts "Error: Customized disk offering has not been defined"
+          exit 1
+        end
+        params['diskofferingid'] = offering['id']
+      end
 
       json = send_async_request(params)
       json['virtualmachine']
@@ -524,6 +534,145 @@ module CloudstackClient
       }
       json = send_async_request(params)
       json['portforwardingrule']
+    end
+
+    ##
+    # Find the first customized disk offering.
+
+    def get_customized_disk_offering()
+      params = {
+          'command' => 'listDiskOfferings'
+      }
+      json = send_request(params)
+      offerings = json['diskoffering']
+      return nil unless offerings
+
+      offerings.each { |offering|
+        if offering['iscustomized'] then
+          return offering
+        end
+      }
+
+      nil
+    end
+
+    ##
+    # Creates a new data disk using the specified size and name.
+
+    def create_disk(disk_name, size_in_gb, zone_name=nil)
+
+      # state preconditions
+      custom_offering = get_customized_disk_offering
+      if !custom_offering then
+        puts "Error: Customized disk offering has not been defined"
+        exit 1
+      end
+
+      # argument preconditions
+      zone = zone_name ? get_zone(zone_name) : get_default_zone
+      if !zone then
+        msg = zone_name ? "Zone '#{zone_name}' is invalid" : "No default zone found"
+        puts "Error: #{msg}"
+        exit 1
+      end
+
+      params = {
+          'command' => 'createVolume',
+          'name' => disk_name,
+          'diskOfferingId' => custom_offering['id'],
+	  'size' => size_in_gb,
+          'zoneId' => zone['id']
+      }
+      json = send_async_request(params)
+      json['volume']
+
+    end
+
+    ##
+    # Finds a data disk given its name.
+
+    def get_disk(disk_name)
+      params = {
+          'command' => 'listVolumes',
+          'name' => disk_name
+      }
+      json = send_request(params)
+      disks = json['volume']
+
+      if !disks || disks.empty? then
+        return nil
+      end
+
+      disks.first
+    end
+
+    ##
+    # Attaches an existing data disk to an existing VM.
+
+    def attach_disk(host_name, disk_name)
+
+      # argument preconditions
+      host = get_server(host_name)
+      if !host || !host['id'] then
+        puts "Error: Server '#{host_name}' does not exist."
+        exit 1
+      end
+      disk = get_disk(disk_name)
+      if !disk || !disk['id'] then
+        puts "Error: Disk '#{disk_name}' does not exist."
+        exit 1
+      end
+
+      params = {
+          'command' => 'attachVolume',
+          'id' => disk['id'],
+          'virtualMachineId' => host['id']
+      }
+      json = send_async_request(params)
+      json['volume']
+
+    end
+
+    ##
+    # Detaches an existing data disk from an existing VM.
+
+    def detach_disk(disk_name)
+
+      # argument preconditions
+      disk = get_disk(disk_name)
+      if !disk || !disk['id'] then
+        puts "Error: Disk '#{disk_name}' does not exist."
+        exit 1
+      end
+
+      params = {
+          'command' => 'detachVolume',
+          'id' => disk['id']
+      }
+      json = send_async_request(params)
+      json['volume']
+    end
+
+    ##
+    # Deletes an existing data disk.
+
+    def delete_disk(disk_name)
+
+      disk = get_disk(disk_name)
+      if !disk || !disk['id'] then
+        puts "Error: Disk '#{disk_name}' does not exist"
+        exit 1
+      end
+
+      params = {
+          'command' => 'deleteVolume',
+          'id' => disk['id']
+      }
+
+      # json = send_async_request(params)
+      json = send_request(params)
+      json['success']
+
     end
 
     ##
