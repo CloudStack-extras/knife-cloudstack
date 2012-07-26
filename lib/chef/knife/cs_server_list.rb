@@ -60,7 +60,8 @@ module KnifeCloudstack
           ui.color('Public IP', :bold),
           ui.color('Service', :bold),
           ui.color('Template', :bold),
-          ui.color('State', :bold)
+          ui.color('State', :bold),
+          ui.color('Hypervisor', :bold)
       ]
 
       servers = connection.list_servers
@@ -78,8 +79,9 @@ module KnifeCloudstack
         server_list << server['serviceofferingname']
         server_list << server['templatename']
         server_list << server['state']
+        server_list << (server['hostname'] || 'N/A')
       end
-      puts ui.list(server_list, :columns_across, 5)
+      puts ui.list(server_list, :columns_across, 6)
 
     end
 
