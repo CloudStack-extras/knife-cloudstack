@@ -547,9 +547,13 @@ module CloudstackClient
       signature = CGI.escape(signature)
 
       url = "#{@api_url}?#{data}&signature=#{signature}"
-
-      response = Net::HTTP.get_response(URI.parse(url))
-
+      uri = URI.parse(url)
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      request = Net::HTTP::Get.new(uri.request_uri)
+      response = http.request(request)
+        
       if !response.is_a?(Net::HTTPOK) then
         puts "Error #{response.code}: #{response.message}"
         puts JSON.pretty_generate(JSON.parse(response.body))
