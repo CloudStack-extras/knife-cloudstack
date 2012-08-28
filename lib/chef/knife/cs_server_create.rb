@@ -23,10 +23,10 @@ module KnifeCloudstack
   class CsServerCreate < Chef::Knife
 
     # Seconds to delay between detecting ssh and initiating the bootstrap
-    BOOTSTRAP_DELAY = 3
+    BOOTSTRAP_DELAY = 20
 
     # Seconds to wait between ssh pings
-    SSH_POLL_INTERVAL = 2
+    SSH_POLL_INTERVAL = 10
 
     deps do
       require 'chef/knife/bootstrap'
@@ -200,7 +200,9 @@ module KnifeCloudstack
         puts "\n"
       }
 
-      bootstrap_for_node(public_ip).run
+      username = locate_config_value(:ssh_user) || "root"
+      password = locate_config_value(:ssh_password) || server.password
+      bootstrap_for_node(public_ip, username, password).run
 
       puts "\n"
       puts "#{ui.color("Name", :cyan)}: #{server['name']}"
@@ -290,12 +292,12 @@ module KnifeCloudstack
     end
 
 
-    def bootstrap_for_node(host)
+    def bootstrap_for_node(host, username, password)
       bootstrap = Chef::Knife::Bootstrap.new
       bootstrap.name_args = [host]
       bootstrap.config[:run_list] = config[:run_list]
-      bootstrap.config[:ssh_user] = config[:ssh_user]
-      bootstrap.config[:ssh_password] = config[:ssh_password]
+      bootstrap.config[:ssh_user] = username
+      bootstrap.config[:ssh_password] = password
       bootstrap.config[:identity_file] = config[:identity_file]
       bootstrap.config[:chef_node_name] = config[:chef_node_name] if config[:chef_node_name]
       bootstrap.config[:prerelease] = config[:prerelease]
