@@ -39,6 +39,8 @@ Additionally the following options may be set in your <tt>knife.rb</tt>:
 * knife[:distro]
 * knife[:template_file]
 
+== Public Clouds (Tata InstaCompute, Ninefold etc):
+To get this plugin to work in public clouds, it is essential that the virtual network (and router) be allocated to the account. Cloudstack clouds automatically creates a virtual network  when the first VM is requested to be created. Hence, it is essential to create the first VM (of a newly created account) manually(which can be terminated immediately if not required) to ensure the virtual network is created.
 
 == SUBCOMMANDS:
 
