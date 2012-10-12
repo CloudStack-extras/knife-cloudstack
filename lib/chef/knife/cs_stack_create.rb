@@ -16,8 +16,6 @@
 # limitations under the License.
 #
 
-require 'chef/knife'
-
 module KnifeCloudstack
   class CsStackCreate < Chef::Knife
 
@@ -31,6 +29,7 @@ module KnifeCloudstack
       require 'net/ssh'
       require 'net/ssh/multi'
       require 'knife-cloudstack/connection'
+      require 'chef/knife'
       Chef::Knife::Ssh.load_deps
       Chef::Knife::NodeRunListRemove.load_deps
       KnifeCloudstack::CsServerCreate.load_deps

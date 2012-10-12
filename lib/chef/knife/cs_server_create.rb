@@ -16,8 +16,6 @@
 # limitations under the License.
 #
 
-require 'chef/knife'
-require 'json'
 
 module KnifeCloudstack
   class CsServerCreate < Chef::Knife
@@ -29,12 +27,14 @@ module KnifeCloudstack
     SSH_POLL_INTERVAL = 10
 
     deps do
-      require 'chef/knife/bootstrap'
-      Chef::Knife::Bootstrap.load_deps
+      require 'json'
       require 'socket'
       require 'net/ssh/multi'
+      require 'chef/knife'
+      require 'chef/knife/bootstrap'
       require 'chef/json_compat'
       require 'knife-cloudstack/connection'
+      Chef::Knife::Bootstrap.load_deps
     end
 
     banner "knife cs server create [SERVER_NAME] (options)"

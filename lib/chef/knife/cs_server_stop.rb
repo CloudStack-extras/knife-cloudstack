@@ -17,14 +17,14 @@
 # limitations under the License.
 #
 
-require 'chef/knife'
-
 module KnifeCloudstack
   class CsServerStop < Chef::Knife
 
     deps do
       require 'knife-cloudstack/connection'
       require 'chef/api_client'
+      require 'chef/knife'
+      Chef::Knife.load_deps
     end
 
     banner "knife cs server stop SERVER_NAME [SERVER_NAME ...] (options)"

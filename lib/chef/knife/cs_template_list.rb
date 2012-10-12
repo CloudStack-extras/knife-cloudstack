@@ -16,8 +16,6 @@
 # limitations under the License.
 #
 
-require 'chef/knife'
-
 module KnifeCloudstack
   class CsTemplateList < Chef::Knife
 
@@ -25,6 +23,8 @@ module KnifeCloudstack
 
     deps do
       require 'knife-cloudstack/connection'
+      require 'chef/knife'
+      Chef::Knife.load_deps
     end
 
     banner "knife cs template list (options)"

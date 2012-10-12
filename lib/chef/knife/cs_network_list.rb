@@ -16,13 +16,13 @@
 # limitations under the License.
 #
 
-require 'chef/knife'
-
 module KnifeCloudstack
   class CsNetworkList < Chef::Knife
 
     deps do
       require 'knife-cloudstack/connection'
+      require 'chef/knife'
+      Chef::Knife.load_deps
     end
 
     banner "knife cs network list (options)"

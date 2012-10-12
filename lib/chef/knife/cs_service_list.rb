@@ -16,15 +16,15 @@
 # limitations under the License.
 #
 
-require 'chef/knife'
-
 module KnifeCloudstack
   class CsServiceList < Chef::Knife
 
     MEGABYTES = 1024 * 1024
 
     deps do
+      require 'chef/knife'
       require 'knife-cloudstack/connection'
+      Chef::Knife.load_deps
     end
 
     banner "knife cs service list (options)"

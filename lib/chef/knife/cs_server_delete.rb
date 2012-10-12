@@ -16,14 +16,14 @@
 # limitations under the License.
 #
 
-require 'chef/knife'
-
 module KnifeCloudstack
   class CsServerDelete < Chef::Knife
 
     deps do
       require 'knife-cloudstack/connection'
       require 'chef/api_client'
+      require 'chef/knife'
+      Chef::Knife.load_deps
     end
 
     banner "knife cs server delete SERVER_NAME [SERVER_NAME ...] (options)"
