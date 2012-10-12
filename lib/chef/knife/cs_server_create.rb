@@ -18,13 +18,8 @@
 # limitations under the License.
 #
 
-require 'chef/knife'
 require 'chef/knife/cs_base'
-require 'json'
 require 'chef/knife/winrm_base'
-require 'winrm'
-require 'httpclient'
-require 'em-winrm'
 
 module KnifeCloudstack
   class CsServerCreate < Chef::Knife
@@ -46,11 +41,17 @@ module KnifeCloudstack
       require 'chef/knife/bootstrap_windows_ssh'
       require 'chef/knife/core/windows_bootstrap_context'
       require 'chef/knife/winrm'
-      Chef::Knife::Bootstrap.load_deps
+      require 'json'
       require 'socket'
       require 'net/ssh/multi'
+      require 'chef/knife'
+      require 'chef/knife/bootstrap'
       require 'chef/json_compat'
       require 'knife-cloudstack/connection'
+      require 'winrm'
+      require 'httpclient'
+      require 'em-winrm'
+      Chef::Knife::Bootstrap.load_deps
     end
 
     banner "knife cs server create [SERVER_NAME] (options)"

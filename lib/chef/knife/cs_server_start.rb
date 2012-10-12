@@ -19,7 +19,6 @@
 # limitations under the License.
 #
 
-require 'chef/knife'
 require 'chef/knife/cs_base'
 
 module KnifeCloudstack
@@ -28,8 +27,10 @@ module KnifeCloudstack
     include Chef::Knife::KnifeCloudstackBase
 
     deps do
+      require 'chef/knife'
       require 'knife-cloudstack/connection'
       require 'chef/api_client'
+      Chef::Knife.load_deps
     end
 
     banner "knife cs server start SERVER_NAME [SERVER_NAME ...] (options)"
