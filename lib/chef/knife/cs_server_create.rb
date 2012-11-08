@@ -18,18 +18,28 @@
 
 require 'chef/knife'
 require 'json'
+require 'chef/knife/winrm_base'
 
 module KnifeCloudstack
   class CsServerCreate < Chef::Knife
 
+    include Knife::WinrmBase
+
+
     # Seconds to delay between detecting ssh and initiating the bootstrap
-    BOOTSTRAP_DELAY = 20
+    BOOTSTRAP_DELAY = 200
+    #The machine will reboot once so we need to handle that
+    WINRM_BOOTSTRAP_DELAY = 900
 
     # Seconds to wait between ssh pings
     SSH_POLL_INTERVAL = 10
 
     deps do
       require 'chef/knife/bootstrap'
+      require 'chef/knife/bootstrap_windows_winrm'
+      require 'chef/knife/bootstrap_windows_ssh'
+      require 'chef/knife/core/windows_bootstrap_context'
+      require 'chef/knife/winrm'
       Chef::Knife::Bootstrap.load_deps
       require 'socket'
       require 'net/ssh/multi'
@@ -157,6 +167,11 @@ module KnifeCloudstack
            :proc => lambda { |o| o.split(/[\s,]+/) },
            :default => []
 
+    option :bootstrap_protocol,
+      :long => "--bootstrap-protocol protocol",
+      :description => "Protocol to bootstrap windows servers. options: winrm/ssh",
+      :default => "winrm"
+
 
     def run
 
@@ -167,6 +182,14 @@ module KnifeCloudstack
         exit 1
       end
       validate_options
+
+      if @windows_platform
+        require 'em-winrs'
+      else
+        require 'gssapi'
+        require 'winrm'
+        require 'em-winrm'
+      end
 
       $stdout.sync = true
 
@@ -193,16 +216,21 @@ module KnifeCloudstack
 
       return if config[:no_bootstrap]
 
-      print "\n#{ui.color("Waiting for sshd", :magenta)}"
+      if @bootstrap_protocol == 'ssh'
+        print "\n#{ui.color("Waiting for sshd", :magenta)}"
 
-      print(".") until is_ssh_open?(public_ip) {
-        sleep BOOTSTRAP_DELAY
-        puts "\n"
-      }
+        print(".") until is_ssh_open?(public_ip) {
+          sleep BOOTSTRAP_DELAY
+          puts "\n"
+        }
+      else
+        print "\n#{ui.color("Waiting for winrm to be active", :magenta)}"
+        print(".") until tcp_test_winrm(server.id,locate_config_value(:winrm_port)) {
+          sleep WINRM_BOOTSTRAP_DELAY
+          puts("\n")
+        }
 
-      username = locate_config_value(:ssh_user) || "root"
-      password = locate_config_value(:ssh_password) || server.password
-      bootstrap_for_node(public_ip, username, password).run
+      bootstrap_for_node(server, public_ip)
 
       puts "\n"
       puts "#{ui.color("Name", :cyan)}: #{server['name']}"
@@ -213,7 +241,8 @@ module KnifeCloudstack
     end
 
     def validate_options
-
+      @windows_image = is_image_windows?
+      @windows_platform = is_platform_windows?
       unless locate_config_value :cloudstack_template
         ui.error "Cloudstack template not specified"
         exit 1
@@ -223,15 +252,30 @@ module KnifeCloudstack
         ui.error "Cloudstack service offering not specified"
         exit 1
       end
-
-      identity_file = locate_config_value :identity_file
-      ssh_user = locate_config_value :ssh_user
-      ssh_password = locate_config_value :ssh_password
-      unless identity_file || (ssh_user && ssh_password)
-        ui.error("You must specify either an ssh identity file or an ssh user and password")
-        exit 1
+      if locate_config_value(:bootstrap_protocol) == 'ssh'
+        identity_file = locate_config_value :identity_file
+        ssh_user = locate_config_value :ssh_user
+        ssh_password = locate_config_value :ssh_password
+        unless identity_file || (ssh_user && ssh_password)
+          ui.error("You must specify either an ssh identity file or an ssh user and password")
+          exit 1
+        end
+        @bootstrap_protocol = 'ssh'
+      elsif locate_config_value(:bootstrap_protocol) == 'winrm'
+        if not @windows_image
+          ui.error("Only Windows Images support WinRM protocol for bootstrapping.")
+          exit 1
+        end
+        winrm_user = locate_config_value :winrm_user
+        winrm_password = locate_config_value :winrm_password
+        winrm_transport = locate_config_value :winrm_transport
+        winrm_port = locate_config_value :winrm_port
+        unless winrm_user && winrm_password && winrm_transport && winrm_port
+          ui.error("WinRM User, Password, Transport and Port are compulsory parameters")
+          exit 1
+        end
+        @bootstrap_protocol = 'winrm'
       end
-    end
 
 
     def find_or_create_public_ip(server, connection)
@@ -242,11 +286,21 @@ module KnifeCloudstack
       else
         # create ip address, ssh forwarding rule and optional forwarding rules
         ip_address = connection.associate_ip_address(server['zoneid'])
-        ssh_rule = connection.create_port_forwarding_rule(ip_address['id'], "22", "TCP", "22", server['id'])
-        create_port_forwarding_rules(ip_address['id'], server['id'], connection)
-        ssh_rule['ipaddress']
+
+        if @bootstrap_protocol == 'ssh'
+          ssh_rule = connection.create_port_forwarding_rule(ip_address['id'], "22", "TCP", "22", server['id'])
+          create_port_forwarding_rules(ip_address['id'], server['id'], connection)
+          ssh_rule['ipaddress']
+        else
+          winrm_rule = connection.create_port_forwarding_rule(
+            ip_address['id'],
+            "#{locate_config_value(:winrm_port)}",
+            "TCP", "#{locate_config_value(:winrm_port)}",
+            server['id'])
+          create_port_forwarding_rules(ip_address['id'], server['id'], connection)
+          winrm_rule['ipaddress']
+        end
       end
-    end
 
     def create_port_forwarding_rules(ip_address_id, server_id, connection)
       rules = locate_config_value(:port_rules)
@@ -260,6 +314,26 @@ module KnifeCloudstack
         connection.create_port_forwarding_rule(ip_address_id, private_port, protocol, public_port, server_id)
       end
 
+    end
+    def tcp_test_winrm(hostname, port)
+      TCPSocket.new(hostname, port)
+      return true
+      rescue SocketError
+        sleep 2
+        false
+      rescue Errno::ETIMEDOUT
+        false
+      rescue Errno::EPERM
+        false
+      rescue Errno::ECONNREFUSED
+        sleep 2
+        false
+      rescue Errno::EHOSTUNREACH
+        sleep 2
+        false
+      rescue Errno::ENETUNREACH
+        sleep 2
+        false
     end
 
     #noinspection RubyArgCount,RubyResolve
@@ -290,8 +364,77 @@ module KnifeCloudstack
         s && s.close
       end
     end
+    def is_platform_windows?
+      return RUBY_PLATFORM.scan('w32').size > 0
+    end
 
+    def bootstrap(server, public_ip)
+      if @windows_image
+        bootstrap_for_windows_node(server, public_ip)
+      else
+        bootstrap_for_node(server, public_ip)
+      end
+    end
+    def bootstrap_for_windows_node(server, fqdn)
+        if locate_config_value(:bootstrap_protocol) == 'winrm'
+            if is_platform_windows?
+              require 'em-winrs'
+            else
+              require 'gssapi'
+              require 'winrm'
+              require 'em-winrm'
+            end
+            #Setting up the FQDN
+            #WinRM (AD/Kerberos) work only with Windows Host Names and not IP Addresses 
+            #Now we have should have a custom image which can join the Domain on bootup via a Runonce script or such
+            #Also the runonce script should set the  Windows Name to be <instance-id>.<domain-name>
+            #Currently there is no way to identify the Windows Name via any API.
+            #
+            bootstrap = Chef::Knife::BootstrapWindowsWinrm.new
+            fqdn = server.id
+            bootstrap.config[:winrm_user] = locate_config_value(:winrm_user) || 'Administrator'
+            bootstrap.config[:winrm_password] = locate_config_value(:winrm_password)
+            bootstrap.config[:winrm_transport] = locate_config_value(:winrm_transport)
 
+            bootstrap.config[:winrm_port] = locate_config_value(:winrm_port)
+
+        elsif locate_config_value(:bootstrap_protocol) == 'ssh'
+            bootstrap = Chef::Knife::BootstrapWindowsSsh.new
+            bootstrap.config[:ssh_user] = locate_config_value(:ssh_user)
+            bootstrap.config[:ssh_password] = locate_config_value(:ssh_password)
+            bootstrap.config[:ssh_port] = locate_config_value(:ssh_port)
+            bootstrap.config[:identity_file] = locate_config_value(:identity_file)
+            bootstrap.config[:no_host_key_verify] = locate_config_value(:no_host_key_verify)
+        else
+            ui.error("Unsupported Bootstrapping Protocol. Supported : winrm, ssh")
+            exit 1
+        end
+        bootstrap.name_args = [fqdn]
+        bootstrap.config[:chef_node_name] = config[:chef_node_name] || server.id
+        bootstrap.config[:encrypted_data_bag_secret] = config[:encrypted_data_bag_secret]
+        bootstrap.config[:encrypted_data_bag_secret_file] = config[:encrypted_data_bag_secret_file]
+        bootstrap_common_params(bootstrap)
+      end
+
+      def bootstrap_for_node(server,fqdn,port)
+        bootstrap = Chef::Knife::Bootstrap.new
+        bootstrap.name_args = [fqdn]
+        bootstrap.config[:run_list] = config[:run_list]
+        bootstrap.config[:ssh_user] = locate_config_value(:ssh_user)
+        bootstrap.config[:ssh_password] = locate_config_value(:ssh_password)
+        bootstrap.config[:ssh_port] = port
+        bootstrap.config[:identity_file] = locate_config_value(:identity_file)
+        bootstrap.config[:chef_node_name] = locate_config_value(:chef_node_name) || server.name
+        bootstrap.config[:prerelease] = locate_config_value(:prerelease)
+        bootstrap.config[:bootstrap_version] = locate_config_value(:bootstrap_version)
+        bootstrap.config[:distro] = locate_config_value(:distro)
+        bootstrap.config[:use_sudo] = true unless locate_config_value(:ssh_user) == 'root'
+        bootstrap.config[:template_file] = config[:template_file]
+        bootstrap.config[:environment] = locate_config_value(:environment)
+        # may be needed for vpc_mode
+        bootstrap.config[:host_key_verify] = config[:host_key_verify]
+        bootstrap
+      end
     def bootstrap_for_node(host, username, password)
       bootstrap = Chef::Knife::Bootstrap.new
       bootstrap.name_args = [host]
