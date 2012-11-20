@@ -73,7 +73,7 @@ module KnifeCloudstack
       templates = connection.list_templates(filter)
       templates.each do |t|
         template_list << t['name']
-        template_list << (human_file_size(t['size']) || 'Unknown')
+        #template_list << (human_file_size(t['size']) || 'Unknown')
         template_list << t['zonename']
         template_list << t['ispublic'].to_s
         template_list << t['created']

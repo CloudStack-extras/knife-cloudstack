@@ -109,7 +109,7 @@ module CloudstackClient
     ##
     # Deploys a new server using the specified parameters.
 
-    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[])
+    def create_server(host_name, service_name, template_name, zone_name=nil, project_name=nil, network_names=[])
 
       if host_name then
         if get_server(host_name) then
@@ -147,7 +147,7 @@ module CloudstackClient
         networks << get_network(name)
       end
       if networks.empty? then
-        networks << get_default_network
+        networks << get_default_network(zone['id'])
       end
       if networks.empty? then
         puts "No default network found"
@@ -164,6 +164,15 @@ module CloudstackClient
           'zoneId' => zone['id'],
           'networkids' => network_ids.join(',')
       }
+      if project_name
+        project = get_project(project_name)
+        if !project then
+          puts "Project #{project_name} does not exist"
+          exit 1
+        end
+        params['projectId'] = project['id']
+      end
+
       params['name'] = host_name if host_name
 
       json = send_async_request(params)
@@ -338,6 +347,25 @@ module CloudstackClient
       json['template'] || []
     end
 
+    #Fetch project with the specified name
+    def get_project(name)
+      params = {
+        'command' => 'listProjects'
+      }
+
+      json = send_request(params)
+      projects = json['project']
+      return nil unless projects
+      projects.each { |n|
+        if n['name'] == name then
+          return n
+        end
+      }
+
+      nil
+    end
+
+
     ##
     # Finds the network with the specified name.
 
@@ -362,10 +390,11 @@ module CloudstackClient
     ##
     # Finds the default network.
 
-    def get_default_network
+    def get_default_network(zone)
       params = {
           'command' => 'listNetworks',
-          'isDefault' => true
+          'isDefault' => true,
+          'zoneid' => zone
       }
       json = send_request(params)
 
@@ -458,7 +487,11 @@ module CloudstackClient
       json['publicipaddress'].first
     end
 
-
+    def list_public_ip_addresses()
+      params = { 'command' => 'listPublicIpAddresses'}
+      json = send_request(params)
+      return json['publicipaddress']
+    end
     ##
     # Acquires and associates a public IP to an account.
 
@@ -471,6 +504,36 @@ module CloudstackClient
       json = send_async_request(params)
       json['ipaddress']
     end
+
+    def enable_static_nat(ipaddress_id, virtualmachine_id)
+      params = {
+        'command' => 'enableStaticNat',
+        'ipAddressId' => ipaddress_id,
+        'virtualmachineId' => virtualmachine_id
+      }
+      send_request(params)
+    end
+
+    def disable_static_nat(ipaddress)
+      params = {
+        'command' => 'disableStaticNat',
+        'ipAddressId' => ipaddress['id']
+      }
+      send_async_request(params)
+    end
+
+    def create_ip_fwd_rule(ipaddress_id, protocol, start_port, end_port)
+      params = {
+        'command' => 'createIpForwardingRule',
+        'ipaddressId' => ipaddress_id,
+        'protocol' => protocol,
+        'startport' =>  start_port,
+        'endport' => end_port
+      }
+
+      send_async_request(params)
+    end
+
 
     ##
     # Disassociates an ip address from the account.
@@ -529,7 +592,7 @@ module CloudstackClient
     ##
     # Sends a synchronous request to the CloudStack API and returns the response as a Hash.
     #
-    # The wrapper element of the response (e.g. mycommandresponse) is discarded and the 
+    # The wrapper element of the response (e.g. mycommandresponse) is discarded and the
     # contents of that element are returned.
 
     def send_request(params)
@@ -553,7 +616,7 @@ module CloudstackClient
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE
       request = Net::HTTP::Get.new(uri.request_uri)
       response = http.request(request)
-        
+
       if !response.is_a?(Net::HTTPOK) then
         puts "Error #{response.code}: #{response.message}"
         puts JSON.pretty_generate(JSON.parse(response.body))
