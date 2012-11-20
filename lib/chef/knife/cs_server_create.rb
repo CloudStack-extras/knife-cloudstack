@@ -243,15 +243,15 @@ module KnifeCloudstack
         project: #{locate_config_value(:cloudstack_project)},
         network: #{locate_config_value(:cloudstack_networks)}")
 
-      # server = connection.create_server(
-      #     hostname,
-      #     locate_config_value(:cloudstack_service),
-      #     locate_config_value(:cloudstack_template),
-      #     locate_config_value(:cloudstack_zone),
-      #     locate_config_value(:cloudstack_project),
-      #     locate_config_value(:cloudstack_networks)
-      # )
-      server = connection.get_server('Chef-10394')
+      server = connection.create_server(
+          hostname,
+          locate_config_value(:cloudstack_service),
+          locate_config_value(:cloudstack_template),
+          locate_config_value(:cloudstack_zone),
+          locate_config_value(:cloudstack_project),
+          locate_config_value(:cloudstack_networks)
+      )
+      # server = connection.get_server('Chef-10394')
       # print "\n#{ui.color("Waiting for server", :magenta)}"
 
       if locate_config_value :allocate_public_ip
@@ -348,8 +348,8 @@ module KnifeCloudstack
         nic['ipaddress']
       else
         puts("allocate ip address, create ssh forwarding rule and optional forwarding rules")
-        #ip_address = connection.associate_ip_address(server['zoneid'])
-        ip_address = connection.get_public_ip_address('202.2.94.158')
+        ip_address = connection.associate_ip_address(server['zoneid'])
+        #ip_address = connection.get_public_ip_address('202.2.94.158')
         print("Allocated IP Address: #{ip_address['ipaddress']}")
         Chef::Log.debug("IP Address Info: #{ip_address}")
 
