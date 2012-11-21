@@ -31,10 +31,20 @@ module CloudstackClient
     ASYNC_POLL_INTERVAL = 2.0
     ASYNC_TIMEOUT = 300
 
-    def initialize(api_url, api_key, secret_key)
+    def initialize(api_url, api_key, secret_key, project_name=nil)
       @api_url = api_url
       @api_key = api_key
       @secret_key = secret_key
+      @project_id = nil
+      if project_name
+        project = get_project(project_name)
+        if !project then
+          puts "Project #{project_name} does not exist"
+          exit 1
+        end
+        @project_id = project['id']
+      end
+
     end
 
     ##
@@ -45,6 +55,9 @@ module CloudstackClient
           'command' => 'listVirtualMachines',
           'name' => name
       }
+      # if @project_id
+      #   params['projectId'] = @project_id
+      # end
       json = send_request(params)
       machines = json['virtualmachine']
 
@@ -60,15 +73,18 @@ module CloudstackClient
 
     def get_server_public_ip(server, cached_rules=nil)
       return nil unless server
-
       # find the public ip
-      nic = get_server_default_nic(server) || {}
-      if nic['type'] == 'Virtual' then
-        ssh_rule = get_ssh_port_forwarding_rule(server, cached_rules)
-        ssh_rule ? ssh_rule['ipaddress'] : nil
-      else
-        nic['ipaddress']
+      nic = get_server_default_nic(server)
+      ssh_rule = get_ssh_port_forwarding_rule(server, cached_rules)
+      if ssh_rule
+        return ssh_rule['ipaddress']
       end
+      #check for static NAT
+      ip_addr = list_public_ip_addresses.find {|v| v['virtualmachineid'] == server['id']}
+      if ip_addr
+        return ip_addr['ipaddress']
+      end
+      nic['ipaddress']
     end
 
     ##
@@ -102,6 +118,9 @@ module CloudstackClient
       params = {
           'command' => 'listVirtualMachines'
       }
+      # if @project_id
+      #   params['projectId'] = @project_id
+      # end
       json = send_request(params)
       json['virtualmachine'] || []
     end
@@ -109,7 +128,7 @@ module CloudstackClient
     ##
     # Deploys a new server using the specified parameters.
 
-    def create_server(host_name, service_name, template_name, zone_name=nil, project_name=nil, network_names=[])
+    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[])
 
       if host_name then
         if get_server(host_name) then
@@ -164,14 +183,9 @@ module CloudstackClient
           'zoneId' => zone['id'],
           'networkids' => network_ids.join(',')
       }
-      if project_name
-        project = get_project(project_name)
-        if !project then
-          puts "Project #{project_name} does not exist"
-          exit 1
-        end
-        params['projectId'] = project['id']
-      end
+      # if @project_id
+      #   params['projectId'] = @project_id
+      # end
 
       params['name'] = host_name if host_name
 
@@ -373,6 +387,9 @@ module CloudstackClient
       params = {
           'command' => 'listNetworks'
       }
+      # if @project_id
+      #   params['projectId'] = @project_id
+      # end
       json = send_request(params)
 
       networks = json['network']
@@ -396,6 +413,9 @@ module CloudstackClient
           'isDefault' => true,
           'zoneid' => zone
       }
+      # if @project_id
+      #   params['projectId'] = @project_id
+      # end
       json = send_request(params)
 
       networks = json['network']
@@ -484,11 +504,13 @@ module CloudstackClient
           'ipaddress' => ip_address
       }
       json = send_request(params)
+      return nil unless json['publicipaddress']
       json['publicipaddress'].first
     end
 
     def list_public_ip_addresses()
       params = { 'command' => 'listPublicIpAddresses'}
+
       json = send_request(params)
       return json['publicipaddress']
     end
@@ -500,7 +522,11 @@ module CloudstackClient
           'command' => 'associateIpAddress',
           'zoneId' => zone_id
       }
-
+      if @project_id
+        default_network = get_default_network(zone_id)
+        params['networkId'] = default_network['id']
+      end
+      print "params: #{params}"
       json = send_async_request(params)
       json['ipaddress']
     end
@@ -596,6 +622,10 @@ module CloudstackClient
     # contents of that element are returned.
 
     def send_request(params)
+      if @project_id
+        params['projectId'] = @project_id
+      end
+      Chef::Log.debug("HTTP Request PARAMS: #{params}")
       params['response'] = 'json'
       params['apiKey'] = @api_key
 

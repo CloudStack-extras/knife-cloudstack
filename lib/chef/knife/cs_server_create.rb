@@ -26,7 +26,7 @@ module KnifeCloudstack
     include Chef::Knife::WinrmBase
 
     # Seconds to delay between detecting ssh and initiating the bootstrap
-    BOOTSTRAP_DELAY = 200
+    BOOTSTRAP_DELAY = 20
     #The machine will reboot once so we need to handle that
     WINRM_BOOTSTRAP_DELAY = 200
 
@@ -172,24 +172,18 @@ module KnifeCloudstack
            :proc => lambda { |o| o.split(/[\s,]+/) },
            :default => []
 
-    option :project,
+    option :cloudstack_project,
            :short => "-P PROJECT_NAME",
-           :long => '--project PROJECT_NAME',
+           :long => '--cloudstack-project PROJECT_NAME',
            :description => "Cloudstack Project in which to create server",
            :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
            :default => nil
 
-    option :enable_static_nat,
-            :long => '--enable-static-nat',
+    option :static_nat,
+            :long => '--static-nat',
             :description => 'Support Static NAT',
             :boolean => true,
             :default => false
-
-    option :allocate_public_ip,
-           :long => '--allocate-public-ip',
-           :description => 'Allocate Public IP (req for Adv.mode)',
-           :boolean => false,
-           :default => true
 
     option :bootstrap_protocol,
       :long => "--bootstrap-protocol protocol",
@@ -205,12 +199,12 @@ module KnifeCloudstack
       @connection ||= CloudstackClient::Connection.new(
           locate_config_value(:cloudstack_url),
           locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key)
+          locate_config_value(:cloudstack_secret_key),
+          locate_config_value(:cloudstack_project)
       )
     end
 
     def run
-
       Chef::Log.debug("Validate hostname and options")
       hostname = @name_args.first
       unless /^[a-zA-Z0-9][a-zA-Z0-9-]*$/.match hostname then
@@ -235,33 +229,28 @@ module KnifeCloudstack
       @connection = CloudstackClient::Connection.new(
           locate_config_value(:cloudstack_url),
           locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key)
+          locate_config_value(:cloudstack_secret_key),
+          locate_config_value(:cloudstack_project)
       )
-      Chef::Log.info("Creating instance with service : #{locate_config_value(:cloudstack_service)},
-        template : #{locate_config_value(:cloudstack_template)},
-        zone : #{locate_config_value(:cloudstack_zone)},
-        project: #{locate_config_value(:cloudstack_project)},
+      Chef::Log.info("Creating instance with
+        service : #{locate_config_value(:cloudstack_service)}
+        template : #{locate_config_value(:cloudstack_template)}
+        zone : #{locate_config_value(:cloudstack_zone)}
+        project: #{locate_config_value(:cloudstack_project)}
         network: #{locate_config_value(:cloudstack_networks)}")
+
+      print "\n#{ui.color("Waiting for Server to be created", :magenta)}"
 
       server = connection.create_server(
           hostname,
           locate_config_value(:cloudstack_service),
           locate_config_value(:cloudstack_template),
           locate_config_value(:cloudstack_zone),
-          locate_config_value(:cloudstack_project),
           locate_config_value(:cloudstack_networks)
       )
-      # server = connection.get_server('Chef-10394')
-      # print "\n#{ui.color("Waiting for server", :magenta)}"
 
-      if locate_config_value :allocate_public_ip
-        Chef::Log.debug("Allocate a Public IP Address for internet access")
-        public_ip = find_or_create_public_ip(server, connection)
-      else
-        public_ip = server['nic'].first['ipaddress']
-      end
-      # server = connection.get_server('Chef')
-      # public_ip = "125.7.123.251"
+      public_ip = find_or_create_public_ip(server, connection)
+
       puts "\n\n"
       puts "#{ui.color('Name', :cyan)}: #{server['name']}"
       puts "#{ui.color('Public IP', :cyan)}: #{public_ip}"
@@ -289,9 +278,7 @@ module KnifeCloudstack
       puts "#{ui.color("Environment", :cyan)}: #{config[:environment] || '_default'}"
       puts "#{ui.color("Run List", :cyan)}: #{config[:run_list].join(', ')}"
       bootstrap(server, public_ip).run
-
     end
-
 
     def fetch_server_fqdn(ip_addr)
         require 'resolv'
@@ -344,16 +331,16 @@ module KnifeCloudstack
     def find_or_create_public_ip(server, connection)
       nic = connection.get_server_default_nic(server) || {}
       #puts "#{ui.color("Not allocating public IP for server", :red)}" unless config[:public_ip]
-      if (config[:public_ip] == false) || (nic['type'] != 'Virtual') then
+      if (config[:public_ip] == false)
         nic['ipaddress']
       else
-        puts("allocate ip address, create ssh forwarding rule and optional forwarding rules")
+        puts("\nAllocate ip address, create ssh forwarding rule and optional forwarding rules")
         ip_address = connection.associate_ip_address(server['zoneid'])
         #ip_address = connection.get_public_ip_address('202.2.94.158')
         print("Allocated IP Address: #{ip_address['ipaddress']}")
         Chef::Log.debug("IP Address Info: #{ip_address}")
 
-        if locate_config_value :enable_static_nat
+        if locate_config_value :static_nat
           Chef::Log.debug("Enabling static NAT for IP Address : #{ip_address['ipaddress']}")
           connection.enable_static_nat(ip_address['id'], server['id'])
         end
@@ -383,9 +370,9 @@ module KnifeCloudstack
             #{ip_address['ipaddress']} with protocol: #{protocol}, public port: #{public_port}")
           connection.create_ip_fwd_rule(ip_address['id'], protocol, public_port, public_port)
         else
-          Chef::Log.debug("Creating Port Forwarding Rule for #{ip_address_id} with protocol: #{protocol},
+          Chef::Log.debug("Creating Port Forwarding Rule for #{ip_address['id']} with protocol: #{protocol},
             public port: #{public_port} and private port: #{private_port} and server: #{server_id}")
-          connection.create_port_forwarding_rule(ip_address_id, private_port, protocol, public_port, server_id)
+          connection.create_port_forwarding_rule(ip_address['id'], private_port, protocol, public_port, server_id)
         end
       end
     end

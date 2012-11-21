@@ -45,6 +45,13 @@ module KnifeCloudstack
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
+    option :cloudstack_project,
+           :short => "-P PROJECT_NAME",
+           :long => '--cloudstack-project PROJECT_NAME',
+           :description => "Cloudstack Project in which to create server",
+           :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
+           :default => nil
+
     def run
 
       $stdout.sync = true
@@ -52,7 +59,8 @@ module KnifeCloudstack
       connection = CloudstackClient::Connection.new(
           locate_config_value(:cloudstack_url),
           locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key)
+          locate_config_value(:cloudstack_secret_key),
+          locate_config_value(:cloudstack_project)
       )
 
       server_list = [
