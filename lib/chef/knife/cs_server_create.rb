@@ -266,7 +266,7 @@ module KnifeCloudstack
         }
       else
         print "\n#{ui.color("Waiting for winrm to be active", :magenta)}"
-        print(".") until tcp_test_winrm(public_ip,locate_config_value(:winrm_transport)) {
+        print(".") until tcp_test_winrm(public_ip,locate_config_value(:winrm_port)) {
           sleep WINRM_BOOTSTRAP_DELAY
           puts("\n")
         }
@@ -287,6 +287,10 @@ module KnifeCloudstack
 
     def is_image_windows?
         template = connection.get_template(locate_config_value(:cloudstack_template))
+        if !template
+          ui.error("Template: #{template} does not exist")
+          exit 1
+        end
         return template['ostypename'].scan('Windows').length > 0
     end
 
@@ -319,8 +323,8 @@ module KnifeCloudstack
         winrm_user = locate_config_value :winrm_user
         winrm_password = locate_config_value :winrm_password
         winrm_transport = locate_config_value :winrm_transport
-        winrm_transport = locate_config_value :winrm_transport
-        unless winrm_user && winrm_password && winrm_transport && winrm_transport
+        winrm_port = locate_config_value :winrm_port
+        unless winrm_user && winrm_password && winrm_transport && winrm_port
           ui.error("WinRM User, Password, Transport and Port are compulsory parameters")
           exit 1
         end
@@ -337,7 +341,7 @@ module KnifeCloudstack
         puts("\nAllocate ip address, create ssh forwarding rule and optional forwarding rules")
         ip_address = connection.associate_ip_address(server['zoneid'])
         #ip_address = connection.get_public_ip_address('202.2.94.158')
-        print("Allocated IP Address: #{ip_address['ipaddress']}")
+        puts("\nAllocated IP Address: #{ip_address['ipaddress']}")
         Chef::Log.debug("IP Address Info: #{ip_address}")
 
         if locate_config_value :static_nat
@@ -354,9 +358,9 @@ module KnifeCloudstack
       if @bootstrap_protocol == 'ssh'
         rules += ["#{locate_config_value(:ssh_port)}"] #SSH Port
       elsif @bootstrap_protocol == 'winrm'
-        rules +=[locate_config_value(:winrm_transport)]
+        rules +=[locate_config_value(:winrm_port)]
       else
-        puts("Unsupported bootstrap protocol : #{@bootstrap_protocol}")
+        puts("\nUnsupported bootstrap protocol : #{@bootstrap_protocol}")
         exit 1
       end
         return unless rules
@@ -459,8 +463,7 @@ module KnifeCloudstack
             bootstrap.config[:winrm_user] = locate_config_value(:winrm_user) || 'Administrator'
             bootstrap.config[:winrm_password] = locate_config_value(:winrm_password)
             bootstrap.config[:winrm_transport] = locate_config_value(:winrm_transport)
-
-            bootstrap.config[:winrm_transport] = locate_config_value(:winrm_transport)
+            bootstrap.config[:winrm_port] = locate_config_value(:winrm_port)
 
         elsif locate_config_value(:bootstrap_protocol) == 'ssh'
             bootstrap = Chef::Knife::BootstrapWindowsSsh.new

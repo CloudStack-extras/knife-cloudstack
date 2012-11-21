@@ -625,7 +625,6 @@ module CloudstackClient
       if @project_id
         params['projectId'] = @project_id
       end
-      Chef::Log.debug("HTTP Request PARAMS: #{params}")
       params['response'] = 'json'
       params['apiKey'] = @api_key
 
