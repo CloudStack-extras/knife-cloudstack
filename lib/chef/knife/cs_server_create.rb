@@ -19,6 +19,8 @@
 require 'chef/knife'
 require 'json'
 require 'chef/knife/winrm_base'
+require 'winrm'
+require 'httpclient'
 
 module KnifeCloudstack
   class CsServerCreate < Chef::Knife
@@ -219,7 +221,6 @@ module KnifeCloudstack
           require 'em-winrs'
         else
           require 'gssapi'
-            require 'winrm'
           require 'em-winrm'
         end
       end
@@ -445,17 +446,6 @@ module KnifeCloudstack
     end
     def bootstrap_for_windows_node(server, fqdn)
         if locate_config_value(:bootstrap_protocol) == 'winrm'
-            if is_platform_windows?
-              require 'gssapi'
-              require 'winrm'
-              require 'em-winrm'
-              require 'em-winrs'
-            else
-              require 'gssapi'
-              require 'winrm'
-              require 'em-winrm'
-            end
-
             bootstrap = Chef::Knife::BootstrapWindowsWinrm.new
             if locate_config_value(:kerberos_realm)
               #Fetch AD/WINS based fqdn if any for Kerberos-based Auth
