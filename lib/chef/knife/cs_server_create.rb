@@ -219,7 +219,7 @@ module KnifeCloudstack
           require 'em-winrs'
         else
           require 'gssapi'
-          require 'winrm'
+            require 'winrm'
           require 'em-winrm'
         end
       end
@@ -338,8 +338,8 @@ module KnifeCloudstack
       if (config[:public_ip] == false)
         nic['ipaddress']
       else
-        puts("\nAllocate ip address, create ssh forwarding rule and optional forwarding rules")
-        ip_address = connection.associate_ip_address(server['zoneid'])
+        puts("\nAllocate ip address, create forwarding rules")
+        ip_address = connection.associate_ip_address(server['zoneid'], locate_config_value(:cloudstack_networks))
         #ip_address = connection.get_public_ip_address('202.2.94.158')
         puts("\nAllocated IP Address: #{ip_address['ipaddress']}")
         Chef::Log.debug("IP Address Info: #{ip_address}")
@@ -369,7 +369,7 @@ module KnifeCloudstack
         public_port = args[0]
         private_port = args[1] || args[0]
         protocol = args[2] || "TCP"
-        if locate_config_value :enable_static_nat
+        if locate_config_value :static_nat
           Chef::Log.debug("Creating IP Forwarding Rule for
             #{ip_address['ipaddress']} with protocol: #{protocol}, public port: #{public_port}")
           connection.create_ip_fwd_rule(ip_address['id'], protocol, public_port, public_port)
@@ -446,6 +446,9 @@ module KnifeCloudstack
     def bootstrap_for_windows_node(server, fqdn)
         if locate_config_value(:bootstrap_protocol) == 'winrm'
             if is_platform_windows?
+              require 'gssapi'
+              require 'winrm'
+              require 'em-winrm'
               require 'em-winrs'
             else
               require 'gssapi'

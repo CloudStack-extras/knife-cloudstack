@@ -517,11 +517,15 @@ module CloudstackClient
     ##
     # Acquires and associates a public IP to an account.
 
-    def associate_ip_address(zone_id)
+    def associate_ip_address(zone_id, networks)
       params = {
           'command' => 'associateIpAddress',
           'zoneId' => zone_id
       }
+      #Choose the first network from the list
+      if networks
+        params['networkId'] = get_network(networks.first)['id']
+      end
       if @project_id
         default_network = get_default_network(zone_id)
         params['networkId'] = default_network['id']
