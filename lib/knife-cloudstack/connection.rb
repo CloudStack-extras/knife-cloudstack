@@ -28,14 +28,15 @@ require 'json'
 module CloudstackClient
   class Connection
 
-    ASYNC_POLL_INTERVAL = 2.0
-    ASYNC_TIMEOUT = 300
+    ASYNC_POLL_INTERVAL = 5.0
+    ASYNC_TIMEOUT = 600
 
-    def initialize(api_url, api_key, secret_key, project_name=nil)
+    def initialize(api_url, api_key, secret_key, project_name=nil, use_ssl=true)
       @api_url = api_url
       @api_key = api_key
       @secret_key = secret_key
       @project_id = nil
+      @use_ssl = use_ssl
       if project_name
         project = get_project(project_name)
         if !project then
@@ -644,7 +645,7 @@ module CloudstackClient
       url = "#{@api_url}?#{data}&signature=#{signature}"
       uri = URI.parse(url)
       http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = true
+      http.use_ssl = @use_ssl
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE
       request = Net::HTTP::Get.new(uri.request_uri)
       response = http.request(request)
