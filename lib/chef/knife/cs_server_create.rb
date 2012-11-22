@@ -21,6 +21,8 @@ require 'json'
 require 'chef/knife/winrm_base'
 require 'winrm'
 require 'httpclient'
+require 'em-winrm'
+
 
 module KnifeCloudstack
   class CsServerCreate < Chef::Knife
@@ -187,6 +189,12 @@ module KnifeCloudstack
             :boolean => true,
             :default => false
 
+    option :use_http_ssl,
+            :long => '--[no-]use-http-ssl',
+            :description => 'Support HTTPS',
+            :boolean => true,
+            :default => true
+            
     option :bootstrap_protocol,
       :long => "--bootstrap-protocol protocol",
       :description => "Protocol to bootstrap windows servers. options: winrm/ssh",
@@ -202,7 +210,8 @@ module KnifeCloudstack
           locate_config_value(:cloudstack_url),
           locate_config_value(:cloudstack_api_key),
           locate_config_value(:cloudstack_secret_key),
-          locate_config_value(:cloudstack_project)
+          locate_config_value(:cloudstack_project),
+          locate_config_value(:use_http_ssl)
       )
     end
 
@@ -215,24 +224,17 @@ module KnifeCloudstack
       end
       validate_options
 
-      if @windows_image
-        Chef::Log.debug("Load WinRM-based gems if we are bootstrapping a Windows-server")
+      if @windows_image and locate_config_value(:kerberos_realm)
+        Chef::Log.debug("Load additional gems for AD/Kerberos Authentication")
         if @windows_platform
           require 'em-winrs'
         else
           require 'gssapi'
-          require 'em-winrm'
         end
       end
 
       $stdout.sync = true
 
-      @connection = CloudstackClient::Connection.new(
-          locate_config_value(:cloudstack_url),
-          locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key),
-          locate_config_value(:cloudstack_project)
-      )
       Chef::Log.info("Creating instance with
         service : #{locate_config_value(:cloudstack_service)}
         template : #{locate_config_value(:cloudstack_template)}
