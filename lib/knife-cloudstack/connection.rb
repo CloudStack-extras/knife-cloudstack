@@ -523,10 +523,9 @@ module CloudstackClient
           'zoneId' => zone_id
       }
       #Choose the first network from the list
-      if networks
+      if networks.size > 0
         params['networkId'] = get_network(networks.first)['id']
-      end
-      if @project_id
+      else
         default_network = get_default_network(zone_id)
         params['networkId'] = default_network['id']
       end
