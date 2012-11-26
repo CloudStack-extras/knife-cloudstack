@@ -61,8 +61,14 @@ module KnifeCloudstack
           next
         end
 
+        disk_name = "#{hostname}-1"
+        data_disk = connection.get_disk(disk_name)
+
         puts "\n"
         msg("Name", server['name'])
+        if data_disk then
+          msg("Data disk", disk_name)
+        end
         msg("Public IP", connection.get_server_public_ip(server) || '?')
         msg("Service", server['serviceofferingname'])
         msg("Template", server['templatename'])
@@ -75,6 +81,10 @@ module KnifeCloudstack
 
         print "#{ui.color("Waiting for deletion", :magenta)}"
         disassociate_virtual_ip_address server
+        if data_disk then
+          connection.detach_disk disk_name
+          connection.delete_disk disk_name
+        end
         connection.delete_server hostname
         puts "\n"
         ui.msg("Deleted server #{hostname}")

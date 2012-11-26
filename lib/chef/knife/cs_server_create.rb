@@ -65,6 +65,12 @@ module KnifeCloudstack
            :proc => lambda { |n| n.split(',').map {|sn| sn.strip}} ,
            :default => []
 
+    option :cloudstack_data_disk,
+           :short => "-D DISK_SIZE",
+           :long => "--data-disk DISK_SIZE",
+           :description => "Size in GB (no suffixes) of the (optional) data disk (NOT the root disk)",
+           :default => nil
+
     option :public_ip,
            :long => "--[no-]public-ip",
            :description => "Allocate a public IP for this server",
@@ -182,7 +188,8 @@ module KnifeCloudstack
           locate_config_value(:cloudstack_service),
           locate_config_value(:cloudstack_template),
           locate_config_value(:cloudstack_zone),
-          locate_config_value(:cloudstack_networks)
+          locate_config_value(:cloudstack_networks),
+          locate_config_value(:cloudstack_data_disk)
       )
 
       public_ip = find_or_create_public_ip(server, connection)
