@@ -53,12 +53,27 @@ module KnifeCloudstack
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
+    option :cloudstack_project,
+           :short => "-P PROJECT_NAME",
+           :long => '--cloudstack-project PROJECT_NAME',
+           :description => "Cloudstack Project in which to create server",
+           :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
+           :default => nil
+
+    option :use_http_ssl,
+          :long => '--[no-]use-http-ssl',
+          :description => 'Support HTTPS',
+          :boolean => true,
+          :default => true       
+
     def run
 
       connection = CloudstackClient::Connection.new(
           locate_config_value(:cloudstack_url),
           locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key)
+          locate_config_value(:cloudstack_secret_key),
+          locate_config_value(:cloudstack_project),
+          locate_config_value(:use_http_ssl)
       )
 
       template_list = [
@@ -73,7 +88,7 @@ module KnifeCloudstack
       templates = connection.list_templates(filter)
       templates.each do |t|
         template_list << t['name']
-        template_list << (human_file_size(t['size']) || 'Unknown')
+        #template_list << (human_file_size(t['size']) || 'Unknown')
         template_list << t['zonename']
         template_list << t['ispublic'].to_s
         template_list << t['created']

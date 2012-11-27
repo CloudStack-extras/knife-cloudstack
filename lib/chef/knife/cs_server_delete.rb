@@ -46,6 +46,19 @@ module KnifeCloudstack
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
+    option :cloudstack_project,
+           :short => "-P PROJECT_NAME",
+           :long => '--cloudstack-project PROJECT_NAME',
+           :description => "Cloudstack Project in which to create server",
+           :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
+           :default => nil
+
+    option :use_http_ssl,
+          :long => '--[no-]use-http-ssl',
+          :description => 'Support HTTPS',
+          :boolean => true,
+          :default => true
+
     def run
 
       @name_args.each do |hostname|
@@ -89,24 +102,15 @@ module KnifeCloudstack
     end
 
     def disassociate_virtual_ip_address(server)
-      nic = server['nic'].first || {}
-      return unless nic['type'] == 'Virtual'
-
-      # get the ssh rule for this server
-      ssh_rule = connection.get_ssh_port_forwarding_rule(server)
-      return unless ssh_rule
-
-      # get all rules for the same ip address
-      rules = connection.list_port_forwarding_rules(ssh_rule['ipaddressid'])
-      return unless rules
-
-      # ensure ip address has rules only for this server
-      rules.each { |r|
-        return if r['virtualmachineid'] != server['id']
-      }
-
-      # dissassociate the ip address if all tests passed
-      connection.disassociate_ip_address(ssh_rule['ipaddressid'])
+      ip_addr = connection.get_server_public_ip(server)
+      return unless ip_addr
+      ip_addr_info = connection.get_public_ip_address(ip_addr)
+      #Check if Public IP has been allocated and is not Source NAT
+      if ip_addr_info
+        if not ip_addr_info['issourcenat']
+          connection.disassociate_ip_address(ip_addr_info['id'])
+        end
+      end
     end
 
     def delete_client(name)
@@ -136,7 +140,9 @@ module KnifeCloudstack
         @connection = CloudstackClient::Connection.new(
             locate_config_value(:cloudstack_url),
             locate_config_value(:cloudstack_api_key),
-            locate_config_value(:cloudstack_secret_key)
+            locate_config_value(:cloudstack_secret_key),
+            locate_config_value(:cloudstack_project),
+            locate_config_value(:use_http_ssl)
         )
       end
       @connection

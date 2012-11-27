@@ -12,6 +12,7 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files = ["README.rdoc", "CHANGES.rdoc", "LICENSE" ]
 
   s.add_dependency "chef", ">= 0.10.0"
+  s.add_dependency "knife-windows", ">= 0"
   s.require_path = 'lib'
   s.files = ["CHANGES.rdoc","README.rdoc", "LICENSE"] + Dir.glob("lib/**/*")
 end
