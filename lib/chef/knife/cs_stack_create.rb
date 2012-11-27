@@ -171,7 +171,7 @@ module KnifeCloudstack
         query = "(#{query})" + " AND chef_environment:#{get_environment}"
       end
 
-      Chef::Log.debug("Searching for nodes: #{query}")
+      Chef::Chef::Log.debug("Searching for nodes: #{query}")
 
       q = Chef::Search::Query.new
       nodes = Array(q.search(:node, query))
