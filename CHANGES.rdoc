@@ -1,4 +1,9 @@
 = Changes
+== 2012-11-29 (0.0.13)
+* Windows support
+  https://github.com/CloudStack-extras/knife-cloudstack/issues/31
+* Support for Projects
+* HTTPS support 
 
 == 2012-05-17 (0.0.12)
 * Adding option to disable public IP allocation on server create
