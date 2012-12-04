@@ -113,17 +113,36 @@ module CloudstackClient
     end
 
     ##
-    # Lists all the servers in your account.
+    # Lists all the accounts, servers, domains, service offerings, disk offerings in your account.
+    def list_accounts(listall=nil, name=nil, keyword=nil)
+      params = {
+          'command' => 'listAccounts'
+      }
+      params['listall'] = true if listall || name || keyword
+      params['name'] = name if name
+      params['keyword'] = keyword if keyword
+      
+      json = send_request(params)
+      json['account'] || []
+    end
 
-    def list_servers
+    def list_servers(listall=nil,name=nil,account=nil,keyword=nil,domain=nil)
       params = {
           'command' => 'listVirtualMachines'
       }
       # if @project_id
       #   params['projectId'] = @project_id
       # end
+
+      params['listall'] = true if listall || name || keyword || account || domain
+      params['keyword'] = keyword if keyword
+      params['name'] = name if name
+
       json = send_request(params)
-      json['virtualmachine'] || []
+      result = json['virtualmachine'] || []  
+      result = result.find_all { |k| k['account'] =~ /#{account}/i } if account
+      result = result.find_all { |k| k['domain'] =~ /#{domain}/i } if domain
+      result
     end
 
     def list_domains(listall=nil)
@@ -131,9 +150,44 @@ module CloudstackClient
         'command' => 'listDomains'
       }
       params['listall'] = true if listall
-
       json = send_request(params)
       json['domain'] || []
+    end
+
+    def list_service_offerings
+      params = {
+          'command' => 'listServiceOfferings'
+      }
+      json = send_request(params)
+      json['serviceoffering'] || []
+    end
+  
+    def list_disk_offerings
+      params = {
+          'command' => 'listDiskOfferings'
+      }
+      json = send_request(params)
+      json['diskoffering'] || []
+    end
+
+    # Lists all templates that match the specified filter.
+    #
+    # Allowable filter values are:
+    #
+    # * featured - templates that are featured and are public
+    # * self - templates that have been registered/created by the owner
+    # * self-executable - templates that have been registered/created by the owner that can be used to deploy a new VM
+    # * executable - all templates that can be used to deploy a new VM
+    # * community - templates that are public
+
+    def list_templates(filter)
+      filter ||= 'featured'
+      params = {
+          'command' => 'listTemplates',
+          'templateFilter' => filter
+      }
+      json = send_request(params)
+      json['template'] || []
     end
 
     ##
@@ -225,6 +279,37 @@ module CloudstackClient
 
       json = send_request(params)
       json['serviceoffering']
+    end
+
+
+    def create_diskoffering(diskname, displaytext, disksize, domainpath=nil, tags=nil, iscustom=nil)
+
+      if diskname then
+        if get_disk_offering(diskname) then
+          puts "Error: Disk offering: '#{diskname}' already exists."
+          exit 1
+        end
+      end
+
+      if !displaytext then
+        puts "Error: The displaytext parameter is missing."
+        exit 1
+      end
+
+      params = {
+        'command' => 'createDiskOffering',
+        'displaytext' => displaytext,
+        'name' => diskname
+      }
+      domain = get_domain(domainpath) if domainpath
+      params['domainid'] = domain['id'] if domain
+      params['tags'] = tags if tags
+      params['customized'] = iscustom if iscustom
+      params['disksize'] = disksize unless iscustom
+
+      json = send_request(params)
+      json['diskoffering']
+
     end
 
 
@@ -380,11 +465,6 @@ module CloudstackClient
     # Finds the service offering with the specified name.
 
     def get_service_offering(name)
-
-      # TODO: use name parameter
-      # listServiceOfferings in CloudStack 2.2 doesn't seem to work
-      # when the name parameter is specified. When this is fixed,
-      # the name parameter should be added to the request.
       params = {
           'command' => 'listServiceOfferings'
       }
@@ -398,7 +478,23 @@ module CloudstackClient
           return s
         end
       }
+      nil
+    end
 
+    def get_disk_offering(name)
+      params = {
+        'command' => 'listDiskOfferings'
+      }
+      json = send_request(params)
+
+      diskoffering = json['diskoffering']
+      return nil unless diskoffering
+
+      diskoffering.each { |s|
+        if s['name'] == name then
+          return s
+        end
+      }
       nil
     end
 
@@ -422,18 +518,6 @@ module CloudstackClient
       nil
     end
 
-    ##
-    # Lists all available service offerings.
-
-    def list_service_offerings
-      params = {
-          'command' => 'listServiceOfferings'
-      }
-      json = send_request(params)
-      json['serviceoffering'] || []
-    end
-
-    ##
     # Finds the template with the specified name.
 
     def get_template(name)
@@ -460,27 +544,6 @@ module CloudstackClient
       }
 
       nil
-    end
-
-    ##
-    # Lists all templates that match the specified filter.
-    #
-    # Allowable filter values are:
-    #
-    # * featured - templates that are featured and are public
-    # * self - templates that have been registered/created by the owner
-    # * self-executable - templates that have been registered/created by the owner that can be used to deploy a new VM
-    # * executable - all templates that can be used to deploy a new VM
-    # * community - templates that are public
-
-    def list_templates(filter)
-      filter ||= 'featured'
-      params = {
-          'command' => 'listTemplates',
-          'templateFilter' => filter
-      }
-      json = send_request(params)
-      json['template'] || []
     end
 
     #Fetch project with the specified name

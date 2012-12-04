@@ -142,22 +142,22 @@ module KnifeCloudstack
 
     def validate_options
       unless locate_config_value :cpunumber 
-        ui.error "The cpunumber parameter is missing."
+        ui.error "The cpunumber parameter '-C <N>' is missing."
         exit 1
       end
 
       unless locate_config_value :cpuspeed
-        ui.error "The cpuspeed parameter is missing."
+        ui.error "The cpuspeed parameter '-S <N>' is missing."
         exit 1
       end
 
       unless locate_config_value :displaytext
-        ui.error "The displaytext parameter is missing."
+        ui.error "The displaytext parameter '-T \"TEXT\"' is missing."
         exit 1
       end
 
       unless locate_config_value :memory
-        ui.error "The memory parameter is missing."
+        ui.error "The memory parameter '-M <N>' is missing."
         exit 1
       end
     end

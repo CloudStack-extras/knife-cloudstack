@@ -1,14 +1,6 @@
 #
-# Author:: Ryan Holmes (<rholmes@edmunds.com>)
-# Author:: KC Braunschweig (<kcbraunschweig@gmail.com>)
-# Copyright:: Copyright (c) 2011 Edmunds, Inc.
-# License:: Apache License, Version 2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
+# Author:: Sander Botman (<sbotman@schubergphilis.com>)
+# Copyright:: Copyright (c) 2012 Schuberg Philis.
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,15 +12,13 @@
 require 'chef/knife'
 
 module KnifeCloudstack
-  class CsHosts < Chef::Knife
-
-    MEGABYTES = 1024 * 1024
+  class CsAccountList < Chef::Knife
 
     deps do
       require 'knife-cloudstack/connection'
     end
 
-    banner "knife cs hosts"
+    banner "knife cs account list (options)"
 
     option :cloudstack_url,
            :short => "-U URL",
@@ -55,19 +45,17 @@ module KnifeCloudstack
 
     option :name,
            :long => "--name NAME",
-           :description => "Specify machine name to list"
+           :description => "Specify account name to list"
 
     option :keyword,
            :long => "--keyword KEY",
            :description => "List by keyword"
 
-    option :account,
-           :long => "--account NAME",
-           :description => "Show machines that belong to account name"
+    option :domainid,
+           :long => "--domainid",
+           :description => "Show domain ID in the output",
+           :boolean => true
 
-    option :domain,
-           :long => "--domain NAME",
-           :description => "Show machines that belong to domain"
 
     def run
 
@@ -77,42 +65,50 @@ module KnifeCloudstack
           locate_config_value(:cloudstack_secret_key)
       )
 
-      host_list = [
-          ui.color('Instance', :bold),
-          ui.color('IP', :bold),
-          ui.color('Host', :bold)
+      account_list = [
+          ui.color('Name', :bold),
+          ui.color('Domain', :bold),
+          ui.color('State', :bold),
+          ui.color('Type', :bold),
+          ui.color('Users', :bold)
       ]
 
-      host_list << ui.color('Domain', :bold) if locate_config_value(:domain)
-      host_list << ui.color('Account', :bold) if locate_config_value(:account)
-      
-      columns = host_list.count
+      account_list = [
+          ui.color('Name', :bold),
+          ui.color('Domain', :bold),
+          ui.color('DomainID', :bold),
+          ui.color('State', :bold),
+          ui.color('Type', :bold),
+          ui.color('Users', :bold)
+      ] if locate_config_value(:domainid)
 
-      servers = connection.list_servers(
+
+      accounts = connection.list_accounts(
         locate_config_value(:listall),
         locate_config_value(:name),
-        locate_config_value(:account),
-        locate_config_value(:keyword),
-        locate_config_value(:domain)
+        locate_config_value(:keyword)
       )
 
-      unless servers 
-        puts "Cannot find any hosts"
-        exit 1
+      accounts.each do |s|
+        account_list << s['name'].to_s
+        account_list << s['domain'].to_s
+        account_list << s['domainid'].to_s if locate_config_value(:domainid)
+        account_list << s['state'].to_s
+        case s['accounttype']
+          when 0 then account_list << "user"
+          when 1 then account_list << "admin"
+          when 2 then account_list << "domain admin"
+          else account_list << "unknown"
+        end
+        account_list << s['user'].count.to_s
       end
 
-      pf_rules = connection.list_port_forwarding_rules
-      servers.each do |s|
-        host_list << s['instancename'].to_s 
-        host_list << (connection.get_server_public_ip(s, pf_rules) || '#')
-        host_list << (s['name'] || '')
-        host_list << s['domain'].to_s if locate_config_value(:domain)
-        host_list << s['account'].to_s if locate_config_value(:account)
+      if locate_config_value(:domainid)
+        puts ui.list(account_list, :columns_across, 6)
+      else
+        puts ui.list(account_list, :columns_across, 5)
       end
-      puts ui.list(host_list, :columns_across, columns)
-
     end
-
 
     def locate_config_value(key)
       key = key.to_sym
