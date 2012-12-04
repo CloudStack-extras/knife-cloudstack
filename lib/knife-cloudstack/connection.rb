@@ -126,6 +126,108 @@ module CloudstackClient
       json['virtualmachine'] || []
     end
 
+    def list_domains(listall=nil)
+      params = {
+        'command' => 'listDomains'
+      }
+      params['listall'] = true if listall
+
+      json = send_request(params)
+      json['domain'] || []
+    end
+
+    ##
+    #
+    def create_domain(domainname, parentdomain, networkdomain)
+      if parentdomain then
+        domainpath = parentdomain + "/" + domainname 
+      else 
+        domainpath = domainname
+      end
+ 
+      if domainname then
+        if get_domain(domainpath) then
+          puts "Error: Domain '#{domainpath}' already exists."
+          exit 1
+        end
+      end
+
+      params = {
+        'command' => 'createDomain',
+        'name' => domainname
+      }
+      if parentdomain then
+        parentdomaindata = get_domain(parentdomain)
+        if parentdomaindata.nil? then 
+          puts "Error: Cannot find domain ID for: #{parentdomain}."
+          exit 1
+        else
+          params['parentdomainid'] = parentdomaindata['id'] if parentdomain
+        end
+      end
+
+ 
+      json = send_request(params)
+      json['domain']
+      puts json
+    end
+
+    ##
+    # Deploys a new service offering using the specified parameters.    
+    def create_service(service_name, cpunumber, cpuspeed, displaytext, memory, domainname=nil, hosttags=nil, issystem=nil, limitcpuuse=nil, networkrate=nil, offerha=nil, storagetype=nil, systemvmtype=nil, tags=nil)
+
+      if service_name then
+        if get_service_offering(service_name) then
+          puts "Error: Service '#{service_name}' already exists."
+          exit 1
+        end
+      end
+
+      if !cpunumber then
+        puts "Error: The cpunumber parameter is missing."
+        exit 1
+      end
+
+      if !cpuspeed then
+        puts "Error: The cpuspeed parameter is missing."
+        exit 1
+      end
+
+      if !displaytext then
+        puts "Error: The displaytext parameter is missing."
+        exit 1
+      end
+
+      if !memory then
+        puts "Error: The memory parameter is missing."
+        exit 1
+      end
+
+      params = {
+        'command' => 'createServiceOffering',
+        'cpunumber' => cpunumber,
+        'cpuspeed' => cpuspeed,
+        'displaytext' => displaytext,
+        'memory' => memory,
+        'name' => service_name
+      }
+
+      domain = get_domain(domainname) if domainname
+      params['domainid'] = domain['id'] if domain
+      params['hosttags'] = hosttags if hosttags
+      params['issystem'] = issystem if issystem
+      params['limitcpuuse'] = limitcpuuse if limitcpuuse
+      params['networkrate'] = networkrate if networkrate
+      params['offerha'] = offerha if offerha
+      params['storagetype'] = storagetype if storagetype
+      params['systemvmtype'] = systemvmtype if systemvmtype
+      params['tags'] = tags if tags
+
+      json = send_request(params)
+      json['serviceoffering']
+    end
+
+
     ##
     # Deploys a new server using the specified parameters.
 
@@ -209,7 +311,6 @@ module CloudstackClient
           'command' => 'destroyVirtualMachine',
           'id' => server['id']
       }
-
       json = send_async_request(params)
       json['virtualmachine']
     end
@@ -298,6 +399,26 @@ module CloudstackClient
         end
       }
 
+      nil
+    end
+
+    def get_domain(domainname)
+      params = {
+        'command' => 'listDomains',
+        'listall' => 'true'
+      }
+      json = send_request(params)
+
+      domaindata = json['domain']
+      return nil unless domaindata
+      
+      domainname = "root/" + domainname unless domainname =~ /^root.*$/i 
+
+      domaindata.each { |domain|
+        if domain['path'].downcase == (domainname.downcase).gsub("\\","/") then
+          return domain
+        end
+      }
       nil
     end
 
@@ -637,12 +758,13 @@ module CloudstackClient
         params_arr << elem[0].to_s + '=' + elem[1].to_s
       }
       data = params_arr.join('&')
-      encoded_data = URI.encode(data.downcase).gsub('+', '%20').gsub(',', '%2c')
+      encoded_data = URI.encode(data.downcase).gsub(' ', '%20').gsub(',', '%2c') 
       signature = OpenSSL::HMAC.digest('sha1', @secret_key, encoded_data)
       signature = Base64.encode64(signature).chomp
       signature = CGI.escape(signature)
 
       url = "#{@api_url}?#{data}&signature=#{signature}"
+      url = url.gsub(' ', '%20')
       uri = URI.parse(url)
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = @use_ssl
