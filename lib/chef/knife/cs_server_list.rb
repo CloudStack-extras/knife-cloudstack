@@ -28,35 +28,75 @@ module KnifeCloudstack
     banner "knife cs server list (options)"
 
     option :cloudstack_url,
-           :short => "-U URL",
-           :long => "--cloudstack-url URL",
-           :description => "The CloudStack endpoint URL",
+           :short => "-s URL",
+           :long => "--server-url URL",
+           :description => "Your CloudStack endpoint URL",
            :proc => Proc.new { |url| Chef::Config[:knife][:cloudstack_url] = url }
 
     option :cloudstack_api_key,
-           :short => "-A KEY",
-           :long => "--cloudstack-api-key KEY",
+           :short => "-k KEY",
+           :long => "--key KEY",
            :description => "Your CloudStack API key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_api_key] = key }
 
     option :cloudstack_secret_key,
            :short => "-K SECRET",
-           :long => "--cloudstack-secret-key SECRET",
+           :long => "--secret SECRET",
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
-    option :cloudstack_project,
-           :short => "-P PROJECT_NAME",
-           :long => '--cloudstack-project PROJECT_NAME',
-           :description => "Cloudstack Project in which to create server",
-           :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
-           :default => nil
+#    option :cloudstack_project,
+#           :short => "-P PROJECT_NAME",
+#           :long => '--cloudstack-project PROJECT_NAME',
+#           :description => "Cloudstack Project in which to create server",
+#           :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
+#           :default => nil
 
     option :use_http_ssl,
-          :long => '--[no-]use-http-ssl',
-          :description => 'Support HTTPS',
-          :boolean => true,
-          :default => true     
+           :long => '--[no-]use-http-ssl',
+           :description => 'Support HTTPS',
+           :boolean => true,
+           :default => true     
+
+    option :listall,
+           :long => "--listall",
+           :description => "List all the accounts",
+           :boolean => true
+
+    option :name,
+           :long => "--name NAME",
+           :description => "Specify hostname to list"
+
+    option :keyword,
+           :long => "--instance NAME",
+           :description => "Specify part of instancename to list"
+
+#    option :account,
+#           :long => "--account NAME",
+#           :description => "Specify part of accountname to list"
+#
+#    option :domain,
+#           :long => "--domain NAME",
+#           :description => "Specify part of domainname to list"
+
+    option :filter,
+           :long => "--filter 'FIELD:NAME'",
+           :description => "Specify field and part of name to list"
+
+    option :fields,
+           :long => "--fields 'NAME, NAME'",
+           :description => "The fields to output, comma-separated"
+    
+    option :fieldlist,
+           :long => "--fieldlist",
+           :description => "The available fields to output, comma-separated",
+           :boolean => true
+
+    option :noheader,
+           :long => "--noheader",
+           :description => "Removes header from output",
+           :boolean => true
+
     def run
 
       $stdout.sync = true
@@ -69,34 +109,54 @@ module KnifeCloudstack
           locate_config_value(:use_http_ssl)
       )
 
-      server_list = [
+      if locate_config_value(:fields)
+        object_list = []  
+        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
+      else
+        object_list = [
+          ui.color('Instance', :bold),
           ui.color('Name', :bold),
           ui.color('Public IP', :bold),
           ui.color('Service', :bold),
           ui.color('Template', :bold),
           ui.color('State', :bold),
           ui.color('Hypervisor', :bold)
-      ]
+        ]
+      end
 
-      servers = connection.list_servers
+      columns = object_list.count
+      object_list = [] if locate_config_value(:noheader)
+
+      connection_result = connection.list_servers(
+        locate_config_value(:listall),
+        locate_config_value(:name),
+        locate_config_value(:keyword),
+        locate_config_value(:filter)
+      )
+
       rules = connection.list_port_forwarding_rules
 
-      servers.each do |server|
-
-        name = server['name']
-        display_name = server['displayname']
+      connection_result.each do |result|
+        name = result['name']
+        display_name = result['displayname']
         if display_name && !display_name.empty? && display_name != name
           name << " (#{display_name})"
         end
-        server_list << server['name']
-        server_list << (connection.get_server_public_ip(server, rules) || '')
-        server_list << server['serviceofferingname']
-        server_list << server['templatename']
-        server_list << server['state']
-        server_list << (server['hostname'] || 'N/A')
-      end
-      puts ui.list(server_list, :columns_across, 6)
 
+        if locate_config_value(:fields)
+          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((result[("#{n}").strip]).to_s || 'N/A') }
+        else
+          object_list << result['instancename']
+          object_list << result['name']
+          object_list << (connection.get_server_public_ip(result, rules) || '')
+          object_list << result['serviceofferingname']
+          object_list << result['templatename']
+          object_list << result['state']
+          object_list << (result['hostname'] || 'N/A')
+        end
+      end
+      puts ui.list(object_list, :uneven_columns_across, columns)
+      connection.show_object_fields(connection_result) if locate_config_value(:fieldlist)
     end
 
     def locate_config_value(key)

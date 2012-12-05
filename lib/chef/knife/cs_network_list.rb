@@ -28,51 +28,106 @@ module KnifeCloudstack
     banner "knife cs network list (options)"
 
     option :cloudstack_url,
-           :short => "-U URL",
-           :long => "--cloudstack-url URL",
-           :description => "The CloudStack endpoint URL",
+           :short => "-s URL",
+           :long => "--server-url URL",
+           :description => "Your CloudStack endpoint URL",
            :proc => Proc.new { |url| Chef::Config[:knife][:cloudstack_url] = url }
 
     option :cloudstack_api_key,
-           :short => "-A KEY",
-           :long => "--cloudstack-api-key KEY",
+           :short => "-k KEY",
+           :long => "--key KEY",
            :description => "Your CloudStack API key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_api_key] = key }
 
     option :cloudstack_secret_key,
            :short => "-K SECRET",
-           :long => "--cloudstack-secret-key SECRET",
+           :long => "--secret SECRET",
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
+
+    # option :cloudstack_project,
+    #        :short => "-P PROJECT_NAME",
+    #        :long => '--cloudstack-project PROJECT_NAME',
+    #        :description => "Cloudstack Project in which to create server",
+    #        :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
+    #        :default => nil
+
+    option :use_http_ssl,
+           :long => '--[no-]use-http-ssl',
+           :description => 'Support HTTPS',
+           :boolean => true,
+           :default => true
+
+    option :listall,
+           :long => "--listall",
+           :description => "List all networks",
+           :boolean => true
+
+    option :keyword,
+           :long => "--keyword KEY",
+           :description => "List by keyword"
+
+    option :filter,
+           :long => "--filter 'FIELD:NAME'",
+           :description => "Specify field and part of name to list"
+
+    option :fields,
+           :long => "--fields 'NAME, NAME'",
+           :description => "The fields to output, comma-separated"
+
+    option :fieldlist,
+           :long => "--fieldlist",
+           :description => "The available fields to output/filter",
+           :boolean => true
+
+    option :noheader,
+           :long => "--noheader",
+           :description => "Removes header from output",
+           :boolean => true
 
     def run
 
       connection = CloudstackClient::Connection.new(
           locate_config_value(:cloudstack_url),
           locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key)
+          locate_config_value(:cloudstack_secret_key),
+          locate_config_value(:cloudstack_project),
+          locate_config_value(:use_http_ssl)
       )
 
-      network_list = [
+      if locate_config_value(:fields)
+        object_list = []
+        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
+      else
+        object_list = [
           ui.color('Name', :bold),
           ui.color('Type', :bold),
           ui.color('Default', :bold),
           ui.color('Shared', :bold),
           ui.color('Gateway', :bold),
           ui.color('Netmask', :bold)
-      ]
-
-      networks = connection.list_networks
-      networks.each do |n|
-        network_list << n['name']
-        network_list << n['type']
-        network_list << n['isdefault'].to_s
-        network_list << n['isshared'].to_s
-        network_list << (n['gateway'] || '')
-        network_list << (n['netmask'] || '')
+        ]
       end
-      puts ui.list(network_list, :columns_across, 6)
 
+      columns = object_list.count
+      object_list = [] if locate_config_value(:noheader)
+
+      connection_result = connection.list_networks(
+        locate_config_value(:listall),
+        locate_config_value(:keyword),
+        locate_config_value(:filter)
+      )
+
+      connection_result.each do |result|
+        object_list << result['name'].to_s
+        object_list << result['type'].to_s
+        object_list << result['isdefault'].to_s
+        object_list << result['isshared'].to_s
+        object_list << (result['gateway'] || '')
+        object_list << (result['netmask'] || '')
+      end
+      puts ui.list(object_list, :uneven_columns_across, columns)
+      connection.show_object_fields(connection_result) if locate_config_value(:fieldlist)
     end
 
     def locate_config_value(key)

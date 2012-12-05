@@ -25,6 +25,20 @@ require 'cgi'
 require 'net/http'
 require 'json'
 
+class String
+  def to_regexp
+    return nil unless self.strip.match(/\A\/(.*)\/(.*)\Z/mx)
+    regexp , flags = $1 , $2
+    return nil if !regexp || flags =~ /[^xim]/m
+
+    x = /x/.match(flags) && Regexp::EXTENDED
+    i = /i/.match(flags) && Regexp::IGNORECASE
+    m = /m/.match(flags) && Regexp::MULTILINE
+
+    Regexp.new regexp , [x,i,m].inject(0){|a,f| f ? a+f : a }
+  end
+end
+
 module CloudstackClient
   class Connection
 
@@ -45,8 +59,13 @@ module CloudstackClient
         end
         @project_id = project['id']
       end
-
     end
+
+    def ui
+      require 'chef/knife/core/ui'
+      @ui ||= Chef::Knife::UI.new(STDOUT, STDERR, STDIN, {})
+    end
+
 
     ##
     # Finds the server with the specified name.
@@ -114,19 +133,20 @@ module CloudstackClient
 
     ##
     # Lists all the accounts, servers, domains, service offerings, disk offerings in your account.
-    def list_accounts(listall=nil, name=nil, keyword=nil)
+    def list_accounts(listall=nil, name=nil, keyword=nil, filter=nil)
       params = {
           'command' => 'listAccounts'
       }
-      params['listall'] = true if listall || name || keyword
+      params['listall'] = true if listall || name || keyword || filter
       params['name'] = name if name
       params['keyword'] = keyword if keyword
-      
       json = send_request(params)
-      json['account'] || []
+      result = json['account'] || []
+      result = data_filter(result, filter) if filter
+      result
     end
 
-    def list_servers(listall=nil,name=nil,account=nil,keyword=nil,domain=nil)
+    def list_servers(listall=nil,name=nil,keyword=nil,filter=nil)
       params = {
           'command' => 'listVirtualMachines'
       }
@@ -134,32 +154,58 @@ module CloudstackClient
       #   params['projectId'] = @project_id
       # end
 
-      params['listall'] = true if listall || name || keyword || account || domain
+      params['listall'] = true if listall || name || keyword || filter
       params['keyword'] = keyword if keyword
       params['name'] = name if name
-
       json = send_request(params)
       result = json['virtualmachine'] || []  
-      result = result.find_all { |k| k['account'] =~ /#{account}/i } if account
-      result = result.find_all { |k| k['domain'] =~ /#{domain}/i } if domain
+      result = data_filter(result, filter) if filter
       result
     end
 
-    def list_domains(listall=nil)
+    def list_domains(listall=nil, filter=nil)
       params = {
         'command' => 'listDomains'
       }
-      params['listall'] = true if listall
+      params['listall'] = true if listall || filter
       json = send_request(params)
-      json['domain'] || []
+      result = json['domain'] || []
+      result = data_filter(result, filter) if filter
+      result
     end
 
-    def list_service_offerings
+    def show_object_fields(object)
+      exit 1 if object.nil? || object.empty?
+      object_fields = [
+        ui.color('Field', :bold),
+        ui.color('Type', :bold),
+        ui.color('Example', :bold)
+      ]
+
+      object.first.each do |k,v|
+        object_fields << k
+        object_fields << v.class.to_s
+        if v.kind_of?(Array) 
+          object_fields << '<Array>'
+        else
+          object_fields << ("#{v}").strip.to_s
+        end
+      end
+      puts "\n"
+      puts ui.list(object_fields, :uneven_columns_across, 3)
+    end
+
+    def list_service_offerings(name=nil,keyword=nil,filter=nil)
       params = {
           'command' => 'listServiceOfferings'
       }
+      params['keyword'] = keyword if keyword
+      params['name'] = name if name
       json = send_request(params)
-      json['serviceoffering'] || []
+      result = json['serviceoffering'] || []
+      result = data_filter(result, filter) if filter
+      result
+
     end
   
     def list_disk_offerings
@@ -180,16 +226,34 @@ module CloudstackClient
     # * executable - all templates that can be used to deploy a new VM
     # * community - templates that are public
 
-    def list_templates(filter)
-      filter ||= 'featured'
+    def list_templates(templatefilter,listall=nil,filter=nil)
+      templatefilter ||= 'featured'
       params = {
           'command' => 'listTemplates',
-          'templateFilter' => filter
+          'templateFilter' => templatefilter
       }
+      params['listall'] = true if listall || filter
       json = send_request(params)
-      json['template'] || []
+      result = json['template'] || []
+      result = data_filter(result, filter) if filter
+      result
     end
 
+    ##
+    # Lists all available networks.
+
+    def list_networks(listall=nil,keyword=nil,filter=nil)
+      params = {
+          'command' => 'listNetworks'
+      }
+      params['listall'] = true if listall || filter
+      params['keyword'] = keyword if keyword
+      json = send_request(params)
+      result = json['network'] || []
+      result = data_filter(result, filter) if filter
+      result
+    end
+ 
     ##
     #
     def create_domain(domainname, parentdomain, networkdomain)
@@ -227,8 +291,11 @@ module CloudstackClient
     end
 
     ##
-    # Deploys a new service offering using the specified parameters.    
-    def create_service(service_name, cpunumber, cpuspeed, displaytext, memory, domainname=nil, hosttags=nil, issystem=nil, limitcpuuse=nil, networkrate=nil, offerha=nil, storagetype=nil, systemvmtype=nil, tags=nil)
+    # Deploys a new service offering using the specified parameters.
+
+    def create_service(service_name, cpunumber, cpuspeed, displaytext, memory, 
+                       domainname=nil, hosttags=nil, issystem=nil, limitcpuuse=nil, 
+                       networkrate=nil, offerha=nil, storagetype=nil, systemvmtype=nil, tags=nil)
 
       if service_name then
         if get_service_offering(service_name) then
@@ -383,7 +450,6 @@ module CloudstackClient
 
     ##
     # Deletes the server with the specified name.
-    #
 
     def delete_server(name)
       server = get_server(name)
@@ -402,7 +468,6 @@ module CloudstackClient
 
     ##
     # Stops the server with the specified name.
-    #
 
     def stop_server(name, forced=nil)
       server = get_server(name)
@@ -423,7 +488,6 @@ module CloudstackClient
 
     ##
     # Start the server with the specified name.
-    #
 
     def start_server(name)
       server = get_server(name)
@@ -443,7 +507,6 @@ module CloudstackClient
 
     ##
     # Reboot the server with the specified name.
-    #
 
     def reboot_server(name)
       server = get_server(name)
@@ -564,6 +627,20 @@ module CloudstackClient
       nil
     end
 
+    # Filter data based on user input which can be string or regexp
+    def data_filter(data, filters)
+      filters.split(',').each do |filter|
+        field = filter.split(':')[0].strip.downcase
+        search = filter.split(':')[1].strip
+        if search =~ /^\/.*\/?/
+          data = data.find_all { |k| k["#{field}"].to_s =~ search.to_regexp } if field && search
+        else
+          data = data.find_all { |k| k["#{field}"].to_s == "#{search}" } if field && search
+        end
+      end
+      data
+    end
+
 
     ##
     # Finds the network with the specified name.
@@ -619,18 +696,7 @@ module CloudstackClient
       default
     end
 
-    ##
-    # Lists all available networks.
-
-    def list_networks
-      params = {
-          'command' => 'listNetworks'
-      }
-      json = send_request(params)
-      json['network'] || []
-    end
-
-    ##
+   ##
     # Finds the zone with the specified name.
 
     def get_zone(name)
@@ -671,13 +737,17 @@ module CloudstackClient
     ##
     # Lists all available zones.
 
-    def list_zones
+    def list_zones(keyword=nil,filter=nil)
       params = {
           'command' => 'listZones',
           'available' => 'true'
       }
+      params['keyword'] = keyword if keyword
       json = send_request(params)
-      json['zone'] || []
+      result = json['zone'] || []
+      result = data_filter(result, filter) if filter
+      result
+
     end
 
     ##
@@ -829,6 +899,9 @@ module CloudstackClient
       url = "#{@api_url}?#{data}&signature=#{signature}"
       url = url.gsub(' ', '%20')
       uri = URI.parse(url)
+
+      Chef::Log.debug("URL: #{url}" )
+
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = @use_ssl
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE

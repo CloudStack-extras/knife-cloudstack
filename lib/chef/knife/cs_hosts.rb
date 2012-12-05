@@ -22,8 +22,6 @@ require 'chef/knife'
 module KnifeCloudstack
   class CsHosts < Chef::Knife
 
-    MEGABYTES = 1024 * 1024
-
     deps do
       require 'knife-cloudstack/connection'
     end
@@ -31,88 +29,109 @@ module KnifeCloudstack
     banner "knife cs hosts"
 
     option :cloudstack_url,
-           :short => "-U URL",
-           :long => "--cloudstack-url URL",
-           :description => "The CloudStack endpoint URL",
+           :short => "-s URL",
+           :long => "--server-url URL",
+           :description => "Your CloudStack endpoint URL",
            :proc => Proc.new { |url| Chef::Config[:knife][:cloudstack_url] = url }
 
     option :cloudstack_api_key,
-           :short => "-A KEY",
-           :long => "--cloudstack-api-key KEY",
+           :short => "-k KEY",
+           :long => "--key KEY",
            :description => "Your CloudStack API key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_api_key] = key }
 
     option :cloudstack_secret_key,
            :short => "-K SECRET",
-           :long => "--cloudstack-secret-key SECRET",
+           :long => "--secret SECRET",
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
+    option :use_http_ssl,
+           :long => '--[no-]use-http-ssl',
+           :description => 'Support HTTPS',
+           :boolean => true,
+           :default => true
+
     option :listall,
            :long => "--listall",
-           :description => "List all the accounts",
+           :description => "List all hosts",
            :boolean => true
 
     option :name,
            :long => "--name NAME",
-           :description => "Specify machine name to list"
+           :description => "Specify hostname to list"
 
     option :keyword,
            :long => "--keyword KEY",
            :description => "List by keyword"
 
-    option :account,
-           :long => "--account NAME",
-           :description => "Show machines that belong to account name"
+    option :filter,
+           :long => "--filter 'FIELD:NAME'",
+           :description => "Specify field and part of name to list"
 
-    option :domain,
-           :long => "--domain NAME",
-           :description => "Show machines that belong to domain"
+    option :fields,
+           :long => "--fields 'NAME, NAME'",
+           :description => "The fields to output, comma-separated"
+
+    option :fieldlist,
+           :long => "--fieldlist",
+           :description => "The available fields to output, comma-separated",
+           :boolean => true
+
+    option :noheader,
+           :long => "--noheader",
+           :description => "Removes header from output",
+           :boolean => true
 
     def run
 
       connection = CloudstackClient::Connection.new(
           locate_config_value(:cloudstack_url),
           locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key)
+          locate_config_value(:cloudstack_secret_key),
+          locate_config_value(:cloudstack_project),
+          locate_config_value(:use_http_ssl)
       )
 
-      host_list = [
+      if locate_config_value(:fields)
+        object_list = []
+        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
+      else
+        object_list = [
           ui.color('Instance', :bold),
           ui.color('IP', :bold),
-          ui.color('Host', :bold)
-      ]
+          ui.color('Host', :bold),
+          ui.color('Domain', :bold),
+          ui.color('Account', :bold)
+        ]
+      end
 
-      host_list << ui.color('Domain', :bold) if locate_config_value(:domain)
-      host_list << ui.color('Account', :bold) if locate_config_value(:account)
-      
-      columns = host_list.count
+      columns = object_list.count
+      object_list = [] if locate_config_value(:noheader)
 
-      servers = connection.list_servers(
+      connection_result = connection.list_servers(
         locate_config_value(:listall),
         locate_config_value(:name),
-        locate_config_value(:account),
         locate_config_value(:keyword),
-        locate_config_value(:domain)
+        locate_config_value(:filter)
       )
 
-      unless servers 
-        puts "Cannot find any hosts"
-        exit 1
-      end
-
       pf_rules = connection.list_port_forwarding_rules
-      servers.each do |s|
-        host_list << s['instancename'].to_s 
-        host_list << (connection.get_server_public_ip(s, pf_rules) || '#')
-        host_list << (s['name'] || '')
-        host_list << s['domain'].to_s if locate_config_value(:domain)
-        host_list << s['account'].to_s if locate_config_value(:account)
+
+      connection_result.each do |result|
+        if locate_config_value(:fields)
+          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((result[("#{n}").strip]).to_s || 'N/A') }
+        else
+          object_list << result['instancename'].to_s 
+          object_list << (connection.get_server_public_ip(result, pf_rules) || '#')
+          object_list << (result['name'] || '')
+          object_list << result['domain'].to_s
+          object_list << result['account'].to_s
+        end
       end
-      puts ui.list(host_list, :columns_across, columns)
-
+      puts ui.list(object_list, :uneven_columns_across, columns)
+      connection.show_object_fields(connection_result) if locate_config_value(:fieldlist)
     end
-
 
     def locate_config_value(key)
       key = key.to_sym

@@ -28,45 +28,91 @@ module KnifeCloudstack
     banner "knife cs zone list (options)"
 
     option :cloudstack_url,
-           :short => "-U URL",
-           :long => "--cloudstack-url URL",
-           :description => "The CloudStack endpoint URL",
+           :short => "-s URL",
+           :long => "--server-url URL",
+           :description => "Your CloudStack endpoint URL",
            :proc => Proc.new { |url| Chef::Config[:knife][:cloudstack_url] = url }
 
     option :cloudstack_api_key,
-           :short => "-A KEY",
-           :long => "--cloudstack-api-key KEY",
+           :short => "-k KEY",
+           :long => "--key KEY",
            :description => "Your CloudStack API key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_api_key] = key }
 
     option :cloudstack_secret_key,
            :short => "-K SECRET",
-           :long => "--cloudstack-secret-key SECRET",
+           :long => "--secret SECRET",
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
+
+    option :use_http_ssl,
+           :long => '--[no-]use-http-ssl',
+           :description => 'Support HTTPS',
+           :boolean => true,
+           :default => true
+
+    option :keyword,
+           :long => "--keyword KEY",
+           :description => "List by keyword"
+
+    option :filter,
+           :long => "--filter 'FIELD:NAME'",
+           :description => "Specify field and part of name to list"
+
+    option :fields,
+           :long => "--fields 'NAME, NAME'",
+           :description => "The fields to output, comma-separated"
+
+    option :fieldlist,
+           :long => "--fieldlist",
+           :description => "The available fields to output, comma-separated",
+           :boolean => true
+
+    option :noheader,
+           :long => "--noheader",
+           :description => "Removes header from output",
+           :boolean => true
 
     def run
 
       connection = CloudstackClient::Connection.new(
           locate_config_value(:cloudstack_url),
           locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key)
+          locate_config_value(:cloudstack_secret_key),
+          locate_config_value(:cloudstack_project),
+          locate_config_value(:use_http_ssl)
       )
 
-      zone_list = [
-          ui.color('Name', :bold),
+      if locate_config_value(:fields)
+        object_list = []
+        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
+      else
+        object_list = [
+ 	  ui.color('Name', :bold),
           ui.color('Network Type', :bold),
           ui.color('Security Groups', :bold)
-      ]
-
-      zones = connection.list_zones
-      zones.each do |z|
-        zone_list << z['name']
-        zone_list << z['networktype']
-        zone_list << z['securitygroupsenabled'].to_s
+        ]
       end
-      puts ui.list(zone_list, :columns_across, 3)
 
+      columns = object_list.count
+      object_list = [] if locate_config_value(:noheader)
+
+      connection_result = connection.list_zones(
+        locate_config_value(:keyword),
+        locate_config_value(:filter)
+      )
+
+      connection_result.each do |result|
+        if locate_config_value(:fields)
+          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((result[("#{n}").strip]).to_s || 'N/A') }
+        else
+          object_list << result['name'].to_s
+          object_list << result['networktype'].to_s
+          object_list << result['securitygroupsenabled'].to_s
+        end
+      end
+      puts ui.list(object_list, :uneven_columns_across, columns)
+      connection.show_object_fields(connection_result) if locate_config_value(:fieldlist)
     end
 
     def locate_config_value(key)
