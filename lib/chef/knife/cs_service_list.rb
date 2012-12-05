@@ -45,13 +45,6 @@ module KnifeCloudstack
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
-#    option :cloudstack_project,
-#           :short => "-P PROJECT_NAME",
-#           :long => '--cloudstack-project PROJECT_NAME',
-#           :description => "Cloudstack Project in which to create server",
-#           :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
-#           :default => nil
-
     option :use_http_ssl,
            :long => '--[no-]use-http-ssl',
            :description => 'Support HTTPS',
@@ -111,10 +104,13 @@ module KnifeCloudstack
       columns = object_list.count
       object_list = [] if locate_config_value(:noheader)
 
-      connection_result = connection.list_service_offerings(
-        locate_config_value(:name),
+      connection_result = connection.list_object(
+        "listServiceOfferings",
+        "serviceoffering",
+        locate_config_value(:filter),
+        false,
         locate_config_value(:keyword),
-        locate_config_value(:filter)
+        locate_config_value(:name)
       )
 
       connection_result.each do |result|
@@ -138,7 +134,7 @@ module KnifeCloudstack
         n /= 1024.0
         count += 1
       end
-      format("%.2f", n) + %w(MB GB TB)[count]
+      format("%.0f", n) + %w(MB GB TB)[count]
     end
 
     def locate_config_value(key)

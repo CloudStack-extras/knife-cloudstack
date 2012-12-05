@@ -45,13 +45,6 @@ module KnifeCloudstack
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
-    # option :cloudstack_project,
-    #        :short => "-P PROJECT_NAME",
-    #        :long => '--cloudstack-project PROJECT_NAME',
-    #        :description => "Cloudstack Project in which to create server",
-    #        :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
-    #        :default => nil
-
     option :use_http_ssl,
            :long => '--[no-]use-http-ssl',
            :description => 'Support HTTPS',
@@ -82,7 +75,6 @@ module KnifeCloudstack
            :boolean => true
 
     option :templatefilter,
-           :short => "-L FILTER",
            :long => "--templatefilter FILTER",
            :description => "The template search filter. Default is 'featured'",
            :default => "featured"
@@ -115,10 +107,14 @@ module KnifeCloudstack
       columns = object_list.count
       object_list = [] if locate_config_value(:noheader)
 
-      connection_result = connection.list_templates(
-        locate_config_value(:templatefilter),
+      connection_result = connection.list_object(
+        "listTemplates",
+        "template",
+        locate_config_value(:filter),
         locate_config_value(:listall),
-        locate_config_value(:filter)
+        nil,
+        nil,
+        locate_config_value(:templatefilter)
       )
 
       connection_result.each do |result|

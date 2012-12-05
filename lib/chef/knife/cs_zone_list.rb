@@ -97,9 +97,12 @@ module KnifeCloudstack
       columns = object_list.count
       object_list = [] if locate_config_value(:noheader)
 
-      connection_result = connection.list_zones(
-        locate_config_value(:keyword),
-        locate_config_value(:filter)
+      connection_result = connection.list_object(
+        "listZones",
+        "zone", 
+        locate_config_value(:filter),
+	false,
+        locate_config_value(:keyword)
       )
 
       connection_result.each do |result|

@@ -109,11 +109,13 @@ module KnifeCloudstack
       columns = object_list.count
       object_list = [] if locate_config_value(:noheader)
 
-      connection_result = connection.list_servers(
+      connection_result = connection.list_object(
+        "listVirtualMachines",
+        "virtualmachines",
+        locate_config_value(:filter),
         locate_config_value(:listall),
-        locate_config_value(:name),
         locate_config_value(:keyword),
-        locate_config_value(:filter)
+        locate_config_value(:name)
       )
 
       pf_rules = connection.list_port_forwarding_rules

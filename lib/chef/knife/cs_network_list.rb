@@ -45,13 +45,6 @@ module KnifeCloudstack
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
-    # option :cloudstack_project,
-    #        :short => "-P PROJECT_NAME",
-    #        :long => '--cloudstack-project PROJECT_NAME',
-    #        :description => "Cloudstack Project in which to create server",
-    #        :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
-    #        :default => nil
-
     option :use_http_ssl,
            :long => '--[no-]use-http-ssl',
            :description => 'Support HTTPS',
@@ -105,17 +98,21 @@ module KnifeCloudstack
           ui.color('Default', :bold),
           ui.color('Shared', :bold),
           ui.color('Gateway', :bold),
-          ui.color('Netmask', :bold)
+          ui.color('Netmask', :bold),
+          ui.color('Account', :bold),
+          ui.color('Domain', :bold)
         ]
       end
 
       columns = object_list.count
       object_list = [] if locate_config_value(:noheader)
 
-      connection_result = connection.list_networks(
+      connection_result = connection.list_object(
+        "listNetworks",
+        "network",
+        locate_config_value(:filter),
         locate_config_value(:listall),
-        locate_config_value(:keyword),
-        locate_config_value(:filter)
+        locate_config_value(:keyword)
       )
 
       connection_result.each do |result|
@@ -125,6 +122,8 @@ module KnifeCloudstack
         object_list << result['isshared'].to_s
         object_list << (result['gateway'] || '')
         object_list << (result['netmask'] || '')
+        object_list << (result['account'] || '')
+        object_list << (result['domain'] || '')
       end
       puts ui.list(object_list, :uneven_columns_across, columns)
       connection.show_object_fields(connection_result) if locate_config_value(:fieldlist)

@@ -101,11 +101,13 @@ module KnifeCloudstack
       columns = object_list.count
       object_list = [] if locate_config_value(:noheader)
 
-      connection_result = connection.list_accounts(
+      connection_result = connection.list_object(
+        "listAccounts",
+        "account",
+        locate_config_value(:filter),
         locate_config_value(:listall),
-        locate_config_value(:name),
         locate_config_value(:keyword),
-        locate_config_value(:filter)
+        locate_config_value(:name)
       )
 
       connection_result.each do |result|

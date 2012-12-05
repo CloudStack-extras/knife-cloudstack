@@ -114,7 +114,7 @@ module CloudstackClient
       return nil unless server
 
       nic = get_server_default_nic(server) || {}
-      networks = list_networks || {}
+      networks = list_object('listNetworks','network') || {}
 
       id = nic['networkid']
       network = networks.select { |net|
@@ -132,44 +132,34 @@ module CloudstackClient
     end
 
     ##
-    # Lists all the accounts, servers, domains, service offerings, disk offerings in your account.
-    def list_accounts(listall=nil, name=nil, keyword=nil, filter=nil)
-      params = {
-          'command' => 'listAccounts'
-      }
-      params['listall'] = true if listall || name || keyword || filter
-      params['name'] = name if name
-      params['keyword'] = keyword if keyword
-      json = send_request(params)
-      result = json['account'] || []
-      result = data_filter(result, filter) if filter
-      result
-    end
+    #  list_object replaces the following because they all have the same parameters:
+    #  function			command			json_result	filter	listall	keyword	name 	templatefilter 
+    #  list_accounts 		listAccounts	 	account		X	X	X	X	
+    #  list_servers		listVirtualMachines	virtualmachines X	X	X	X
+    #  list_domains		listDomains		domain		X	X				
+    #  list_service_offerings	listServiceOfferings	serviceoffering X		X	X
+    #  list_disk_offerings	listDiskOfferings	diskoffering	X		X	X
+    #  list_templates		listTemplates		template	X	X			X
+    #  list_networks		listNetworks		network		X	X	X
+    #  list_zones		listZones		zone		X		X
+    #
 
-    def list_servers(listall=nil,name=nil,keyword=nil,filter=nil)
+    def list_object(command, json_result, filter=nil, listall=nil, keyword=nil, name=nil, templatefilter=nil)
       params = {
-          'command' => 'listVirtualMachines'
+          'command' => command
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
-
-      params['listall'] = true if listall || name || keyword || filter
+      params['listall'] = true if listall || name || keyword || filter unless listall == false
       params['keyword'] = keyword if keyword
       params['name'] = name if name
-      json = send_request(params)
-      result = json['virtualmachine'] || []  
-      result = data_filter(result, filter) if filter
-      result
-    end
 
-    def list_domains(listall=nil, filter=nil)
-      params = {
-        'command' => 'listDomains'
-      }
-      params['listall'] = true if listall || filter
+      if templatefilter
+        template = 'featured'
+        template = templatefilter.downcase if ["featured","self","self-executable","executable","community"].include?(templatefilter.downcase)
+        params['templateFilter'] = template
+      end
+
       json = send_request(params)
-      result = json['domain'] || []
+      result = json["#{json_result}"] || []
       result = data_filter(result, filter) if filter
       result
     end
@@ -195,65 +185,6 @@ module CloudstackClient
       puts ui.list(object_fields, :uneven_columns_across, 3)
     end
 
-    def list_service_offerings(name=nil,keyword=nil,filter=nil)
-      params = {
-          'command' => 'listServiceOfferings'
-      }
-      params['keyword'] = keyword if keyword
-      params['name'] = name if name
-      json = send_request(params)
-      result = json['serviceoffering'] || []
-      result = data_filter(result, filter) if filter
-      result
-
-    end
-  
-    def list_disk_offerings
-      params = {
-          'command' => 'listDiskOfferings'
-      }
-      json = send_request(params)
-      json['diskoffering'] || []
-    end
-
-    # Lists all templates that match the specified filter.
-    #
-    # Allowable filter values are:
-    #
-    # * featured - templates that are featured and are public
-    # * self - templates that have been registered/created by the owner
-    # * self-executable - templates that have been registered/created by the owner that can be used to deploy a new VM
-    # * executable - all templates that can be used to deploy a new VM
-    # * community - templates that are public
-
-    def list_templates(templatefilter,listall=nil,filter=nil)
-      templatefilter ||= 'featured'
-      params = {
-          'command' => 'listTemplates',
-          'templateFilter' => templatefilter
-      }
-      params['listall'] = true if listall || filter
-      json = send_request(params)
-      result = json['template'] || []
-      result = data_filter(result, filter) if filter
-      result
-    end
-
-    ##
-    # Lists all available networks.
-
-    def list_networks(listall=nil,keyword=nil,filter=nil)
-      params = {
-          'command' => 'listNetworks'
-      }
-      params['listall'] = true if listall || filter
-      params['keyword'] = keyword if keyword
-      json = send_request(params)
-      result = json['network'] || []
-      result = data_filter(result, filter) if filter
-      result
-    end
- 
     ##
     #
     def create_domain(domainname, parentdomain, networkdomain)
@@ -735,22 +666,6 @@ module CloudstackClient
     end
 
     ##
-    # Lists all available zones.
-
-    def list_zones(keyword=nil,filter=nil)
-      params = {
-          'command' => 'listZones',
-          'available' => 'true'
-      }
-      params['keyword'] = keyword if keyword
-      json = send_request(params)
-      result = json['zone'] || []
-      result = data_filter(result, filter) if filter
-      result
-
-    end
-
-    ##
     # Finds the public ip address for a given ip address string.
 
     def get_public_ip_address(ip_address)
@@ -901,7 +816,6 @@ module CloudstackClient
       uri = URI.parse(url)
 
       Chef::Log.debug("URL: #{url}" )
-
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = @use_ssl
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE

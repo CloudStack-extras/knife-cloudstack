@@ -45,13 +45,6 @@ module KnifeCloudstack
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
-#    option :cloudstack_project,
-#           :short => "-P PROJECT_NAME",
-#           :long => '--cloudstack-project PROJECT_NAME',
-#           :description => "Cloudstack Project in which to create server",
-#           :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
-#           :default => nil
-
     option :use_http_ssl,
            :long => '--[no-]use-http-ssl',
            :description => 'Support HTTPS',
@@ -70,14 +63,6 @@ module KnifeCloudstack
     option :keyword,
            :long => "--instance NAME",
            :description => "Specify part of instancename to list"
-
-#    option :account,
-#           :long => "--account NAME",
-#           :description => "Specify part of accountname to list"
-#
-#    option :domain,
-#           :long => "--domain NAME",
-#           :description => "Specify part of domainname to list"
 
     option :filter,
            :long => "--filter 'FIELD:NAME'",
@@ -127,11 +112,13 @@ module KnifeCloudstack
       columns = object_list.count
       object_list = [] if locate_config_value(:noheader)
 
-      connection_result = connection.list_servers(
+      connection_result = connection.list_object(
+        "listVirtualMachines",
+        "virtualmachines",
+        locate_config_value(:filter),
         locate_config_value(:listall),
-        locate_config_value(:name),
         locate_config_value(:keyword),
-        locate_config_value(:filter)
+        locate_config_value(:name)
       )
 
       rules = connection.list_port_forwarding_rules
