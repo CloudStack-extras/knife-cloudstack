@@ -41,7 +41,7 @@ module KnifeCloudstack
 
     option :cloudstack_secret_key,
            :short => "-K SECRET",
-           :long => "--secret SECRET",
+           :long => "--cloudstack-secret-key SECRET",
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
