@@ -118,7 +118,7 @@ module KnifeCloudstack
           locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
         else
           object_list << r['name'].to_s
-          object_list << (human_memory(r['memory']) || 'Unknown')
+          object_list << (r['memory'] ? human_memory(r['memory']) : 'Unknown')
           object_list << r['cpunumber'].to_s
           object_list << r['cpuspeed'].to_s + ' Mhz'
           object_list << r['created']

@@ -123,7 +123,7 @@ module KnifeCloudstack
           locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
         else
           object_list << r['name'].to_s
-          object_list << (human_file_size(r['size']) || 'Unknown')
+          object_list << (r['size'] ? human_file_size(r['size']) : 'Unknown')
           object_list << r['zonename'].to_s
           object_list << r['ispublic'].to_s
           object_list << r['created']

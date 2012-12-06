@@ -46,11 +46,11 @@ module KnifeCloudstack
 
     option :name,
            :long => "--name NAME",
-           :description => "Specify servicename to list"
+           :description => "Specify diskname to list"
 
     option :keyword,
            :long => "--service NAME",
-           :description => "Specify part of servicename to list"
+           :description => "Specify part of diskname to list"
 
     option :filter,
            :long => "--filter 'FIELD:NAME'",

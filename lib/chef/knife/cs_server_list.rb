@@ -82,6 +82,11 @@ module KnifeCloudstack
            :description => "Removes header from output",
            :boolean => true
 
+    option :action,
+           :short => "-a ACTION",
+           :long => "--action ACTION",
+           :description => "start, stop or migrate your result"
+
     def run
 
       $stdout.sync = true
@@ -99,12 +104,12 @@ module KnifeCloudstack
         locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
       else
         object_list = [
-          ui.color('Instance', :bold),
           ui.color('Name', :bold),
           ui.color('Public IP', :bold),
           ui.color('Service', :bold),
           ui.color('Template', :bold),
           ui.color('State', :bold),
+          ui.color('Instance', :bold),
           ui.color('Hypervisor', :bold)
         ]
       end
@@ -133,17 +138,26 @@ module KnifeCloudstack
         if locate_config_value(:fields)
           locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
         else
-          object_list << r['instancename']
           object_list << r['name']
           object_list << (connection.get_server_public_ip(r, rules) || '')
           object_list << r['serviceofferingname']
           object_list << r['templatename']
           object_list << r['state']
+          object_list << (r['instancename'] || 'N/A')
           object_list << (r['hostname'] || 'N/A')
         end
       end
+
       puts ui.list(object_list, :uneven_columns_across, columns)
       connection.show_object_fields(connection_result) if locate_config_value(:fieldlist)
+
+      if locate_config_value(:action)
+        case locate_config_value(:action).downcase
+          when "migrate" then connection.server_action("migrateVirtualMachine", "virtualmachine", connection_result)
+          when "start" then connection.server_action("startVirtualMachine", "virtualmachine", connection_result)
+          when "stop" then connection.server_action("stopVirtualMachine", "virtualmachine", connection_result)
+        end
+      end
     end
 
     def locate_config_value(key)

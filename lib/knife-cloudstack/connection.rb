@@ -66,7 +66,6 @@ module CloudstackClient
       @ui ||= Chef::Knife::UI.new(STDOUT, STDERR, STDIN, {})
     end
 
-
     ##
     # Finds the server with the specified name.
 
@@ -167,9 +166,9 @@ module CloudstackClient
     def show_object_fields(object)
       exit 1 if object.nil? || object.empty?
       object_fields = [
-        ui.color('Field', :bold),
+        ui.color('Key', :bold),
         ui.color('Type', :bold),
-        ui.color('Example', :bold)
+        ui.color('Value', :bold)
       ]
 
       object.first.each do |k,v|
@@ -419,6 +418,23 @@ module CloudstackClient
 
     ##
     # Start the server with the specified name.
+
+    def server_action(command, json_result, server, forced=nil)
+      result = []
+      server.each do |s|
+        if s['id'] then
+          params = { 'command' => command }
+          case command
+            when "migrateVirtualMachine" then params['virtualmachineid'] = s['id']
+            else params['id'] = s['id']
+          end  
+          json = send_async_request(params)
+          result << json["#{json_result}"]
+        end
+      end
+      result
+    end
+
 
     def start_server(name)
       server = get_server(name)
@@ -806,13 +822,13 @@ module CloudstackClient
         params_arr << elem[0].to_s + '=' + elem[1].to_s
       }
       data = params_arr.join('&')
-      encoded_data = URI.encode(data.downcase).gsub(' ', '%20').gsub(',', '%2c') 
+      encoded_data = URI.encode(data.downcase).gsub('+', '%20').gsub(',', '%2c').gsub(' ','%20')
       signature = OpenSSL::HMAC.digest('sha1', @secret_key, encoded_data)
       signature = Base64.encode64(signature).chomp
       signature = CGI.escape(signature)
 
       url = "#{@api_url}?#{data}&signature=#{signature}"
-      url = url.gsub(' ', '%20')
+      url = url.gsub('+', '%20').gsub(' ','%20')
       uri = URI.parse(url)
 
       Chef::Log.debug("URL: #{url}" )
