@@ -21,20 +21,20 @@ module KnifeCloudstack
     banner "knife cs account list (options)"
 
     option :cloudstack_url,
-           :short => "-s URL",
-           :long => "--server-url URL",
-           :description => "Your CloudStack endpoint URL",
+           :short => "-U URL",
+           :long => "--cloudstack-url URL",
+           :description => "The CloudStack endpoint URL",
            :proc => Proc.new { |url| Chef::Config[:knife][:cloudstack_url] = url }
 
     option :cloudstack_api_key,
-           :short => "-k KEY",
-           :long => "--key KEY",
+           :short => "-A KEY",
+           :long => "--cloudstack-api-key KEY",
            :description => "Your CloudStack API key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_api_key] = key }
 
     option :cloudstack_secret_key,
            :short => "-K SECRET",
-           :long => "--secret SECRET",
+           :long => "--cloudstack-secret-key SECRET",
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
@@ -110,20 +110,20 @@ module KnifeCloudstack
         locate_config_value(:name)
       )
 
-      connection_result.each do |result|
+      connection_result.each do |r|
        if locate_config_value(:fields)
-          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((result[("#{n}").strip]).to_s || 'N/A') }
+          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
         else
-          object_list << result['name'].to_s
-          object_list << result['domain'].to_s
-          object_list << result['state'].to_s
-          case result['accounttype']
+          object_list << r['name'].to_s
+          object_list << r['domain'].to_s
+          object_list << r['state'].to_s
+          case r['accounttype']
             when 0 then object_list << "user"
             when 1 then object_list << "admin"
             when 2 then object_list << "domain admin"
             else object_list << "unknown"
           end
-          object_list << result['user'].count.to_s
+          object_list << r['user'].count.to_s
         end
       end
       puts ui.list(object_list, :uneven_columns_across, columns)

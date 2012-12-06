@@ -28,14 +28,14 @@ module KnifeCloudstack
     banner "knife cs network list (options)"
 
     option :cloudstack_url,
-           :short => "-s URL",
-           :long => "--server-url URL",
-           :description => "Your CloudStack endpoint URL",
+           :short => "-U URL",
+           :long => "--cloudstack-url URL",
+           :description => "The CloudStack endpoint URL",
            :proc => Proc.new { |url| Chef::Config[:knife][:cloudstack_url] = url }
 
     option :cloudstack_api_key,
-           :short => "-k KEY",
-           :long => "--key KEY",
+           :short => "-A KEY",
+           :long => "--cloudstack-api-key KEY",
            :description => "Your CloudStack API key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_api_key] = key }
 
@@ -115,15 +115,15 @@ module KnifeCloudstack
         locate_config_value(:keyword)
       )
 
-      connection_result.each do |result|
-        object_list << result['name'].to_s
-        object_list << result['type'].to_s
-        object_list << result['isdefault'].to_s
-        object_list << result['isshared'].to_s
-        object_list << (result['gateway'] || '')
-        object_list << (result['netmask'] || '')
-        object_list << (result['account'] || '')
-        object_list << (result['domain'] || '')
+      connection_result.each do |r|
+        object_list << r['name'].to_s
+        object_list << r['type'].to_s
+        object_list << r['isdefault'].to_s
+        object_list << r['isshared'].to_s
+        object_list << (r['gateway'] || '')
+        object_list << (r['netmask'] || '')
+        object_list << (r['account'] || '')
+        object_list << (r['domain'] || '')
       end
       puts ui.list(object_list, :uneven_columns_across, columns)
       connection.show_object_fields(connection_result) if locate_config_value(:fieldlist)

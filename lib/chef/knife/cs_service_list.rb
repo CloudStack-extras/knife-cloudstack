@@ -28,14 +28,14 @@ module KnifeCloudstack
     banner "knife cs service list (options)"
 
     option :cloudstack_url,
-           :short => "-s URL",
-           :long => "--server-url URL",
-           :description => "Your CloudStack endpoint URL",
+           :short => "-U URL",
+           :long => "--cloudstack-url URL",
+           :description => "The CloudStack endpoint URL",
            :proc => Proc.new { |url| Chef::Config[:knife][:cloudstack_url] = url }
 
     option :cloudstack_api_key,
-           :short => "-k KEY",
-           :long => "--key KEY",
+           :short => "-A KEY",
+           :long => "--cloudstack-api-key KEY",
            :description => "Your CloudStack API key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_api_key] = key }
 
@@ -113,15 +113,15 @@ module KnifeCloudstack
         locate_config_value(:name)
       )
 
-      connection_result.each do |result|
+      connection_result.each do |r|
         if locate_config_value(:fields)
-          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((result[("#{n}").strip]).to_s || 'N/A') }
+          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
         else
-          object_list << result['name'].to_s
-          object_list << (human_memory(result['memory']) || 'Unknown')
-          object_list << result['cpunumber'].to_s
-          object_list << result['cpuspeed'].to_s + ' Mhz'
-          object_list << result['created']
+          object_list << r['name'].to_s
+          object_list << (human_memory(r['memory']) || 'Unknown')
+          object_list << r['cpunumber'].to_s
+          object_list << r['cpuspeed'].to_s + ' Mhz'
+          object_list << r['created']
         end
       end
       puts ui.list(object_list, :uneven_columns_across, columns)

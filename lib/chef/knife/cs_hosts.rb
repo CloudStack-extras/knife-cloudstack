@@ -29,20 +29,20 @@ module KnifeCloudstack
     banner "knife cs hosts"
 
     option :cloudstack_url,
-           :short => "-s URL",
-           :long => "--server-url URL",
-           :description => "Your CloudStack endpoint URL",
+           :short => "-U URL",
+           :long => "--cloudstack-url URL",
+           :description => "The CloudStack endpoint URL",
            :proc => Proc.new { |url| Chef::Config[:knife][:cloudstack_url] = url }
 
     option :cloudstack_api_key,
-           :short => "-k KEY",
-           :long => "--key KEY",
+           :short => "-A KEY",
+           :long => "--cloudstack-api-key KEY",
            :description => "Your CloudStack API key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_api_key] = key }
 
     option :cloudstack_secret_key,
            :short => "-K SECRET",
-           :long => "--secret SECRET",
+           :long => "--cloudstack-secret-key SECRET",
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
@@ -99,10 +99,12 @@ module KnifeCloudstack
       else
         object_list = [
           ui.color('Instance', :bold),
-          ui.color('IP', :bold),
           ui.color('Host', :bold),
+          ui.color('State', :bold),
           ui.color('Domain', :bold),
-          ui.color('Account', :bold)
+          ui.color('Account', :bold),
+          ui.color('Hypervisor', :bold),
+          ui.color('HA', :bold)
         ]
       end
 
@@ -111,24 +113,24 @@ module KnifeCloudstack
 
       connection_result = connection.list_object(
         "listVirtualMachines",
-        "virtualmachines",
+        "virtualmachine",
         locate_config_value(:filter),
         locate_config_value(:listall),
         locate_config_value(:keyword),
         locate_config_value(:name)
       )
 
-      pf_rules = connection.list_port_forwarding_rules
-
       connection_result.each do |result|
         if locate_config_value(:fields)
           locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((result[("#{n}").strip]).to_s || 'N/A') }
         else
           object_list << result['instancename'].to_s 
-          object_list << (connection.get_server_public_ip(result, pf_rules) || '#')
           object_list << (result['name'] || '')
+          object_list << result['state'].to_s
           object_list << result['domain'].to_s
           object_list << result['account'].to_s
+          object_list << result['hostname'].to_s
+          object_list << result['haenable'].to_s
         end
       end
       puts ui.list(object_list, :uneven_columns_across, columns)

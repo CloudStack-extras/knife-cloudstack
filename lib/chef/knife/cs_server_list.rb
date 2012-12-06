@@ -28,14 +28,14 @@ module KnifeCloudstack
     banner "knife cs server list (options)"
 
     option :cloudstack_url,
-           :short => "-s URL",
-           :long => "--server-url URL",
-           :description => "Your CloudStack endpoint URL",
+           :short => "-U URL",
+           :long => "--cloudstack-url URL",
+           :description => "The CloudStack endpoint URL",
            :proc => Proc.new { |url| Chef::Config[:knife][:cloudstack_url] = url }
 
     option :cloudstack_api_key,
-           :short => "-k KEY",
-           :long => "--key KEY",
+           :short => "-A KEY",
+           :long => "--cloudstack-api-key KEY",
            :description => "Your CloudStack API key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_api_key] = key }
 
@@ -114,7 +114,7 @@ module KnifeCloudstack
 
       connection_result = connection.list_object(
         "listVirtualMachines",
-        "virtualmachines",
+        "virtualmachine",
         locate_config_value(:filter),
         locate_config_value(:listall),
         locate_config_value(:keyword),
@@ -123,23 +123,23 @@ module KnifeCloudstack
 
       rules = connection.list_port_forwarding_rules
 
-      connection_result.each do |result|
-        name = result['name']
-        display_name = result['displayname']
+      connection_result.each do |r|
+        name = r['name']
+        display_name = r['displayname']
         if display_name && !display_name.empty? && display_name != name
           name << " (#{display_name})"
         end
 
         if locate_config_value(:fields)
-          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((result[("#{n}").strip]).to_s || 'N/A') }
+          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
         else
-          object_list << result['instancename']
-          object_list << result['name']
-          object_list << (connection.get_server_public_ip(result, rules) || '')
-          object_list << result['serviceofferingname']
-          object_list << result['templatename']
-          object_list << result['state']
-          object_list << (result['hostname'] || 'N/A')
+          object_list << r['instancename']
+          object_list << r['name']
+          object_list << (connection.get_server_public_ip(r, rules) || '')
+          object_list << r['serviceofferingname']
+          object_list << r['templatename']
+          object_list << r['state']
+          object_list << (r['hostname'] || 'N/A')
         end
       end
       puts ui.list(object_list, :uneven_columns_across, columns)
