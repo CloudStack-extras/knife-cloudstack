@@ -200,6 +200,11 @@ module KnifeCloudstack
       :description => "Protocol to bootstrap windows servers. options: winrm/ssh",
       :default => "ssh"
 
+    option :bootstrap_proxy,
+      :long => "--bootstrap-proxy PROXY_URL",
+      :description => "The proxy server for the node being bootstrapped",
+      :proc => Proc.new { |v| Chef::Config[:knife][:bootstrap_proxy] = v }
+
     option :fqdn,
       :long => '--fqdn',
       :description => "FQDN which Kerberos Understands (only for Windows Servers)"
@@ -483,6 +488,8 @@ module KnifeCloudstack
       bootstrap.config[:bootstrap_version] = locate_config_value(:bootstrap_version)
       bootstrap.config[:distro] = locate_config_value(:distro)
       bootstrap.config[:template_file] = locate_config_value(:template_file)
+      bootstrap.config[:bootstrap_proxy] = locate_config_value(:bootstrap_proxy)
+      Chef::Log.debug("The final bootstrap config: #{bootstrap.config}")
       bootstrap
     end
 
