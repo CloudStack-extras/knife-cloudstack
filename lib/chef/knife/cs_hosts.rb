@@ -1,6 +1,7 @@
 #
 # Author:: Ryan Holmes (<rholmes@edmunds.com>)
 # Author:: KC Braunschweig (<kcbraunschweig@gmail.com>)
+# Revised:: 20121210 Sander Botman (<sbotman@schubergphilis.com>)
 # Copyright:: Copyright (c) 2011 Edmunds, Inc.
 # License:: Apache License, Version 2.0
 #
@@ -98,13 +99,8 @@ module KnifeCloudstack
         locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
       else
         object_list = [
-          ui.color('Instance', :bold),
+          ui.color('IPAddress', :bold),
           ui.color('Host', :bold),
-          ui.color('State', :bold),
-          ui.color('Domain', :bold),
-          ui.color('Account', :bold),
-          ui.color('Hypervisor', :bold),
-          ui.color('HA', :bold)
         ]
       end
 
@@ -120,17 +116,14 @@ module KnifeCloudstack
         locate_config_value(:name)
       )
 
-      connection_result.each do |result|
+      rules = connection.list_port_forwarding_rules
+
+      connection_result.each do |r|
         if locate_config_value(:fields)
-          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((result[("#{n}").strip]).to_s || 'N/A') }
+          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
         else
-          object_list << result['instancename'].to_s 
-          object_list << (result['name'] || '')
-          object_list << result['state'].to_s
-          object_list << result['domain'].to_s
-          object_list << result['account'].to_s
-          object_list << result['hostname'].to_s
-          object_list << result['haenable'].to_s
+          object_list << (connection.get_server_public_ip(r, rules) || '')
+          object_list << (r['name'] || '')
         end
       end
       puts ui.list(object_list, :uneven_columns_across, columns)

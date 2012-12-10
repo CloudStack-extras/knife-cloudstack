@@ -1,6 +1,7 @@
 #
 # Author:: Ryan Holmes (<rholmes@edmunds.com>)
 # Author:: KC Braunschweig (<kcbraunschweig@gmail.com>)
+# Revised:: 20121210 Sander Botman (<sbotman@schubergphilis.com>)
 # Copyright:: Copyright (c) 2011 Edmunds, Inc.
 # License:: Apache License, Version 2.0
 #
@@ -131,17 +132,7 @@ module CloudstackClient
     end
 
     ##
-    #  list_object replaces the following because they all have the same parameters:
-    #  function			command			json_result	filter	listall	keyword	name 	templatefilter 
-    #  list_accounts 		listAccounts	 	account		X	X	X	X	
-    #  list_servers		listVirtualMachines	virtualmachines X	X	X	X
-    #  list_domains		listDomains		domain		X	X				
-    #  list_service_offerings	listServiceOfferings	serviceoffering X		X	X
-    #  list_disk_offerings	listDiskOfferings	diskoffering	X		X	X
-    #  list_templates		listTemplates		template	X	X			X
-    #  list_networks		listNetworks		network		X	X	X
-    #  list_zones		listZones		zone		X		X
-    #
+    # Returns the object data based on the command, json_result parameter.
 
     def list_object(command, json_result, filter=nil, listall=nil, keyword=nil, name=nil, templatefilter=nil)
       params = {
@@ -158,6 +149,8 @@ module CloudstackClient
       end
 
       json = send_request(params)
+      Chef::Log.debug("JSON Result: #{json}")
+
       result = json["#{json_result}"] || []
       result = data_filter(result, filter) if filter
       result
@@ -170,8 +163,8 @@ module CloudstackClient
         ui.color('Type', :bold),
         ui.color('Value', :bold)
       ]
-
-      object.first.each do |k,v|
+      
+      object.first.sort.each do |k,v|
         object_fields << k
         object_fields << v.class.to_s
         if v.kind_of?(Array) 
@@ -183,9 +176,29 @@ module CloudstackClient
       puts "\n"
       puts ui.list(object_fields, :uneven_columns_across, 3)
     end
+    
+    def check_account_access_level(l)
+  
+      r = list_object("listAccounts", "account", nil, false)
+      n = r.first['accounttype']
+
+      case n
+        when 2 then account = "domain admin"; s = 2
+        when 1 then account = "admin"; s = 3
+        when 0 then account = "user"; s = 1
+      end
+           
+      Chef::Log.debug("Account access level needed  : #{l}")
+      Chef::Log.debug("Current account access level : #{s}")
+      if s < l
+         ui.error "Your #{account} account is not allowed to execute this command."
+        exit 1
+      end
+    end
 
     ##
-    #
+    # Create a new domain using the specified parameters
+
     def create_domain(domainname, parentdomain, networkdomain)
       if parentdomain then
         domainpath = parentdomain + "/" + domainname 
@@ -278,7 +291,9 @@ module CloudstackClient
       json['serviceoffering']
     end
 
-
+    ##
+    # Deploys a new disk offering using the specified parameters.
+ 
     def create_diskoffering(diskname, displaytext, disksize, domainpath=nil, tags=nil, iscustom=nil)
 
       if diskname then
@@ -419,7 +434,7 @@ module CloudstackClient
     ##
     # Start the server with the specified name.
 
-    def server_action(command, json_result, server, forced=nil)
+    def server_action(command, json_result, server, quiet=nil, forced=nil)
       result = []
       server.each do |s|
         if s['id'] then
@@ -428,12 +443,63 @@ module CloudstackClient
             when "migrateVirtualMachine" then params['virtualmachineid'] = s['id']
             else params['id'] = s['id']
           end  
-          json = send_async_request(params)
-          result << json["#{json_result}"]
+          
+          if quiet then
+            print "Starting host: " + s['name'] if command == "startVirtualMachine"
+            print "Stopping host: " + s['name'] if command == "stopVirtualMachine"
+            json = send_async_request(params)
+            result << json["#{json_result}"]
+          else
+            object_fields = [
+              ui.color('Key', :bold),
+              ui.color('Value', :bold)
+            ]
+
+            object_fields << ui.color("Name", :yellow, :bold)
+            object_fields << s['name'].to_s
+            object_fields << ui.color("Public IP", :yellow, :bold)
+            object_fields << (get_server_public_ip(s) || 'N/A')
+            object_fields << ui.color("Service", :yellow, :bold)
+            object_fields << s['serviceofferingname'].to_s
+            object_fields << ui.color("Template", :yellow, :bold)
+            object_fields << s['templatename']
+            object_fields << ui.color("Domain", :yellow, :bold)
+            object_fields << s['domain']
+            object_fields << ui.color("Zone", :yellow, :bold)
+            object_fields << s['zonename']
+            object_fields << ui.color("State", :yellow, :bold)
+            object_fields << s['state']
+          
+            puts "\n"
+            puts ui.list(object_fields, :uneven_columns_across, 2)
+            response = yesno("Do you really want to start this server") if command == "startVirtualMachine"
+            response = yesno("Do you really want to stop this server") if command == "stopVirtualMachine"
+
+            if response
+              print "Starting host: " + s['name'] if command == "startVirtualMachine"
+              print "Stopping host: " + s['name'] if command == "stopVirtualMachine"
+              json = send_async_request(params)
+              result << json["#{json_result}"]
+            end
+          end
+          puts "\n"
         end
       end
       result
     end
+
+
+def yesno(prompt = 'Continue?', default = true)
+  require 'highline/import'
+  a = ''
+  s = default ? '[Y/n]' : '[y/N]'
+  d = default ? 'y' : 'n'
+  until %w[y n].include? a
+    a = ask("#{prompt} #{s} ") { |q| q.limit = 1; q.case = :downcase }
+    a = d if a.length == 0
+  end
+  a == 'y'
+end
 
 
     def start_server(name)

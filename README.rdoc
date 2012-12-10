@@ -46,6 +46,20 @@ To get this plugin to work in public clouds, it is essential that the virtual ne
 
 This plugin provides the following Knife subcommands.  Specific command options can be found by invoking the subcommand with a <tt>--help</tt> flag
 
+=== knife cs <command> list
+
+--filter 		Filters your output on the fields that you specify. Filter can be a string 'name' or regexp '/name/i'
+			Example: --filter "instancename:/i-xxx/i, account:accname"
+
+--fields 		The fields that you want to display in your output. Default outputs will be shown if no fields are defined.
+			Example: --fields "name, instancename, domain"
+
+--fieldlist 		This will display the fields that you can use to filter or use in your output. 
+			Example will be given with the first result that you specify in your filter.
+
+--noheader 	 	this will remove the column header from the output.
+
+
 === knife cs server create
 
 Provisions a new server in CloudStack and then performs a Chef bootstrap (using the SSH protocol).  The goal of the bootstrap is to get Chef installed on the target
@@ -79,19 +93,40 @@ the associated node and client objects from the Chef server.
 Displays a list of all servers in the currently configured CloudStack account.  <b>PLEASE NOTE</b> - this shows all
 servers associated with the cloudstack account including servers that are not registered with a Chef server.
 
+--listall		This will list all the servers, depending on the accout that you are using.
+
+--keyword		Filters your output on the instance name that you specify: Example: --keyword "i-324"
+			This will display all servers with 'i-324' inside the instancename.
+
+--name 			Filters your output on the name that you specify. Example: --name "chef" 
+			This will display all servers with 'chef' inside the hostname.
+
+--action		This action will be executed on the output of the list command. Actions can be start or stop.
+
+
 === knife cs network list
 Displays a list of all networks available in the currently configured CloudStack account. A network can be specified
 when creating a new server by passing the network name as an argument to the -W (or --network) option of the
 <tt>knife cs server create</tt> command.
+
+--listall		This will list all the networks, depending on the accout that you are using.
+
+--keyword		Filters your output on the keyword that you specify. Example: --keyword "network1" 
+			This will display all networks with 'network1' inside the name.
 
 === knife cs service list
 Displays a list of all service offerings available in the currently configured CloudStack account. A service offering
 can be specified when creating a new server by passing the name as an argument to the -S (or --service) option of the
 <tt>knife cs server create</tt> command.
 
+--keyword		Filters your output on the service name, just like --name here below.
+			
+--name			Filters your output on the name that you specify. Example: --name "medium" or --keyword "medium"
+			This will display all cpu service offerings with 'medium' inside the name.
+
 === knife cs template list
 Displays a list of all templates in the currently configured CloudStack account. Featured templates are displayed by default.
-Use the -F (or --filter) option to use a different filter. The allowable filter values are:
+Use the -F (or --templatefilter) option to use a different filter. The allowable filter values are:
 
 * featured - templates that are featured and are public (this is the default)
 * self - templates that have been registered/created by the owner
@@ -102,13 +137,116 @@ Use the -F (or --filter) option to use a different filter. The allowable filter 
 A template can be specified when creating a new server by passing the template name as an argument to the -T
 (or --template) option of the <tt>knife cs server create</tt> command.
 
+--listall		This will list all the templates, depending on the accout that you are using.
+
 === knife cs zone list
 Displays a list of all zones available in the currently configured CloudStack account. A zone can be specified
 when creating a new server by passing the zone name as an argument to the -Z (or --zone) option of the
 <tt>knife cs server create</tt> command.
 
+--keyword		Filters your output on the keyword that you specify. Example: --keyword "zone1" 
+			This will display all zones with 'zone1' inside the name
+
 === knife cs hosts
 Convenience command that displays the public ip address and fqdn for all servers. Matches /etc/hosts file format.
+
+--listall		This will list all the servers, depending on the accout that you are using.
+
+--keyword		Filters your result based on a keyword.
+
+--name	 		Filters your output on the name that you specify.  
+
+==== knife cs account list
+
+--listall		This will list all the possible results, depending on the accout that you are using.
+
+--keyword               Filters your result based on a keyword.
+
+--name                  Filters your output on the name that you specify.
+
+==== knife cs cluster list
+
+--keyword               Filters your result based on a keyword.
+
+--name                  Filters your output on the name that you specify.
+
+==== knife cs config list
+
+--keyword               Filters your result based on a keyword.
+
+--name                  Filters your output on the name that you specify.
+
+==== knife cs disk list
+
+--keyword               Filters your result based on a keyword.
+
+--name                  Filters your output on the name that you specify.
+
+==== knife cs domain list
+
+--listall		This will list all the domains, depending on the accout that you are using.
+
+==== knife cs firewallrule list
+
+--listall		This will list all the firewallrules, depending on the accout that you are using.
+
+--keyword		Filters your result based on a keyword.
+
+==== knife cs host list
+
+--name	 		Filters your output on the name that you specify.
+
+==== knife cs iso list
+
+--listall		This will list all the iso's, depending on the accout that you are using.
+
+--keyword		Filters your result based on a keyword. 
+
+--name	 		Filters your output on the name that you specify.
+
+==== knife cs ostype list
+
+--keyword		Filters your output on the keyword that you specify.
+
+==== knife cs oscategory list
+
+--keyword		Filters your output on the keyword that you specify.
+
+==== knife cs pod list
+
+--keyword		Filters your result based on a keyword.
+
+--name	 		Filters your output on the name that you specify.
+
+==== knife project iso list
+
+--listall		This will list all the projects, depending on the accout that you are using.
+
+--keyword		Filters your result based on a keyword. 
+
+--name	 		Filters your output on the name that you specify.
+
+==== knife cs router list
+
+--listall		This will list all the routers, depending on the accout that you are using.
+
+--keyword		Filters your result based on a keyword. 
+
+--name	 		Filters your output on the name that you specify.
+			
+==== knife cs user list
+
+--listall		This will list all the users, depending on the accout that you are using.
+
+--keyword		Filters your output on the keyword that you specify.
+
+==== knife cs volume list:	
+
+--listall		This will list all the volumes, depending on the accout that you are using.
+
+--keyword		Filters your output on the keyword that you specify.
+
+--name			Filters your output on the name that you specify.
 
 === knife cs stack create
 Creates a "stack" of servers based on a JSON definition file. Simple orchestration can be performed by
@@ -199,6 +337,7 @@ Reboots the specified virtual machines(s).
 Author:: Ryan Holmes <rholmes@edmunds.com> 
 Author:: KC Braunschweig <kcbraunschweig@gmail.com>
 Author:: John E. Vincent <lusis.org+github.com@gmail.com>
+Author:: Sander Botman <sbotman@schubergphilis.com>
 
 Copyright:: Copyright (c) 2011 Edmunds, Inc.
 License:: Apache License, Version 2.0

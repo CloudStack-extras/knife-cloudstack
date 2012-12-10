@@ -1,5 +1,6 @@
 #
 # Author:: Ryan Holmes (<rholmes@edmunds.com>)
+# Revised:: 20121210 Sander Botman (<sbotman@schubergphilis.com>)
 # Copyright:: Copyright (c) 2011 Edmunds, Inc.
 # License:: Apache License, Version 2.0
 #
@@ -56,7 +57,7 @@ module KnifeCloudstack
            :description => "Specify servicename to list"
 
     option :keyword,
-           :long => "--service NAME",
+           :long => "--keyword NAME",
            :description => "Specify part of servicename to list"
 
     option :filter,

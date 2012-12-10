@@ -1,5 +1,6 @@
 #
 # Author:: Ryan Holmes (<rholmes@edmunds.com>)
+# Revised:: 20121210 Sander Botman (<sbotman@schubergphilis.com>)
 # Copyright:: Copyright (c) 2011 Edmunds, Inc.
 # License:: Apache License, Version 2.0
 #
@@ -61,7 +62,7 @@ module KnifeCloudstack
            :description => "Specify hostname to list"
 
     option :keyword,
-           :long => "--instance NAME",
+           :long => "--keyword NAME",
            :description => "Specify part of instancename to list"
 
     option :filter,
@@ -85,7 +86,7 @@ module KnifeCloudstack
     option :action,
            :short => "-a ACTION",
            :long => "--action ACTION",
-           :description => "start, stop or migrate your result"
+           :description => "start or stop the instances in your result"
 
     def run
 
@@ -153,9 +154,8 @@ module KnifeCloudstack
 
       if locate_config_value(:action)
         case locate_config_value(:action).downcase
-          when "migrate" then connection.server_action("migrateVirtualMachine", "virtualmachine", connection_result)
-          when "start" then connection.server_action("startVirtualMachine", "virtualmachine", connection_result)
-          when "stop" then connection.server_action("stopVirtualMachine", "virtualmachine", connection_result)
+          when "start" then connection.server_action("startVirtualMachine", "virtualmachine", connection_result, locate_config_value(:yes))
+          when "stop" then connection.server_action("stopVirtualMachine", "virtualmachine", connection_result, locate_config_value(:yes))
         end
       end
     end
