@@ -134,7 +134,7 @@ Use the <tt>-F</tt> (or <tt>--templatefilter</tt>) option to use a different fil
 * executable - all templates that can be used to deploy a new VM
 * community - templates that are public
 
-A template can be specified when creating a new server by passing the template name as an argument to the <tt>-T</tt
+A template can be specified when creating a new server by passing the template name as an argument to the <tt>-T</tt>
 (or <tt>template</tt>) option of the <tt>knife cs server create</tt> command.
 
 <tt>--listall</tt>		This will list all the templates, depending on the accout that you are using.
@@ -253,8 +253,7 @@ Creates a "stack" of servers based on a JSON definition file. Simple orchestrati
 specifying one or more actions to be executed after a server (or group of servers) is created.
 
 ==== Example Stack Definition File:
-<tt>
-{
+<tt>{
   "name": "hadoop_cluster_a",
   "description": "A small hadoop cluster with hbase",
   "version": "1.0",
@@ -292,8 +291,7 @@ specifying one or more actions to be executed after a server (or group of server
         { "http_request": "http://${hadoop-master}:50070/index.jsp" }
       ]
     }
-}
-</tt>
+}</tt>
 
 ==== Stack Attributes
 name:: Stack name. May be used in the future to e.g. look up a stack in a databag.
