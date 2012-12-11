@@ -25,7 +25,7 @@ module KnifeCloudstack
       require 'knife-cloudstack/connection'
     end
 
-    banner "knife cs firewall list (options)"
+    banner "knife cs firewallrule list (options)"
 
     option :cloudstack_url,
            :short => "-U URL",

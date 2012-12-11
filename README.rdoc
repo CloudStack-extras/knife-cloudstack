@@ -48,16 +48,16 @@ This plugin provides the following Knife subcommands.  Specific command options 
 
 === knife cs <command> list
 
---filter 		Filters your output on the fields that you specify. Filter can be a string 'name' or regexp '/name/i'
+<tt>--filter</tt> 		Filters your output on the fields that you specify. Filter can be a string 'name' or regexp '/name/i'
 			Example: --filter "instancename:/i-xxx/i, account:accname"
 
---fields 		The fields that you want to display in your output. Default outputs will be shown if no fields are defined.
+<tt>--fields</tt> 		The fields that you want to display in your output. Default outputs will be shown if no fields are defined.
 			Example: --fields "name, instancename, domain"
 
---fieldlist 		This will display the fields that you can use to filter or use in your output. 
+<tt>--fieldlist</tt> 		This will display the fields that you can use to filter or use in your output. 
 			Example will be given with the first result that you specify in your filter.
 
---noheader 	 	this will remove the column header from the output.
+<tt>--noheader</tt> 	 	this will remove the column header from the output.
 
 
 === knife cs server create
@@ -93,15 +93,15 @@ the associated node and client objects from the Chef server.
 Displays a list of all servers in the currently configured CloudStack account.  <b>PLEASE NOTE</b> - this shows all
 servers associated with the cloudstack account including servers that are not registered with a Chef server.
 
---listall		This will list all the servers, depending on the accout that you are using.
+<tt>--listall</tt>		This will list all the servers, depending on the accout that you are using.
 
---keyword		Filters your output on the instance name that you specify: Example: --keyword "i-324"
+<tt>--keyword</tt>		Filters your output on the instance name that you specify: Example: <tt>--keyword "i-324"</tt>
 			This will display all servers with 'i-324' inside the instancename.
 
---name 			Filters your output on the name that you specify. Example: --name "chef" 
+<tt>--name</tt> 			Filters your output on the name that you specify. Example: <tt>--name "chef"</tt> 
 			This will display all servers with 'chef' inside the hostname.
 
---action		This action will be executed on the output of the list command. Actions can be start or stop.
+<tt>--action</tt>		This action will be executed on the output of the list command. Actions can be start or stop.
 
 
 === knife cs network list

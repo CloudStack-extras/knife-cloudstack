@@ -25,6 +25,7 @@ require 'uri'
 require 'cgi'
 require 'net/http'
 require 'json'
+require 'highline/import'
 
 class String
   def to_regexp
@@ -489,17 +490,16 @@ module CloudstackClient
     end
 
 
-def yesno(prompt = 'Continue?', default = true)
-  require 'highline/import'
-  a = ''
-  s = default ? '[Y/n]' : '[y/N]'
-  d = default ? 'y' : 'n'
-  until %w[y n].include? a
-    a = ask("#{prompt} #{s} ") { |q| q.limit = 1; q.case = :downcase }
-    a = d if a.length == 0
-  end
-  a == 'y'
-end
+    def yesno(prompt = 'Continue?', default = true)
+      a = ''
+      s = default ? '[Y/n]' : '[y/N]'
+      d = default ? 'y' : 'n'
+      until %w[y n].include? a
+        a = ask("#{prompt} #{s} ") { |q| q.limit = 1; q.case = :downcase }
+        a = d if a.length == 0
+      end
+      a == 'y'
+    end
 
 
     def start_server(name)
