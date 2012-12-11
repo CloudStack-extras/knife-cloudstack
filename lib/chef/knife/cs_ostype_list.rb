@@ -90,7 +90,7 @@ module KnifeCloudstack
         object_list = [
           ui.color('ID', :bold),
           ui.color('Description', :bold),
-          ui.color('OS Categorie ID', :bold),
+          ui.color('OS Categorie ID', :bold)
         ]
       end
 
@@ -102,7 +102,7 @@ module KnifeCloudstack
         "ostype",
         locate_config_value(:filter),
         false,
-        locate_config_value(:keyword),
+        locate_config_value(:keyword)
       )
 
       connection_result.each do |r|

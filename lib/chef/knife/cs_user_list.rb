@@ -114,7 +114,7 @@ module KnifeCloudstack
         "user",
         locate_config_value(:filter),
         locate_config_value(:listall),
-        locate_config_value(:keyword),
+        locate_config_value(:keyword)
       )
 
       connection_result.each do |r|
