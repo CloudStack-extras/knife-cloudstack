@@ -6,21 +6,23 @@
   <tt>router list</tt>, <tt>service create</tt>, <tt>user list</tt>, <tt>volume list</tt>
 * Updated subcommands: <tt>hosts</tt>, <tt>network list</tt>, <tt>server list</tt>, <tt>service list</tt>,
   <tt>template list</tt>, <tt>zone list</tt>
-* Added option: --filter to all list commands. This filters your output on the fields that you specify.
-  Filter can be a string 'name' or regexp '/name/i'. Example: --filter "instancename:/i-xxx/i,accountname:jenkins"
+* Added option: <tt>--filter</tt> to all list commands. This filters your output on the fields that you specify.
+  Filter can be a string <tt>'name'</tt> or regexp <tt>'/name/i'</tt>. Example: <tt>--filter "instancename:/i-xxx/i,accountname:jenkins"</tt>
   Additional filters can be added by separating them using a comma ','
-* Added option: --fields to all list commands. Here you specify the fields that you want to display in your output.
-  Default outputs will be shown if no fields are defined. Example: --fields "name, instancename, domain"
-* Added option: --noheader to all list commands. 
+* Added option: <tt>--fields</tt> to all list commands. Here you specify the fields that you want to display in your output.
+  Default outputs will be shown if no fields are defined. Example: <tt>--fields "name, instancename, domain"</tt>
+* Added option: <tt>--noheader</tt> to all list commands. 
   This will remove the column header from the output.
-* Added option: --fieldlist to all list commands. This will display the fields that you can use to filter or 
+* Added option: <tt>--fieldlist</tt> to all list commands. This will display the fields that you can use to filter or 
   use in your output. Example will be given with the first result that you specify in your filter.
-* Added option: --listall to: account, domain, firewallrule, hosts, iso, network, project, router, server, template,
-  user, volume.
-* Added option: --keyword to: account, cluster, config, disk, firewallrule, hosts, iso, network, ostype, oscategory,
-  pod, project, router, server, service, user, volume, zone.
-* Added option: --name to: account, cluster, config, disk, host, hosts, iso, pod, project, router, server, service, volume
-* Added option: --action to <tt>server list</tt> to start or stop the machines.
+* Added option: <tt>--listall</tt> to: <tt>account list</tt>, <tt>domain list</tt>, <tt>firewallrule list</tt>, <tt>hosts</tt>, <tt>iso list</tt>, 
+  <tt>network list</tt>, <tt>project list</tt>, <tt>router list</tt>, <tt>server list</tt>, <tt>template list</tt>, <tt>user list</tt>, <tt>volume list</tt>.
+* Added option: <tt>--keyword</tt> to: <tt>account list</tt>, <tt>cluster list</tt>, <tt>config list</tt>, <tt>disk list</tt>, <tt>firewallrule list</tt>, 
+  <tt>hosts</tt>, <tt>iso list</tt>, <tt>network list</tt>, <tt>ostype list</tt>, <tt>oscategory list</tt>, <tt>pod list</tt>, <tt>project list</tt>, <tt>router list</tt>, 
+  <tt>server list</tt>, <tt>service list</tt>, <tt>user list</tt>, <tt>volume list</tt>, <tt>zone list</tt>.
+* Added option: <tt>--name</tt> to: <tt>account list</tt>, <tt>cluster list</tt>, <tt>config list</tt>, <tt>disk list</tt>, <tt>host list<tt>, <tt>hosts</tt>, <tt>iso list</tt>, 
+  <tt>pod list</tt>, <tt>project list</tt>, <tt>router list</tt>, <tt>server list</tt>, <tt>service list</tt>, <tt>volume list</tt>
+* Added option: <tt>--action</tt> to <tt>server list</tt> to <tt>start</tt> or <tt>stop</tt> the machines.
 
 == 2012-11-29 (0.0.13)
 * Windows support
