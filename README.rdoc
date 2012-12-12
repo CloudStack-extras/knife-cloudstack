@@ -93,7 +93,7 @@ the associated node and client objects from the Chef server.
 Displays a list of all servers in the currently configured CloudStack account.  <b>PLEASE NOTE</b> - this shows all
 servers associated with the cloudstack account including servers that are not registered with a Chef server.
 
-<tt>--listall</tt>		This will list all the servers, depending on the accout that you are using.
+<tt>--listall</tt>		This will list all the servers, depending on the account that you are using.
 
 <tt>--keyword</tt>		Filters your output on the instance name that you specify: Example: <tt>--keyword "i-324"</tt>
 			This will display all servers with <tt>'i-324'</tt> inside the instancename.
@@ -109,7 +109,7 @@ Displays a list of all networks available in the currently configured CloudStack
 when creating a new server by passing the network name as an argument to the <tt>-W</tt> (or <tt>--network</tt>) option of the
 <tt>knife cs server create</tt> command.
 
-<tt>--listall</tt>		This will list all the networks, depending on the accout that you are using.
+<tt>--listall</tt>		This will list all the networks, depending on the account that you are using.
 
 <tt>--keyword</tt>		Filters your output on the keyword that you specify. Example: <tt>--keyword "network1"</tt> 
 			This will display all networks with <tt>'network1'</tt> inside the name.
@@ -137,7 +137,7 @@ Use the <tt>-F</tt> (or <tt>--templatefilter</tt>) option to use a different fil
 A template can be specified when creating a new server by passing the template name as an argument to the <tt>-T</tt>
 (or <tt>template</tt>) option of the <tt>knife cs server create</tt> command.
 
-<tt>--listall</tt>		This will list all the templates, depending on the accout that you are using.
+<tt>--listall</tt>		This will list all the templates, depending on the account that you are using.
 
 === knife cs zone list
 Displays a list of all zones available in the currently configured CloudStack account. A zone can be specified
@@ -150,7 +150,7 @@ when creating a new server by passing the zone name as an argument to the <tt>-Z
 === knife cs hosts
 Convenience command that displays the public ip address and fqdn for all servers. Matches /etc/hosts file format.
 
-<tt>--listall</tt>		This will list all the servers, depending on the accout that you are using.
+<tt>--listall</tt>		This will list all the servers, depending on the account that you are using.
 
 <tt>--keyword</tt>		Filters your result based on a keyword.
 
@@ -158,7 +158,7 @@ Convenience command that displays the public ip address and fqdn for all servers
 
 ==== knife cs account list
 
-<tt>--listall</tt>		This will list all the possible results, depending on the accout that you are using.
+<tt>--listall</tt>		This will list all the possible results, depending on the account that you are using.
 
 <tt>--keyword</tt>               Filters your result based on a keyword.
 
@@ -184,11 +184,11 @@ Convenience command that displays the public ip address and fqdn for all servers
 
 ==== knife cs domain list
 
-<tt>--listall</tt>		This will list all the domains, depending on the accout that you are using.
+<tt>--listall</tt>		This will list all the domains, depending on the account that you are using.
 
 ==== knife cs firewallrule list
 
-<tt>--listall</tt>		This will list all the firewallrules, depending on the accout that you are using.
+<tt>--listall</tt>		This will list all the firewallrules, depending on the account that you are using.
 
 <tt>--keyword</tt>		Filters your result based on a keyword.
 
@@ -198,7 +198,7 @@ Convenience command that displays the public ip address and fqdn for all servers
 
 ==== knife cs iso list
 
-<tt>--listall</tt>		This will list all the iso's, depending on the accout that you are using.
+<tt>--listall</tt>		This will list all the iso's, depending on the account that you are using.
 
 <tt>--keyword</tt>		Filters your result based on a keyword. 
 
@@ -220,7 +220,7 @@ Convenience command that displays the public ip address and fqdn for all servers
 
 ==== knife project iso list
 
-<tt>--listall</tt>		This will list all the projects, depending on the accout that you are using.
+<tt>--listall</tt>		This will list all the projects, depending on the account that you are using.
 
 <tt>--keyword</tt>		Filters your result based on a keyword. 
 
@@ -228,7 +228,7 @@ Convenience command that displays the public ip address and fqdn for all servers
 
 ==== knife cs router list
 
-<tt>--listall</tt>		This will list all the routers, depending on the accout that you are using.
+<tt>--listall</tt>		This will list all the routers, depending on the account that you are using.
 
 <tt>--keyword</tt>		Filters your result based on a keyword. 
 
@@ -236,13 +236,13 @@ Convenience command that displays the public ip address and fqdn for all servers
 			
 ==== knife cs user list
 
-<tt>--listall</tt>		This will list all the users, depending on the accout that you are using.
+<tt>--listall</tt>		This will list all the users, depending on the account that you are using.
 
 <tt>--keyword</tt>		Filters your output on the keyword that you specify.
 
 ==== knife cs volume list:	
 
-<tt>--listall</tt>		This will list all the volumes, depending on the accout that you are using.
+<tt>--listall</tt>		This will list all the volumes, depending on the account that you are using.
 
 <tt>--keyword</tt>		Filters your output on the keyword that you specify.
 
