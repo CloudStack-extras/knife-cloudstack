@@ -194,7 +194,7 @@ module KnifeCloudstack
             :description => 'Support HTTPS',
             :boolean => true,
             :default => true
-            
+
     option :bootstrap_protocol,
       :long => "--bootstrap-protocol protocol",
       :description => "Protocol to bootstrap windows servers. options: winrm/ssh",
@@ -208,7 +208,6 @@ module KnifeCloudstack
     option :fqdn,
       :long => '--fqdn',
       :description => "FQDN which Kerberos Understands (only for Windows Servers)"
-
 
     def connection
       @connection ||= CloudstackClient::Connection.new(
@@ -256,14 +255,13 @@ module KnifeCloudstack
           locate_config_value(:cloudstack_zone),
           locate_config_value(:cloudstack_networks)
       )
-
       public_ip = find_or_create_public_ip(server, connection)
 
       puts "\n\n"
       puts "#{ui.color('Name', :cyan)}: #{server['name']}"
       puts "#{ui.color('Public IP', :cyan)}: #{public_ip}"
 
-      return if config[:no_bootstrap]
+      return if locate_config_value :no_bootstrap
 
       if @bootstrap_protocol == 'ssh'
         print "\n#{ui.color("Waiting for sshd", :magenta)}"
@@ -272,7 +270,7 @@ module KnifeCloudstack
           sleep BOOTSTRAP_DELAY
           puts "\n"
         }
-      else
+      elsif @bootstrap_protocol == 'winrm'
         print "\n#{ui.color("Waiting for winrm to be active", :magenta)}"
         print(".") until tcp_test_winrm(public_ip,locate_config_value(:winrm_port)) {
           sleep WINRM_BOOTSTRAP_DELAY
@@ -314,6 +312,12 @@ module KnifeCloudstack
         ui.error "Cloudstack service offering not specified"
         exit 1
       end
+
+      if locate_config_value :no_bootstrap
+        @bootstrap_protocol = nil
+        return
+      end
+
       if locate_config_value(:bootstrap_protocol) == 'ssh'
         identity_file = locate_config_value :identity_file
         ssh_user = locate_config_value :ssh_user
@@ -341,9 +345,8 @@ module KnifeCloudstack
     end
 
     def find_or_create_public_ip(server, connection)
-      nic = connection.get_server_default_nic(server) || {}
-      #puts "#{ui.color("Not allocating public IP for server", :red)}" unless config[:public_ip]
-      if (config[:public_ip] == false)
+      if ((config[:public_ip] == false) or (locate_config_value :no_bootstrap and locate_config_value(:port_rules).size.zero?))
+        nic = connection.get_server_default_nic(server)
         nic['ipaddress']
       else
         puts("\nAllocate ip address, create forwarding rules")
@@ -367,6 +370,8 @@ module KnifeCloudstack
         rules += ["#{locate_config_value(:ssh_port)}"] #SSH Port
       elsif @bootstrap_protocol == 'winrm'
         rules +=[locate_config_value(:winrm_port)]
+      elsif (@bootstrap_protocol == nil and locate_config_value :no_bootstrap)
+        puts("No Bootstrapping selected")
       else
         puts("\nUnsupported bootstrap protocol : #{@bootstrap_protocol}")
         exit 1
@@ -493,21 +498,15 @@ module KnifeCloudstack
       bootstrap
     end
 
-
     def bootstrap_for_node(server,fqdn)
       bootstrap = Chef::Knife::Bootstrap.new
       bootstrap.name_args = [fqdn]
-      # bootstrap.config[:run_list] = config[:run_list]
       bootstrap.config[:ssh_user] = locate_config_value(:ssh_user)
       bootstrap.config[:ssh_password] = locate_config_value(:ssh_password)
       bootstrap.config[:ssh_port] = locate_config_value(:ssh_port) || 22
       bootstrap.config[:identity_file] = locate_config_value(:identity_file)
-      bootstrap.config[:chef_node_name] = locate_config_value(:chef_node_name) || server.name
-      # bootstrap.config[:prerelease] = locate_config_value(:prerelease)
-      # bootstrap.config[:bootstrap_version] = locate_config_value(:bootstrap_version)
-      # bootstrap.config[:distro] = locate_config_value(:distro)
+      bootstrap.config[:chef_node_name] = locate_config_value(:chef_node_name) || server['name']
       bootstrap.config[:use_sudo] = true unless locate_config_value(:ssh_user) == 'root'
-      # bootstrap.config[:template_file] = config[:template_file]
       bootstrap.config[:environment] = locate_config_value(:environment)
       # may be needed for vpc_mode
       bootstrap.config[:host_key_verify] = config[:host_key_verify]
