@@ -495,7 +495,7 @@ module KnifeCloudstack
       bootstrap.config[:ssh_password] = locate_config_value(:ssh_password)
       bootstrap.config[:ssh_port] = locate_config_value(:ssh_port) || 22
       bootstrap.config[:identity_file] = locate_config_value(:identity_file)
-      bootstrap.config[:chef_node_name] = locate_config_value(:chef_node_name) || server.name
+      bootstrap.config[:chef_node_name] = locate_config_value(:chef_node_name) || server["name"]
       # bootstrap.config[:prerelease] = locate_config_value(:prerelease)
       # bootstrap.config[:bootstrap_version] = locate_config_value(:bootstrap_version)
       # bootstrap.config[:distro] = locate_config_value(:distro)
