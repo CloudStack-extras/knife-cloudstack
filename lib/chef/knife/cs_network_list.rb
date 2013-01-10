@@ -46,6 +46,13 @@ module KnifeCloudstack
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
+    option :cloudstack_project,
+           :short => "-P PROJECT_NAME",
+           :long => '--cloudstack-project PROJECT_NAME',
+           :description => "Cloudstack Project in which to create server",
+           :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
+           :default => nil
+
     option :use_http_ssl,
            :long => '--[no-]use-http-ssl',
            :description => 'Support HTTPS',
@@ -89,20 +96,18 @@ module KnifeCloudstack
           locate_config_value(:use_http_ssl)
       )
 
+      object_list = []
       if locate_config_value(:fields)
-        object_list = []
         locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
       else
-        object_list = [
-          ui.color('Name', :bold),
-          ui.color('Type', :bold),
-          ui.color('Default', :bold),
-          ui.color('Shared', :bold),
-          ui.color('Gateway', :bold),
-          ui.color('Netmask', :bold),
-          ui.color('Account', :bold),
-          ui.color('Domain', :bold)
-        ]
+        object_list << ui.color('Name', :bold)
+        object_list << ui.color('Type', :bold)
+        object_list << ui.color('Default', :bold)
+        object_list << ui.color('Shared', :bold)
+        object_list << ui.color('Gateway', :bold)
+        object_list << ui.color('Netmask', :bold)
+        object_list << ui.color('Account', :bold) unless locate_config_value(:cloudstack_project)
+        object_list << ui.color('Domain', :bold)
       end
 
       columns = object_list.count
@@ -119,11 +124,11 @@ module KnifeCloudstack
       connection_result.each do |r|
         object_list << r['name'].to_s
         object_list << r['type'].to_s
-        object_list << r['isdefault'].to_s
-        object_list << r['isshared'].to_s
+        object_list << (r['isdefault'] ? r['isdefault'].to_s : 'false')
+        object_list << (r['isshared'] ? r['isshared'].to_s : 'false')
         object_list << (r['gateway'] || '')
         object_list << (r['netmask'] || '')
-        object_list << (r['account'] || '')
+        object_list << (r['account'] || '') unless locate_config_value(:cloudstack_project)
         object_list << (r['domain'] || '')
       end
       puts ui.list(object_list, :uneven_columns_across, columns)

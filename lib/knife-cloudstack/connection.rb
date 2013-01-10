@@ -76,9 +76,6 @@ module CloudstackClient
           'command' => 'listVirtualMachines',
           'name' => name
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
       json = send_request(params)
       machines = json['virtualmachine']
 
@@ -150,7 +147,7 @@ module CloudstackClient
       end
 
       json = send_request(params)
-      Chef::Log.debug("JSON Result: #{json}")
+      Chef::Log.debug("JSON (list_object) result: #{json}")
 
       result = json["#{json_result}"] || []
       result = data_filter(result, filter) if filter
@@ -384,9 +381,6 @@ module CloudstackClient
           'zoneId' => zone['id'],
           'networkids' => network_ids.join(',')
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
 
       params['name'] = host_name if host_name
 
@@ -625,7 +619,8 @@ module CloudstackClient
     #Fetch project with the specified name
     def get_project(name)
       params = {
-        'command' => 'listProjects'
+        'command' => 'listProjects',
+        'listall' => 'true'
       }
 
       json = send_request(params)
@@ -662,9 +657,6 @@ module CloudstackClient
       params = {
           'command' => 'listNetworks'
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
       json = send_request(params)
 
       networks = json['network']
@@ -688,9 +680,6 @@ module CloudstackClient
           'isDefault' => true,
           'zoneid' => zone
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
       json = send_request(params)
 
       networks = json['network']
@@ -877,9 +866,7 @@ module CloudstackClient
     # contents of that element are returned.
 
     def send_request(params)
-      if @project_id
-        params['projectId'] = @project_id
-      end
+      params['projectId'] = @project_id if @project_id
       params['response'] = 'json'
       params['apiKey'] = @api_key
 

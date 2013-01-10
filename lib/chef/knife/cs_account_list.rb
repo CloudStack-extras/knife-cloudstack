@@ -45,6 +45,13 @@ module KnifeCloudstack
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
+   option  :cloudstack_project,
+           :short => "-P PROJECT_NAME",
+           :long => '--cloudstack-project PROJECT_NAME',
+           :description => "Cloudstack Project in which to create server",
+           :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
+           :default => nil
+
     option :use_http_ssl,
            :long => '--[no-]use-http-ssl',
            :description => 'Support HTTPS',
@@ -96,21 +103,39 @@ module KnifeCloudstack
         object_list = []
         locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
       else
-        object_list = [
-          ui.color('Name', :bold),
-          ui.color('Domain', :bold),
-          ui.color('State', :bold),
-          ui.color('Type', :bold),
-          ui.color('Users', :bold)
-        ]
+        if locate_config_value(:cloudstack_project) 
+          object_list = [
+            ui.color('Account', :bold),
+            ui.color('Domain', :bold),
+            ui.color('Type', :bold),
+            ui.color('Role', :bold),
+            ui.color('Users', :bold)
+          ]
+        else
+          object_list = [
+            ui.color('Name', :bold),
+            ui.color('Domain', :bold),
+            ui.color('State', :bold),
+            ui.color('Type', :bold),
+            ui.color('Users', :bold)
+          ]
+        end
       end
 
       columns = object_list.count
       object_list = [] if locate_config_value(:noheader)
 
+      if locate_config_value(:cloudstack_project)
+        api_command = "listProjectAccounts"
+        api_result = "projectaccount"
+      else
+        api_command = "listAccounts"
+        api_result = "account"
+      end
+
       connection_result = connection.list_object(
-        "listAccounts",
-        "account",
+        api_command,
+        api_result,
         locate_config_value(:filter),
         locate_config_value(:listall),
         locate_config_value(:keyword),
@@ -121,16 +146,29 @@ module KnifeCloudstack
        if locate_config_value(:fields)
           locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
         else
-          object_list << r['name'].to_s
-          object_list << r['domain'].to_s
-          object_list << r['state'].to_s
-          case r['accounttype']
-            when 0 then object_list << "user"
-            when 1 then object_list << "admin"
-            when 2 then object_list << "domain admin"
-            else object_list << "unknown"
+          if locate_config_value(:cloudstack_project)
+            object_list << r['account'].to_s
+            object_list << r['domain'].to_s
+            case r['accounttype']
+              when 0 then object_list << "User"
+              when 1 then object_list << "Admin"
+              when 2 then object_list << "Domain Admin"
+              else object_list << "unknown"
+            end
+            object_list << r['role'].to_s
+            object_list << r['user'].count.to_s
+          else
+            object_list << r['name'].to_s
+            object_list << r['domain'].to_s
+            object_list << r['state'].to_s
+            case r['accounttype']
+              when 0 then object_list << "User"
+              when 1 then object_list << "Admin"
+              when 2 then object_list << "Domain Admin"
+              else object_list << "unknown"
+            end
+            object_list << r['user'].count.to_s
           end
-          object_list << r['user'].count.to_s
         end
       end
       puts ui.list(object_list, :uneven_columns_across, columns)

@@ -45,6 +45,13 @@ module KnifeCloudstack
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
+    option :cloudstack_project,
+           :short => "-P PROJECT_NAME",
+           :long => '--cloudstack-project PROJECT_NAME',
+           :description => "Cloudstack Project in which to create server",
+           :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
+           :default => nil
+
     option :use_http_ssl,
            :long => '--[no-]use-http-ssl',
            :description => 'Support HTTPS',
@@ -92,18 +99,16 @@ module KnifeCloudstack
           locate_config_value(:use_http_ssl)
       )
 
+      object_list = []
       if locate_config_value(:fields)
-        object_list = []
         locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
       else
-        object_list = [
-          ui.color('Name', :bold),
-          ui.color('Account', :bold),
-          ui.color('Domain', :bold),
-          ui.color('Public', :bold),
-          ui.color('Size', :bold),
-          ui.color('OS', :bold)
-        ]
+        object_list << ui.color('Name', :bold)
+        object_list << ui.color('Account', :bold) unless locate_config_value(:cloudstack_project)
+        object_list << ui.color('Domain', :bold)
+        object_list << ui.color('Public', :bold)
+        object_list << ui.color('Size', :bold)
+        object_list << ui.color('OS', :bold)
       end
 
       columns = object_list.count
@@ -123,11 +128,11 @@ module KnifeCloudstack
           locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
         else
           object_list << r['name'].to_s
-          object_list << r['account'].to_s
+          object_list << (r['account'] ? r['account'].to_s : 'N/A') unless locate_config_value(:cloudstack_project)
           object_list << r['domain'].to_s
           object_list << r['ispublic'].to_s
           object_list << (r['size'] ? human_file_size(r['size']) : 'Unknown')
-          object_list << r['ostypename'].to_s
+          object_list << (r['ostypename'] ? r['ostypename'].to_s : 'N/A')
         end
       end
       puts ui.list(object_list, :uneven_columns_across, columns)
