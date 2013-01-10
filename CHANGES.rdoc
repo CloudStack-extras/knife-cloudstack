@@ -1,5 +1,8 @@
+== 2013-01-12 (0.0.14.1)
+* Added the option: <tt>-P</tt> / <tt>--cloudstack-project</tt> to the following oommands: <tt>account list</tt>, <tt>firewallrule list</tt>, <tt>hosts</tt>,
+  <tt>iso list</tt>, <tt>network list</tt>, <tt>router list</tt>, <tt>server list</tt>, <tt>template list</tt>, <tt>volume list</tt>
+
 == 2012-10-12 (0.0.14)
-= Changes.
 * Added subcommands: <tt>account list</tt>, <tt>cluster list</tt>, <tt>config list</tt>, <tt>disk create</tt>, 
   <tt>disk list</tt>, <tt>domain create</tt>, <tt>domain list</tt>,<tt>firewallrule list</tt>, <tt>host list</tt>, 
   <tt>iso list</tt>, <tt>ostype list</tt>, <tt>oscategory list</tt>, <tt>pod list</tt>, <tt>project list</tt>, 

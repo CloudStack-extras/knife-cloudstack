@@ -103,6 +103,7 @@ servers associated with the cloudstack account including servers that are not re
 
 <tt>--action</tt>		This action will be executed on the output of the list command. Actions can be start or stop.
 
+<tt>-P</tt> / <tt>--cloudstack-project</tt>     Executes command within the project name that you specify.
 
 === knife cs network list
 Displays a list of all networks available in the currently configured CloudStack account. A network can be specified
@@ -113,6 +114,8 @@ when creating a new server by passing the network name as an argument to the <tt
 
 <tt>--keyword</tt>		Filters your output on the keyword that you specify. Example: <tt>--keyword "network1"</tt> 
 			This will display all networks with <tt>'network1'</tt> inside the name.
+
+<tt>-P</tt> / <tt>--cloudstack-project</tt>     Executes command within the project name that you specify.
 
 === knife cs service list
 Displays a list of all service offerings available in the currently configured CloudStack account. A service offering
@@ -139,6 +142,8 @@ A template can be specified when creating a new server by passing the template n
 
 <tt>--listall</tt>		This will list all the templates, depending on the account that you are using.
 
+<tt>-P</tt> / <tt>--cloudstack-project</tt>     Executes command within the project name that you specify.
+
 === knife cs zone list
 Displays a list of all zones available in the currently configured CloudStack account. A zone can be specified
 when creating a new server by passing the zone name as an argument to the <tt>-Z</tt> (or <tt>--zone</tt>) option of the
@@ -156,6 +161,8 @@ Convenience command that displays the public ip address and fqdn for all servers
 
 <tt>--name</tt>	 		Filters your output on the name that you specify.  
 
+<tt>-P</tt> / <tt>--cloudstack-project</tt>     Executes command within the project name that you specify.
+
 ==== knife cs account list
 
 <tt>--listall</tt>		This will list all the possible results, depending on the account that you are using.
@@ -163,6 +170,8 @@ Convenience command that displays the public ip address and fqdn for all servers
 <tt>--keyword</tt>               Filters your result based on a keyword.
 
 <tt>--name</tt>                  Filters your output on the name that you specify.
+
+<tt>-P</tt> / <tt>--cloudstack-project</tt>	Executes command within the project name that you specify.
 
 ==== knife cs cluster list
 
@@ -192,6 +201,8 @@ Convenience command that displays the public ip address and fqdn for all servers
 
 <tt>--keyword</tt>		Filters your result based on a keyword.
 
+<tt>-P</tt> / <tt>--cloudstack-project</tt>     Executes command within the project name that you specify.
+
 ==== knife cs host list
 
 <tt>--name</tt>	 		Filters your output on the name that you specify.
@@ -203,6 +214,8 @@ Convenience command that displays the public ip address and fqdn for all servers
 <tt>--keyword</tt>		Filters your result based on a keyword. 
 
 <tt>--name</tt>	 		Filters your output on the name that you specify.
+
+<tt>-P</tt> / <tt>--cloudstack-project</tt>     Executes command within the project name that you specify.
 
 ==== knife cs ostype list
 
@@ -218,7 +231,7 @@ Convenience command that displays the public ip address and fqdn for all servers
 
 <tt>--name</tt>	 		Filters your output on the name that you specify.
 
-==== knife project iso list
+==== knife project list
 
 <tt>--listall</tt>		This will list all the projects, depending on the account that you are using.
 
@@ -233,6 +246,8 @@ Convenience command that displays the public ip address and fqdn for all servers
 <tt>--keyword</tt>		Filters your result based on a keyword. 
 
 <tt>--name</tt>	 		Filters your output on the name that you specify.
+
+<tt>-P</tt> / <tt>--cloudstack-project</tt>     Executes command within the project name that you specify.
 			
 ==== knife cs user list
 
@@ -247,6 +262,8 @@ Convenience command that displays the public ip address and fqdn for all servers
 <tt>--keyword</tt>		Filters your output on the keyword that you specify.
 
 <tt>--name</tt>			Filters your output on the name that you specify.
+
+<tt>-P</tt> / <tt>--cloudstack-project</tt>     Executes command within the project name that you specify.
 
 === knife cs stack create
 Creates a "stack" of servers based on a JSON definition file. Simple orchestration can be performed by
