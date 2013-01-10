@@ -1,5 +1,5 @@
 == 2013-01-12 (0.0.14.1)
-* Added the option: <tt>-P</tt> / <tt>--cloudstack-project</tt> to the following oommands: <tt>account list</tt>, <tt>firewallrule list</tt>, <tt>hosts</tt>,
+* Added the option: <tt>-P</tt> / <tt>--cloudstack-project</tt> to the following commands: <tt>account list</tt>, <tt>firewallrule list</tt>, <tt>hosts</tt>,
   <tt>iso list</tt>, <tt>network list</tt>, <tt>router list</tt>, <tt>server list</tt>, <tt>template list</tt>, <tt>volume list</tt>
 
 == 2012-10-12 (0.0.14)

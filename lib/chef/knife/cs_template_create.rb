@@ -54,10 +54,6 @@ module KnifeCloudstack
            :long => "--displaytext 'DISPLAY TEXT'",
            :description => "The display text of the template"
 
-    option :name,
-           :long => "--name NAME",
-           :description => "Specify template name"
-
     option :ostypeid,
            :long => "--ostypeid ID",
            :description => "Specify OS type ID"
@@ -69,7 +65,13 @@ module KnifeCloudstack
     def run
 
       $stdout.sync = true
-      templatename = locate_config_value(:name)
+
+      Chef::Log.debug("Validate hostname and options")
+      templatename = @name_args.first
+      unless /^[a-zA-Z0-9][a-zA-Z0-9_\-#]*$/.match templatename then
+        ui.error "Invalid templatename. Please specify a simple without spaces"
+        exit 1
+      end
 
       connection = CloudstackClient::Connection.new(
         locate_config_value(:cloudstack_url),
@@ -80,7 +82,7 @@ module KnifeCloudstack
       print "#{ui.color("Creating template: #{templatename}", :magenta)}\n"
 
       template = connection.create_template(
-        locate_config_value(:name),
+        templatename,
         locate_config_value(:displaytext),
         locate_config_value(:ostypeid),
         locate_config_value(:volumeid)
