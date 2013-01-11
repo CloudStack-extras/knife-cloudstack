@@ -54,7 +54,9 @@ module KnifeCloudstack
     option :displaytext,
            :short => "-T 'DISPLAY TEXT' ",
            :long => "--displaytext 'DISPLAY TEXT'",
-           :description => "The display text of the disk offering"
+           :description => "The display text of the disk offering",
+           :required => true,
+           :on => :head
 
     option :disksize,
            :short => "-S SIZE",
@@ -67,8 +69,7 @@ module KnifeCloudstack
 
     option :tags,
            :long => "--tags TAGS",
-           :description => "The tags for this disk offering",
-           :mandatory => true
+           :description => "The tags for this disk offering"
  
     option :iscustom,
            :long => "--iscustom",
@@ -82,7 +83,7 @@ module KnifeCloudstack
         ui.error "Invalid diskname, please specify a short diskname.\n"
         exit 1
       end
-#      validate_options
+      validate_options
 
       $stdout.sync = true
 
@@ -105,11 +106,6 @@ module KnifeCloudstack
     end
 
     def validate_options
-      unless locate_config_value :displaytext
-        ui.error "The displaytext parameter '-T \"TEXT\"' is missing."
-        exit 1
-      end
-
       unless locate_config_value :iscustom
         unless locate_config_value :disksize
           ui.error "The disksize parameter '-S <N>' is missing."
