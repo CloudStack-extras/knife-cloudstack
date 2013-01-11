@@ -84,7 +84,7 @@ module KnifeCloudstack
 
     option :templatefilter,
            :long => "--templatefilter FILTER",
-           :description => "The template search filter. Default is 'featured'",
+           :description => "Default: 'featured'. Options: 'self','self-executable','executable','community'",
            :default => "featured"
 
     def run

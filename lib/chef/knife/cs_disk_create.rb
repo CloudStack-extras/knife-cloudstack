@@ -67,8 +67,9 @@ module KnifeCloudstack
 
     option :tags,
            :long => "--tags TAGS",
-           :description => "The tags for this disk offering"
-
+           :description => "The tags for this disk offering",
+           :mandatory => true
+ 
     option :iscustom,
            :long => "--iscustom",
            :description => "Whether disk offering is custom or not",
@@ -81,7 +82,7 @@ module KnifeCloudstack
         ui.error "Invalid diskname, please specify a short diskname.\n"
         exit 1
       end
-      validate_options
+#      validate_options
 
       $stdout.sync = true
 

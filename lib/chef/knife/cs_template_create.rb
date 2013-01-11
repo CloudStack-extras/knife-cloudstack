@@ -52,7 +52,9 @@ module KnifeCloudstack
     option :displaytext,
            :short => "-T 'DISPLAY TEXT' ",
            :long => "--displaytext 'DISPLAY TEXT'",
-           :description => "The display text of the template"
+           :description => "The display text of the template",
+           :required => true,
+           :on => :head
 
     option :name,
            :long => "--name NAME",
@@ -60,11 +62,15 @@ module KnifeCloudstack
 
     option :ostypeid,
            :long => "--ostypeid ID",
-           :description => "Specify OS type ID"
+           :description => "Specify OS type ID",
+           :required => true,
+           :on => :head
 
     option :volumeid,
-           :long => "--volumeid ID",
-           :description => "Specify volume ID"
+           :long => "--volumeid=ID",
+           :description => "Specify volume ID",
+           :required => true,
+           :on => :head
 
     def run
 
