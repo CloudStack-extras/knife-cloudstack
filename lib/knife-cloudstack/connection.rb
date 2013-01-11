@@ -322,6 +322,22 @@ module CloudstackClient
 
     end
 
+    ##
+    # Creates a new template using the specified parameters.
+
+    def create_template(name, displaytext, ostypeid, volumeid)
+      params = {
+        'command' => 'createTemplate',
+        'name' => name,
+        'displaytext' => displaytext,
+        'ostypeid' => ostypeid,
+        'volumeid' => volumeid
+      }
+
+      json = send_request(params)
+      json['template']
+      puts json
+    end
 
     ##
     # Deploys a new server using the specified parameters.
