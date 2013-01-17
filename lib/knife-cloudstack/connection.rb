@@ -513,7 +513,7 @@ module CloudstackClient
       params = { 'command' => 'listPublicIpAddresses'}
 
       json = send_request(params)
-      return json['publicipaddress']
+      return json['publicipaddress'] || []
     end
     ##
     # Acquires and associates a public IP to an account.
