@@ -48,6 +48,12 @@ module KnifeCloudstack
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
+    option :use_http_ssl,
+           :long => '--[no-]use-http-ssl',
+           :description => 'Support HTTPS',
+           :boolean => true,
+           :default => true     
+
     def run
       file_path = File.expand_path(@name_args.first)
       unless File.exist?(file_path) then

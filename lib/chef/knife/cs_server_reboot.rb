@@ -50,6 +50,12 @@ module KnifeCloudstack
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
+    option :use_http_ssl,
+           :long => '--[no-]use-http-ssl',
+           :description => 'Support HTTPS',
+           :boolean => true,
+           :default => true     
+
     def run
 
       @name_args.each do |hostname|
@@ -78,17 +84,6 @@ module KnifeCloudstack
         ui.msg("Rebooted server #{hostname}")
       end
 
-    end
-
-    def connection
-      unless @connection
-        @connection = CloudstackClient::Connection.new(
-            locate_config_value(:cloudstack_url),
-            locate_config_value(:cloudstack_api_key),
-            locate_config_value(:cloudstack_secret_key)
-        )
-      end
-      @connection
     end
 
     def msg(label, value)

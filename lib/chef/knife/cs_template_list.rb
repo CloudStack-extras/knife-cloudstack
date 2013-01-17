@@ -64,20 +64,12 @@ module KnifeCloudstack
            :default => nil
 
     option :use_http_ssl,
-          :long => '--[no-]use-http-ssl',
-          :description => 'Support HTTPS',
-          :boolean => true,
-          :default => true       
+           :long => '--[no-]use-http-ssl',
+           :description => 'Support HTTPS',
+           :boolean => true,
+           :default => true       
 
     def run
-
-      connection = CloudstackClient::Connection.new(
-          locate_config_value(:cloudstack_url),
-          locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key),
-          locate_config_value(:cloudstack_project),
-          locate_config_value(:use_http_ssl)
-      )
 
       template_list = [
           ui.color('Name', :bold),

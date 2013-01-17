@@ -57,10 +57,10 @@ module KnifeCloudstack
            :default => nil
 
     option :use_http_ssl,
-          :long => '--[no-]use-http-ssl',
-          :description => 'Support HTTPS',
-          :boolean => true,
-          :default => true
+           :long => '--[no-]use-http-ssl',
+           :description => 'Support HTTPS',
+           :boolean => true,
+           :default => true
 
     def run
 

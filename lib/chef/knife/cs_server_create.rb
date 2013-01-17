@@ -206,16 +206,12 @@ module KnifeCloudstack
       :long => '--fqdn',
       :description => "FQDN which Kerberos Understands (only for Windows Servers)"
 
+    option :use_http_ssl,
+           :long => '--[no-]use-http-ssl',
+           :description => 'Support HTTPS',
+           :boolean => true,
+           :default => true     
 
-    def connection
-      @connection ||= CloudstackClient::Connection.new(
-          locate_config_value(:cloudstack_url),
-          locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key),
-          locate_config_value(:cloudstack_project),
-          locate_config_value(:use_http_ssl)
-      )
-    end
 
     def run
       Chef::Log.debug("Validate hostname and options")

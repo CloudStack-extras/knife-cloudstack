@@ -74,6 +74,12 @@ module KnifeCloudstack
            :long => "--identity-file IDENTITY_FILE",
            :description => "The SSH identity file used for authentication"
 
+    option :use_http_ssl,
+           :long => '--[no-]use-http-ssl',
+           :description => 'Support HTTPS',
+           :boolean => true,
+           :default => true     
+
     def run
       file_path = File.expand_path(@name_args.first)
       unless File.exist?(file_path) then
@@ -86,16 +92,6 @@ module KnifeCloudstack
       create_stack stack
 
       #puts "Stack: #{stack.inspect}"
-    end
-
-    def connection
-      if (!@connection) then
-        url = locate_config_value(:cloudstack_url)
-        api_key = locate_config_value(:cloudstack_api_key)
-        secret_key = locate_config_value(:cloudstack_secret_key)
-        @connection = CloudstackClient::Connection.new(url, api_key, secret_key)
-      end
-      @connection
     end
 
     def create_stack(stack)
