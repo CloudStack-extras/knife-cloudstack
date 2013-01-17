@@ -17,9 +17,12 @@
 #
 
 require 'chef/knife'
+require 'knife-cloudstack/helpers'
 
 module KnifeCloudstack
   class CsServerList < Chef::Knife
+
+    include Helpers
 
     deps do
       require 'knife-cloudstack/connection'
@@ -97,11 +100,6 @@ module KnifeCloudstack
       end
       puts ui.list(server_list, :columns_across, 6)
 
-    end
-
-    def locate_config_value(key)
-      key = key.to_sym
-      Chef::Config[:knife][key] || config[key]
     end
 
   end

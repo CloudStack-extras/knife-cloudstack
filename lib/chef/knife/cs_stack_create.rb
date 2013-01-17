@@ -17,9 +17,12 @@
 #
 
 require 'chef/knife'
+require 'knife-cloudstack/helpers'
 
 module KnifeCloudstack
   class CsStackCreate < Chef::Knife
+
+    include Helpers
 
     attr_accessor :current_stack
 

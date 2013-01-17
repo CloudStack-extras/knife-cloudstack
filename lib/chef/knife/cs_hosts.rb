@@ -18,9 +18,12 @@
 #
 
 require 'chef/knife'
+require 'knife-cloudstack/helpers'
 
 module KnifeCloudstack
   class CsHosts < Chef::Knife
+
+    include Helpers
 
     MEGABYTES = 1024 * 1024
 
@@ -71,12 +74,6 @@ module KnifeCloudstack
       end
       puts ui.list(host_list, :columns_across, 3)
 
-    end
-
-
-    def locate_config_value(key)
-      key = key.to_sym
-      Chef::Config[:knife][key] || config[key]
     end
 
   end

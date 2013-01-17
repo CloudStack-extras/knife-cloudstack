@@ -22,10 +22,12 @@ require 'chef/knife/winrm_base'
 require 'winrm'
 require 'httpclient'
 require 'em-winrm'
-
+require 'knife-cloudstack/helpers'
 
 module KnifeCloudstack
   class CsServerCreate < Chef::Knife
+
+    include Helpers
 
     include Chef::Knife::WinrmBase
 
@@ -507,9 +509,5 @@ module KnifeCloudstack
       bootstrap_common_params(bootstrap)
     end
 
-    def locate_config_value(key)
-      key = key.to_sym
-      Chef::Config[:knife][key] || config[key]
-    end
   end
 end

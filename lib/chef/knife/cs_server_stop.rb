@@ -18,9 +18,12 @@
 #
 
 require 'chef/knife'
+require 'knife-cloudstack/helpers'
 
 module KnifeCloudstack
   class CsServerStop < Chef::Knife
+
+    include Helpers
 
     deps do
       require 'knife-cloudstack/connection'
@@ -103,11 +106,6 @@ module KnifeCloudstack
       if value && !value.empty?
         puts "#{ui.color(label, :cyan)}: #{value}"
       end
-    end
-
-    def locate_config_value(key)
-      key = key.to_sym
-      Chef::Config[:knife][key] || config[key]
     end
 
   end
