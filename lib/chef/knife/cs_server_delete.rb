@@ -17,9 +17,12 @@
 #
 
 require 'chef/knife'
+require 'knife-cloudstack/helpers'
 
 module KnifeCloudstack
   class CsServerDelete < Chef::Knife
+
+    include Helpers
 
     deps do
       require 'knife-cloudstack/connection'
@@ -54,10 +57,10 @@ module KnifeCloudstack
            :default => nil
 
     option :use_http_ssl,
-          :long => '--[no-]use-http-ssl',
-          :description => 'Support HTTPS',
-          :boolean => true,
-          :default => true
+           :long => '--[no-]use-http-ssl',
+           :description => 'Support HTTPS',
+           :boolean => true,
+           :default => true
 
     def run
 
@@ -152,11 +155,6 @@ module KnifeCloudstack
       if value && !value.empty?
         puts "#{ui.color(label, :cyan)}: #{value}"
       end
-    end
-
-    def locate_config_value(key)
-      key = key.to_sym
-      Chef::Config[:knife][key] || config[key]
     end
 
   end

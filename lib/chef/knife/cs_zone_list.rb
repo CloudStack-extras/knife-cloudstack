@@ -17,9 +17,12 @@
 #
 
 require 'chef/knife'
+require 'knife-cloudstack/helpers'
 
 module KnifeCloudstack
   class CsZoneList < Chef::Knife
+
+    include Helpers
 
     deps do
       require 'knife-cloudstack/connection'
@@ -45,13 +48,13 @@ module KnifeCloudstack
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
-    def run
+    option :use_http_ssl,
+           :long => '--[no-]use-http-ssl',
+           :description => 'Support HTTPS',
+           :boolean => true,
+           :default => true       
 
-      connection = CloudstackClient::Connection.new(
-          locate_config_value(:cloudstack_url),
-          locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key)
-      )
+    def run
 
       zone_list = [
           ui.color('Name', :bold),
@@ -67,11 +70,6 @@ module KnifeCloudstack
       end
       puts ui.list(zone_list, :columns_across, 3)
 
-    end
-
-    def locate_config_value(key)
-      key = key.to_sym
-      Chef::Config[:knife][key] || config[key]
     end
 
   end

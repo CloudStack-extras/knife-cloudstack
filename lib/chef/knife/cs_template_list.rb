@@ -17,9 +17,12 @@
 #
 
 require 'chef/knife'
+require 'knife-cloudstack/helpers'
 
 module KnifeCloudstack
   class CsTemplateList < Chef::Knife
+
+    include Helpers
 
     MEGABYTES = 1024 * 1024
 
@@ -61,20 +64,12 @@ module KnifeCloudstack
            :default => nil
 
     option :use_http_ssl,
-          :long => '--[no-]use-http-ssl',
-          :description => 'Support HTTPS',
-          :boolean => true,
-          :default => true       
+           :long => '--[no-]use-http-ssl',
+           :description => 'Support HTTPS',
+           :boolean => true,
+           :default => true       
 
     def run
-
-      connection = CloudstackClient::Connection.new(
-          locate_config_value(:cloudstack_url),
-          locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key),
-          locate_config_value(:cloudstack_project),
-          locate_config_value(:use_http_ssl)
-      )
 
       template_list = [
           ui.color('Name', :bold),
@@ -104,11 +99,6 @@ module KnifeCloudstack
         count += 1
       end
       format("%.2f", n) + %w(B KB MB GB TB)[count]
-    end
-
-    def locate_config_value(key)
-      key = key.to_sym
-      Chef::Config[:knife][key] || config[key]
     end
 
   end
