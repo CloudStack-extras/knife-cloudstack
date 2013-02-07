@@ -341,26 +341,64 @@ module CloudstackClient
 
     ##
     # Deploys a new server using the specified parameters.
+    # If the template name is not found this routine searches for an ISO with
+    # the given name as well
 
-    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[])
+    def create_server(host_name, service_name, template_name=nil, zone_name=nil, iso_name=nil, disk_name=nil, project_name=nil, network_names=[])
 
+      if project_name then
+        project = get_project(project_name)
+	if !project then
+	  puts "\nError: Project '#{project_name}' doesn't exist";
+	  exit 1
+	end
+      end
+      project = { 'id' => nil } if ! project
+        
       if host_name then
         if get_server(host_name) then
-          puts "Error: Server '#{host_name}' already exists."
+          puts "\nError: Server '#{host_name}' already exists."
           exit 1
         end
       end
 
       service = get_service_offering(service_name)
       if !service then
-        puts "Error: Service offering '#{service_name}' is invalid"
+        puts "\nError: Service offering '#{service_name}' is invalid"
         exit 1
       end
 
-      template = get_template(template_name)
+      if template_name then
+        if iso_name then
+	  puts "\nError: you cannot specify both a template and an iso"
+	  exit 1
+	end
+        template = get_template(template_name)
+        if !template then
+          puts "Error: Template '#{template_name}' is invalid"
+          exit 1
+	end
+      end
+
+      if iso_name then
+      	template = get_iso(iso_name) 
+	if !template then
+          puts "Error: ISO '#{template_name}' is invalid"
+          exit 1
+	end
+      end
+
       if !template then
-        puts "Error: Template '#{template_name}' is invalid"
-        exit 1
+	puts "\nError: You need to specify a template or ISO"
+	exit 1
+      end
+
+      if disk_name then
+        disk = get_disk_offering(disk_name)
+	if !disk then
+	  puts "\nError: Disk '#{disk_name}' is invalid"
+	  exit 1
+	end
       end
 
       zone = zone_name ? get_zone(zone_name) : get_default_zone
@@ -399,6 +437,8 @@ module CloudstackClient
       }
 
       params['name'] = host_name if host_name
+      params['diskofferingid'] = disk['id'] if iso_name 
+      params['hypervisor'] = 'XenServer'
 
       json = send_async_request(params)
       json['virtualmachine']
@@ -626,6 +666,31 @@ module CloudstackClient
       templates.each { |t|
         if t['name'] == name then
           return t
+        end
+      }
+
+      nil
+    end
+
+    # Finds the template with the specified name.
+
+    def get_iso(name)
+
+      # TODO: use name parameter
+      params = {
+          'command' => 'listIsos',
+          'templateFilter' => 'executable'
+      }
+      json = send_request(params)
+
+      isos = json['iso']
+      if !isos then
+        return nil
+      end
+
+      isos.each { |i|
+        if i['name'] == name then
+          return i
         end
       }
 
@@ -885,6 +950,8 @@ module CloudstackClient
       params['projectId'] = @project_id if @project_id
       params['response'] = 'json'
       params['apiKey'] = @api_key
+      puts params
+      #exit 255
 
       params_arr = []
       params.sort.each { |elem|
