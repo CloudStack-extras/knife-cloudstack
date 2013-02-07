@@ -64,6 +64,16 @@ module KnifeCloudstack
            :long => "--template TEMPLATE",
            :description => "The CloudStack template for the server",
            :proc => Proc.new { |t| Chef::Config[:knife][:cloudstack_template] = t }
+    option :cloudstack_iso,
+    	   :long => "--iso ISO",
+	   :description => "The CloudStack iso for the server",
+	   :proc => Proc.new { |i| Chef::Config[:knife][:cloudstack_iso] = i }
+
+    option :cloudstack_disk,
+    	   :long => "--disk OFFERING",
+	   :description => "The CloudStack disk offering for the server (when using ISO)",
+	   :proc => Proc.new { |d| Chef::Config[:knife][:cloudstack_disk] = d },
+	   :default => "M"
 
     option :cloudstack_zone,
            :short => "-Z ZONE",
@@ -166,8 +176,7 @@ module KnifeCloudstack
     option :no_bootstrap,
            :long => "--no-bootstrap",
            :description => "Disable Chef bootstrap",
-           :boolean => true,
-           :default => false
+           :boolean => true
 
     option :port_rules,
            :short => "-p PORT_RULES",
@@ -235,22 +244,47 @@ module KnifeCloudstack
 
       $stdout.sync = true
 
-      Chef::Log.info("Creating instance with
-        service : #{locate_config_value(:cloudstack_service)}
-        template : #{locate_config_value(:cloudstack_template)}
-        zone : #{locate_config_value(:cloudstack_zone)}
-        project: #{locate_config_value(:cloudstack_project)}
-        network: #{locate_config_value(:cloudstack_networks)}")
-
       print "\n#{ui.color("Waiting for Server to be created", :magenta)}"
+      if Chef::Config[:knife][:cloudstack_iso] 
 
-      server = connection.create_server(
-          hostname,
-          locate_config_value(:cloudstack_service),
-          locate_config_value(:cloudstack_template),
-          locate_config_value(:cloudstack_zone),
-          locate_config_value(:cloudstack_networks)
-      )
+        Chef::Log.info("Creating instance with
+          service : #{locate_config_value(:cloudstack_service)}
+          template : nil
+          zone : #{locate_config_value(:cloudstack_zone)}
+	  ISO: #{locate_config_value(:cloudstack_iso)}
+	  Disk: #{locate_config_value(:cloudstack_disk)}
+          network: #{locate_config_value(:cloudstack_networks)}")
+  
+        server = connection.create_server(
+            hostname,
+            locate_config_value(:cloudstack_service),
+            nil,
+            locate_config_value(:cloudstack_zone),
+	    locate_config_value(:cloudstack_iso),
+	    locate_config_value(:cloudstack_disk),
+            locate_config_value(:cloudstack_networks)
+        )
+
+      else
+
+        Chef::Log.info("Creating instance with
+          service : #{locate_config_value(:cloudstack_service)}
+          template : #{locate_config_value(:cloudstack_template)}
+          zone : #{locate_config_value(:cloudstack_zone)}
+	  ISO: nil
+	  Disk: nil
+          network: #{locate_config_value(:cloudstack_networks)}")
+  
+        server = connection.create_server(
+            hostname,
+            locate_config_value(:cloudstack_service),
+            locate_config_value(:cloudstack_template),
+            locate_config_value(:cloudstack_zone),
+	    nil,
+	    nil,
+            locate_config_value(:cloudstack_networks)
+        )
+      end
 
       public_ip = find_or_create_public_ip(server, connection)
 
@@ -298,40 +332,49 @@ module KnifeCloudstack
     end
 
     def validate_options
-      unless locate_config_value :cloudstack_template
-        ui.error "Cloudstack template not specified"
+      if locate_config_value :cloudstack_template and locate_config_value :cloudstack_iso then
+        ui.error("You must specify either a template or an iso, not both");
         exit 1
       end
-      @windows_image = is_image_windows?
-      @windows_platform = is_platform_windows?
+      unless locate_config_value :cloudstack_template or locate_config_value :cloudstack_iso
+        ui.error "Cloudstack template or iso not specified"
+        exit 1
+      end
+      if locate_config_value :cloudstack_template
+        @windows_image = is_image_windows?
+        @windows_platform = is_platform_windows?
+      end
 
       unless locate_config_value :cloudstack_service
         ui.error "Cloudstack service offering not specified"
         exit 1
       end
-      if locate_config_value(:bootstrap_protocol) == 'ssh'
-        identity_file = locate_config_value :identity_file
-        ssh_user = locate_config_value :ssh_user
-        ssh_password = locate_config_value :ssh_password
-        unless identity_file || (ssh_user && ssh_password)
-          ui.error("You must specify either an ssh identity file or an ssh user and password")
-          exit 1
+
+      if config[:no_bootstrap] 
+        if locate_config_value(:bootstrap_protocol) == 'ssh'
+          identity_file = locate_config_value :identity_file
+          ssh_user = locate_config_value :ssh_user
+          ssh_password = locate_config_value :ssh_password
+          unless identity_file || (ssh_user && ssh_password)
+            ui.error("You must specify either an ssh identity file or an ssh user and password")
+            exit 1
+          end
+          @bootstrap_protocol = 'ssh'
+        elsif locate_config_value(:bootstrap_protocol) == 'winrm'
+          if not @windows_image
+            ui.error("Only Windows Images support WinRM protocol for bootstrapping.")
+            exit 1
+          end
+          winrm_user = locate_config_value :winrm_user
+          winrm_password = locate_config_value :winrm_password
+          winrm_transport = locate_config_value :winrm_transport
+          winrm_port = locate_config_value :winrm_port
+          unless winrm_user && winrm_password && winrm_transport && winrm_port
+            ui.error("WinRM User, Password, Transport and Port are compulsory parameters")
+            exit 1
+          end
+          @bootstrap_protocol = 'winrm'
         end
-        @bootstrap_protocol = 'ssh'
-      elsif locate_config_value(:bootstrap_protocol) == 'winrm'
-        if not @windows_image
-          ui.error("Only Windows Images support WinRM protocol for bootstrapping.")
-          exit 1
-        end
-        winrm_user = locate_config_value :winrm_user
-        winrm_password = locate_config_value :winrm_password
-        winrm_transport = locate_config_value :winrm_transport
-        winrm_port = locate_config_value :winrm_port
-        unless winrm_user && winrm_password && winrm_transport && winrm_port
-          ui.error("WinRM User, Password, Transport and Port are compulsory parameters")
-          exit 1
-        end
-        @bootstrap_protocol = 'winrm'
       end
     end
 
