@@ -192,6 +192,12 @@ module KnifeCloudstack
            :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
            :default => nil
 
+    option :cloudstack_hypervisor,
+           :long => '--cloudstack-hypervisor HYPERVISOR',
+           :description => "Cloudstack hypervisor type on which to create server",
+           :proc => Proc.new { |h| Chef::Config[:knife][:cloudstack_hypervisor] = h },
+           :default => nil
+
     option :static_nat,
             :long => '--static-nat',
             :description => 'Support Static NAT',
@@ -253,6 +259,7 @@ module KnifeCloudstack
           zone : #{locate_config_value(:cloudstack_zone)}
 	  ISO: #{locate_config_value(:cloudstack_iso)}
 	  Disk: #{locate_config_value(:cloudstack_disk)}
+	  Hypervisor: #{locate_config_value(:cloudstack_hypervisor)}
           network: #{locate_config_value(:cloudstack_networks)}")
   
         server = connection.create_server(
@@ -262,6 +269,7 @@ module KnifeCloudstack
             locate_config_value(:cloudstack_zone),
 	    locate_config_value(:cloudstack_iso),
 	    locate_config_value(:cloudstack_disk),
+	    locate_config_value(:cloudstack_hypervisor),
             locate_config_value(:cloudstack_networks)
         )
 
@@ -280,6 +288,7 @@ module KnifeCloudstack
             locate_config_value(:cloudstack_service),
             locate_config_value(:cloudstack_template),
             locate_config_value(:cloudstack_zone),
+	    nil,
 	    nil,
 	    nil,
             locate_config_value(:cloudstack_networks)

@@ -344,17 +344,8 @@ module CloudstackClient
     # If the template name is not found this routine searches for an ISO with
     # the given name as well
 
-    def create_server(host_name, service_name, template_name=nil, zone_name=nil, iso_name=nil, disk_name=nil, project_name=nil, network_names=[])
+    def create_server(host_name, service_name, template_name=nil, zone_name=nil, iso_name=nil, disk_name=nil, hypervisor=nil, network_names=[])
 
-      if project_name then
-        project = get_project(project_name)
-	if !project then
-	  puts "\nError: Project '#{project_name}' doesn't exist";
-	  exit 1
-	end
-      end
-      project = { 'id' => nil } if ! project
-        
       if host_name then
         if get_server(host_name) then
           puts "\nError: Server '#{host_name}' already exists."
@@ -438,7 +429,7 @@ module CloudstackClient
 
       params['name'] = host_name if host_name
       params['diskofferingid'] = disk['id'] if iso_name 
-      params['hypervisor'] = 'XenServer'
+      params['hypervisor'] = hypervisor if hypervisor
 
       json = send_async_request(params)
       json['virtualmachine']
