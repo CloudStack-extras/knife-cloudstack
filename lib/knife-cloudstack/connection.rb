@@ -941,8 +941,6 @@ module CloudstackClient
       params['projectId'] = @project_id if @project_id
       params['response'] = 'json'
       params['apiKey'] = @api_key
-      puts params
-      #exit 255
 
       params_arr = []
       params.sort.each { |elem|
