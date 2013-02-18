@@ -173,10 +173,11 @@ module KnifeCloudstack
            :boolean => true,
            :default => false
 
-    option :no_bootstrap,
-           :long => "--no-bootstrap",
-           :description => "Disable Chef bootstrap",
-           :boolean => true
+    option :bootstrap,
+           :long => "--[no-]bootstrap",
+           :description => "Enable or disable Chef bootstrap (enabled by default)",
+           :boolean => true,
+	   :default => true
 
     option :port_rules,
            :short => "-p PORT_RULES",
@@ -301,16 +302,16 @@ module KnifeCloudstack
       puts "#{ui.color('Name', :cyan)}: #{server['name']}"
       puts "#{ui.color('Public IP', :cyan)}: #{public_ip}"
 
-      return if config[:no_bootstrap]
+      return if @bootstrap_protocol == 'none'
 
       if @bootstrap_protocol == 'ssh'
         print "\n#{ui.color("Waiting for sshd", :magenta)}"
-
+  
         print(".") until is_ssh_open?(public_ip) {
           sleep BOOTSTRAP_DELAY
           puts "\n"
         }
-      else
+      elsif @bootstrap_protocol == 'winrm'
         print "\n#{ui.color("Waiting for winrm to be active", :magenta)}"
         print(".") until tcp_test_winrm(public_ip,locate_config_value(:winrm_port)) {
           sleep WINRM_BOOTSTRAP_DELAY
@@ -359,7 +360,8 @@ module KnifeCloudstack
         exit 1
       end
 
-      if config[:no_bootstrap] 
+      @bootstrap_protocol = 'none'
+      if config[:bootstrap] 
         if locate_config_value(:bootstrap_protocol) == 'ssh'
           identity_file = locate_config_value :identity_file
           ssh_user = locate_config_value :ssh_user
