@@ -52,74 +52,6 @@ module KnifeCloudstack
 
     banner "knife cs server create [SERVER_NAME] (options)"
 
-    option :cloudstack_service,
-           :short => "-S SERVICE",
-           :long => "--service SERVICE",
-           :description => "The CloudStack service offering name",
-           :proc => Proc.new { |o| Chef::Config[:knife][:cloudstack_service] = o },
-           :default => "M"
-
-    option :cloudstack_template,
-           :short => "-T TEMPLATE",
-           :long => "--template TEMPLATE",
-           :description => "The CloudStack template for the server",
-           :proc => Proc.new { |t| Chef::Config[:knife][:cloudstack_template] = t }
-    option :cloudstack_iso,
-    	   :long => "--iso ISO",
-	   :description => "The CloudStack iso for the server",
-	   :proc => Proc.new { |i| Chef::Config[:knife][:cloudstack_iso] = i }
-
-    option :cloudstack_disk,
-    	   :long => "--disk OFFERING",
-	   :description => "The CloudStack disk offering for the server (when using ISO)",
-	   :proc => Proc.new { |d| Chef::Config[:knife][:cloudstack_disk] = d },
-	   :default => "M"
-
-    option :cloudstack_zone,
-           :short => "-Z ZONE",
-           :long => "--zone ZONE",
-           :description => "The CloudStack zone for the server",
-           :proc => Proc.new { |z| Chef::Config[:knife][:cloudstack_zone] = z }
-
-    option :cloudstack_networks,
-           :short => "-W NETWORKS",
-           :long => "--networks NETWORK",
-           :description => "Comma separated list of CloudStack network names",
-           :proc => lambda { |n| n.split(',').map {|sn| sn.strip}} ,
-           :default => []
-
-    option :public_ip,
-           :long => "--[no-]public-ip",
-           :description => "Allocate a public IP for this server",
-           :boolean => true,
-           :default => true
-
-    option :chef_node_name,
-           :short => "-N NAME",
-           :long => "--node-name NAME",
-           :description => "The Chef node name for your new node"
-
-    option :ssh_user,
-           :short => "-x USERNAME",
-           :long => "--ssh-user USERNAME",
-           :description => "The ssh username"
-
-    option :ssh_password,
-           :short => "-P PASSWORD",
-           :long => "--ssh-password PASSWORD",
-           :description => "The ssh password"
-
-
-    option :ssh_port,
-           :long => "--ssh-port PORT",
-           :description => "The ssh port",
-           :default => "22"
-
-    option :identity_file,
-           :short => "-i IDENTITY_FILE",
-           :long => "--identity-file IDENTITY_FILE",
-           :description => "The SSH identity file used for authentication"
-
     option :cloudstack_url,
            :short => "-U URL",
            :long => "--cloudstack-url URL",
@@ -138,9 +70,31 @@ module KnifeCloudstack
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |s| Chef::Config[:knife][:cloudstack_secret_key] = s }
 
-    option :prerelease,
-           :long => "--prerelease",
-           :description => "Install the pre-release chef gems"
+    option :cloudstack_project,
+           :short => "-P PROJECT_NAME",
+           :long => '--cloudstack-project PROJECT_NAME',
+           :description => "Cloudstack Project in which to create server",
+           :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
+           :default => nil
+
+    option :cloudstack_service,
+           :short => "-S SERVICE",
+           :long => "--service SERVICE",
+           :description => "The CloudStack service offering name",
+           :proc => Proc.new { |o| Chef::Config[:knife][:cloudstack_service] = o },
+           :default => "M"
+
+    option :cloudstack_template,
+           :short => "-T TEMPLATE",
+           :long => "--template TEMPLATE",
+           :description => "The CloudStack template for the server",
+           :proc => Proc.new { |t| Chef::Config[:knife][:cloudstack_template] = t }
+
+    option :cloudstack_zone,
+           :short => "-Z ZONE",
+           :long => "--zone ZONE",
+           :description => "The CloudStack zone for the server",
+           :proc => Proc.new { |z| Chef::Config[:knife][:cloudstack_zone] = z }
 
     option :bootstrap_version,
            :long => "--bootstrap-version VERSION",
@@ -160,24 +114,20 @@ module KnifeCloudstack
            :proc => Proc.new { |t| Chef::Config[:knife][:template_file] = t },
            :default => false
 
+
+    option :cloudstack_networks,
+           :short => "-W NETWORKS",
+           :long => "--networks NETWORK",
+           :description => "Comma separated list of CloudStack network names",
+           :proc => lambda { |n| n.split(',').map {|sn| sn.strip}} ,
+           :default => []
+
     option :run_list,
            :short => "-r RUN_LIST",
            :long => "--run-list RUN_LIST",
            :description => "Comma separated list of roles/recipes to apply",
            :proc => lambda { |o| o.split(/[\s,]+/) },
            :default => []
-
-    option :no_host_key_verify,
-           :long => "--no-host-key-verify",
-           :description => "Disable host key verification",
-           :boolean => true,
-           :default => false
-
-    option :bootstrap,
-           :long => "--[no-]bootstrap",
-           :description => "Enable or disable Chef bootstrap (enabled by default)",
-           :boolean => true,
-	   :default => true
 
     option :port_rules,
            :short => "-p PORT_RULES",
@@ -186,39 +136,91 @@ module KnifeCloudstack
            :proc => lambda { |o| o.split(/[\s,]+/) },
            :default => []
 
-    option :cloudstack_project,
-           :short => "-P PROJECT_NAME",
-           :long => '--cloudstack-project PROJECT_NAME',
-           :description => "Cloudstack Project in which to create server",
-           :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
-           :default => nil
+
+    option :cloudstack_iso,
+           :long => "--iso ISO",
+           :description => "CloudStack iso for the server"
+
+    option :cloudstack_disk,
+           :long => "--disk OFFERING",
+           :description => "The CloudStack disk offering for the server (when using ISO)"
+
+    option :public_ip,
+           :long => "--[no-]public-ip",
+           :description => "Allocate a public IP for this server",
+           :boolean => true,
+           :default => true
+
+    option :chef_node_name,
+           :short => "-N NAME",
+           :long => "--node-name NAME",
+           :description => "The Chef node name for your new node"
+
+    option :ssh_user,
+           :short => "-x USERNAME",
+           :long => "--ssh-user USERNAME",
+           :description => "The ssh username",
+           :default => "root"
+
+    option :ssh_password,
+           :short => "-P PASSWORD",
+           :long => "--ssh-password PASSWORD",
+           :description => "The ssh password"
+
+    option :ssh_port,
+           :long => "--ssh-port PORT",
+           :description => "The ssh port",
+           :default => "22"
+
+    option :identity_file,
+           :short => "-i IDENTITY_FILE",
+           :long => "--identity-file IDENTITY_FILE",
+           :description => "The SSH identity file used for authentication"
+
+    option :cloudstack_password,
+           :long => "--cloudstack-password",
+           :description => "Use when password is auto-generated by Cloudstack",
+           :boolean => true
+
+    option :prerelease,
+           :long => "--prerelease",
+           :description => "Install the pre-release chef gems"
+
+    option :no_host_key_verify,
+           :long => "--no-host-key-verify",
+           :description => "Disable host key verification",
+           :boolean => true
+
+    option :bootstrap,
+           :long => "--[no-]bootstrap",
+           :description => "Enable or disable Chef bootstrap (enabled by default)",
+           :boolean => true,
+           :default => true
 
     option :cloudstack_hypervisor,
            :long => '--cloudstack-hypervisor HYPERVISOR',
            :description => "Cloudstack hypervisor type on which to create server",
-           :proc => Proc.new { |h| Chef::Config[:knife][:cloudstack_hypervisor] = h },
-           :default => nil
+           :default => "XenServer"
 
     option :static_nat,
-            :long => '--static-nat',
-            :description => 'Support Static NAT',
-            :boolean => true,
-            :default => false
+           :long => '--static-nat',
+           :description => 'Support Static NAT',
+           :boolean => true
 
     option :use_http_ssl,
-            :long => '--[no-]use-http-ssl',
-            :description => 'Support HTTPS',
-            :boolean => true,
-            :default => true
+           :long => '--[no-]use-http-ssl',
+           :description => 'Support HTTPS',
+           :boolean => true,
+           :default => true
             
     option :bootstrap_protocol,
-      :long => "--bootstrap-protocol protocol",
-      :description => "Protocol to bootstrap windows servers. options: winrm/ssh",
-      :default => "ssh"
+           :long => "--bootstrap-protocol protocol",
+           :description => "Protocol to bootstrap windows servers. options: winrm/ssh",
+           :default => "ssh"
 
     option :fqdn,
-      :long => '--fqdn',
-      :description => "FQDN which Kerberos Understands (only for Windows Servers)"
+           :long => '--fqdn',
+           :description => "FQDN which Kerberos Understands (only for Windows Servers)"
 
 
     def connection
@@ -252,17 +254,8 @@ module KnifeCloudstack
       $stdout.sync = true
 
       print "\n#{ui.color("Waiting for Server to be created", :magenta)}"
-      if Chef::Config[:knife][:cloudstack_iso] 
 
-        Chef::Log.info("Creating instance with
-          service : #{locate_config_value(:cloudstack_service)}
-          template : nil
-          zone : #{locate_config_value(:cloudstack_zone)}
-	  ISO: #{locate_config_value(:cloudstack_iso)}
-	  Disk: #{locate_config_value(:cloudstack_disk)}
-	  Hypervisor: #{locate_config_value(:cloudstack_hypervisor)}
-          network: #{locate_config_value(:cloudstack_networks)}")
-  
+      if Chef::Config[:knife][:cloudstack_iso] 
         server = connection.create_server(
             hostname,
             locate_config_value(:cloudstack_service),
@@ -275,15 +268,6 @@ module KnifeCloudstack
         )
 
       else
-
-        Chef::Log.info("Creating instance with
-          service : #{locate_config_value(:cloudstack_service)}
-          template : #{locate_config_value(:cloudstack_template)}
-          zone : #{locate_config_value(:cloudstack_zone)}
-	  ISO: nil
-	  Disk: nil
-          network: #{locate_config_value(:cloudstack_networks)}")
-  
         server = connection.create_server(
             hostname,
             locate_config_value(:cloudstack_service),
@@ -291,7 +275,7 @@ module KnifeCloudstack
             locate_config_value(:cloudstack_zone),
 	    nil,
 	    nil,
-	    nil,
+	    locate_config_value(:cloudstack_hypervisor),
             locate_config_value(:cloudstack_networks)
         )
       end
@@ -300,9 +284,10 @@ module KnifeCloudstack
 
       puts "\n\n"
       puts "#{ui.color('Name', :cyan)}: #{server['name']}"
+      puts "#{ui.color('Password', :cyan)}: #{server['password']}" if locate_config_value(:cloudstack_password)
       puts "#{ui.color('Public IP', :cyan)}: #{public_ip}"
 
-      return if @bootstrap_protocol == 'none'
+      return if config[:no_bootstrap]
 
       if @bootstrap_protocol == 'ssh'
         print "\n#{ui.color("Waiting for sshd", :magenta)}"
@@ -342,31 +327,33 @@ module KnifeCloudstack
     end
 
     def validate_options
-      if locate_config_value :cloudstack_template and locate_config_value :cloudstack_iso then
-        ui.error("You must specify either a template or an iso, not both");
+      if locate_config_value(:cloudstack_template) && locate_config_value(:cloudstack_iso) then
+        ui.error "You must specify either a template or an iso, not both!"
         exit 1
       end
-      unless locate_config_value :cloudstack_template or locate_config_value :cloudstack_iso
+
+      unless locate_config_value(:cloudstack_template) || locate_config_value(:cloudstack_iso)
         ui.error "Cloudstack template or iso not specified"
         exit 1
       end
-      if locate_config_value :cloudstack_template
-        @windows_image = is_image_windows?
-        @windows_platform = is_platform_windows?
-      end
 
-      unless locate_config_value :cloudstack_service
+      unless locate_config_value(:cloudstack_service)
         ui.error "Cloudstack service offering not specified"
         exit 1
       end
 
-      @bootstrap_protocol = 'none'
+      if locate_config_value(:cloudstack_template)
+        @windows_image = is_image_windows?
+        @windows_platform = is_platform_windows?
+      end
+
+
       if config[:bootstrap] 
         if locate_config_value(:bootstrap_protocol) == 'ssh'
-          identity_file = locate_config_value :identity_file
-          ssh_user = locate_config_value :ssh_user
-          ssh_password = locate_config_value :ssh_password
-          unless identity_file || (ssh_user && ssh_password)
+          identity_file = locate_config_value(:identity_file)
+          ssh_user = locate_config_value(:ssh_user)
+          ssh_password = locate_config_value(:ssh_password)
+          unless identity_file || (ssh_user && ssh_password) || locate_config_value(:cloudstack_password)
             ui.error("You must specify either an ssh identity file or an ssh user and password")
             exit 1
           end
@@ -376,11 +363,11 @@ module KnifeCloudstack
             ui.error("Only Windows Images support WinRM protocol for bootstrapping.")
             exit 1
           end
-          winrm_user = locate_config_value :winrm_user
-          winrm_password = locate_config_value :winrm_password
-          winrm_transport = locate_config_value :winrm_transport
-          winrm_port = locate_config_value :winrm_port
-          unless winrm_user && winrm_password && winrm_transport && winrm_port
+          winrm_user = locate_config_value(:winrm_user)
+          winrm_password = locate_config_value(:winrm_password)
+          winrm_transport = locate_config_value(:winrm_transport)
+          winrm_port = locate_config_value(:winrm_port)
+          unless (winrm_user && winrm_transport && winrm_port) && (locate_config_value(:cloudstack_password) || winrm_password)
             ui.error("WinRM User, Password, Transport and Port are compulsory parameters")
             exit 1
           end
@@ -500,6 +487,7 @@ module KnifeCloudstack
         bootstrap_for_node(server, public_ip)
       end
     end
+
     def bootstrap_for_windows_node(server, fqdn)
         if locate_config_value(:bootstrap_protocol) == 'winrm'
             bootstrap = Chef::Knife::BootstrapWindowsWinrm.new
@@ -510,14 +498,14 @@ module KnifeCloudstack
             end
             bootstrap.name_args = [fqdn]
             bootstrap.config[:winrm_user] = locate_config_value(:winrm_user) || 'Administrator'
-            bootstrap.config[:winrm_password] = locate_config_value(:winrm_password)
+            locate_config_value(:cloudstack_password) ? bootstrap.config[:winrm_password] = server['password'] : bootstrap.config[:winrm_password] = locate_config_value(:winrm_password)
             bootstrap.config[:winrm_transport] = locate_config_value(:winrm_transport)
             bootstrap.config[:winrm_port] = locate_config_value(:winrm_port)
 
         elsif locate_config_value(:bootstrap_protocol) == 'ssh'
             bootstrap = Chef::Knife::BootstrapWindowsSsh.new
             bootstrap.config[:ssh_user] = locate_config_value(:ssh_user)
-            bootstrap.config[:ssh_password] = locate_config_value(:ssh_password)
+            locate_config_value(:cloudstack_password) ? bootstrap.config[:ssh_password] = server['password'] : bootstrap.config[:ssh_password] = locate_config_value(:ssh_password)
             bootstrap.config[:ssh_port] = locate_config_value(:ssh_port)
             bootstrap.config[:identity_file] = locate_config_value(:identity_file)
             bootstrap.config[:no_host_key_verify] = locate_config_value(:no_host_key_verify)
@@ -530,8 +518,8 @@ module KnifeCloudstack
         bootstrap.config[:encrypted_data_bag_secret_file] = config[:encrypted_data_bag_secret_file]
         bootstrap_common_params(bootstrap)
     end
-    def bootstrap_common_params(bootstrap)
 
+    def bootstrap_common_params(bootstrap)
       bootstrap.config[:run_list] = config[:run_list]
       bootstrap.config[:prerelease] = config[:prerelease]
       bootstrap.config[:bootstrap_version] = locate_config_value(:bootstrap_version)
@@ -546,7 +534,7 @@ module KnifeCloudstack
       bootstrap.name_args = [fqdn]
       # bootstrap.config[:run_list] = config[:run_list]
       bootstrap.config[:ssh_user] = locate_config_value(:ssh_user)
-      bootstrap.config[:ssh_password] = locate_config_value(:ssh_password)
+      locate_config_value(:cloudstack_password) ? bootstrap.config[:ssh_password] = server['password'] : bootstrap.config[:ssh_password] = locate_config_value(:ssh_password)
       bootstrap.config[:ssh_port] = locate_config_value(:ssh_port) || 22
       bootstrap.config[:identity_file] = locate_config_value(:identity_file)
       bootstrap.config[:chef_node_name] = locate_config_value(:chef_node_name) || server.name

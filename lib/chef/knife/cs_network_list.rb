@@ -122,14 +122,18 @@ module KnifeCloudstack
       )
 
       connection_result.each do |r|
-        object_list << r['name'].to_s
-        object_list << r['type'].to_s
-        object_list << (r['isdefault'] ? r['isdefault'].to_s : 'false')
-        object_list << (r['isshared'] ? r['isshared'].to_s : 'false')
-        object_list << (r['gateway'] || '')
-        object_list << (r['netmask'] || '')
-        object_list << (r['account'] || '') unless locate_config_value(:cloudstack_project)
-        object_list << (r['domain'] || '')
+        if locate_config_value(:fields)
+          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
+        else
+          object_list << r['name'].to_s
+          object_list << r['type'].to_s
+          object_list << (r['isdefault'] ? r['isdefault'].to_s : 'false')
+          object_list << (r['isshared'] ? r['isshared'].to_s : 'false')
+          object_list << (r['gateway'] || '')
+          object_list << (r['netmask'] || '')
+          object_list << (r['account'] || '') unless locate_config_value(:cloudstack_project)
+          object_list << (r['domain'] || '')
+        end
       end
       puts ui.list(object_list, :uneven_columns_across, columns)
       connection.show_object_fields(connection_result) if locate_config_value(:fieldlist)

@@ -82,6 +82,11 @@ module KnifeCloudstack
            :description => "Removes header from output",
            :boolean => true
 
+    option :index,
+           :long => "--index",
+           :description => "Add index numbers to the output",
+           :boolean => true
+
     option :templatefilter,
            :long => "--templatefilter FILTER",
            :description => "Default: 'featured'. Options: 'self','self-executable','executable','community'",
@@ -99,17 +104,19 @@ module KnifeCloudstack
           locate_config_value(:use_http_ssl)
       )
 
+      object_list = []
+      object_list << ui.color('Index', :bold) if locate_config_value(:index)
+
       if locate_config_value(:fields)
-        object_list = []
         locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
       else
-        object_list = [
+       [ 
           ui.color('Name', :bold),
           ui.color('Size', :bold),
           ui.color('Zone', :bold),
           ui.color('Public', :bold),
-          ui.color('Created', :bold),
-        ]
+          ui.color('Created', :bold)
+        ].each { |field| object_list << field }
       end
 
       columns = object_list.count
@@ -125,9 +132,14 @@ module KnifeCloudstack
         locate_config_value(:templatefilter)
       )
 
+      index_num = 0
       connection_result.each do |r|
+        if locate_config_value(:index)
+          index_num += 1 
+          object_list << index_num.to_s
+        end
 
-       if locate_config_value(:fields)
+        if locate_config_value(:fields)
           locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
         else
           object_list << r['name'].to_s
