@@ -513,6 +513,7 @@ module KnifeCloudstack
             ui.error("Unsupported Bootstrapping Protocol. Supported : winrm, ssh")
             exit 1
         end
+        bootstrap.config[:environment] = locate_config_value(:environment)
         bootstrap.config[:chef_node_name] = config[:chef_node_name] || server['id']
         bootstrap.config[:encrypted_data_bag_secret] = config[:encrypted_data_bag_secret]
         bootstrap.config[:encrypted_data_bag_secret_file] = config[:encrypted_data_bag_secret_file]

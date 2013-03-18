@@ -17,39 +17,18 @@
 #
 
 require 'chef/knife'
+require 'chef/knife/cs_base'
 
 module KnifeCloudstack
   class CsHostList < Chef::Knife
+
+    include Chef::Knife::KnifeCloudstackBase
 
     deps do
       require 'knife-cloudstack/connection'
     end
 
     banner "knife cs host list (options)"
-
-    option :cloudstack_url,
-           :short => "-U URL",
-           :long => "--cloudstack-url URL",
-           :description => "The CloudStack endpoint URL",
-           :proc => Proc.new { |url| Chef::Config[:knife][:cloudstack_url] = url }
-
-    option :cloudstack_api_key,
-           :short => "-A KEY",
-           :long => "--cloudstack-api-key KEY",
-           :description => "Your CloudStack API key",
-           :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_api_key] = key }
-
-    option :cloudstack_secret_key,
-           :short => "-K SECRET",
-           :long => "--cloudstack-secret-key SECRET",
-           :description => "Your CloudStack secret key",
-           :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
-
-    option :use_http_ssl,
-           :long => '--[no-]use-http-ssl',
-           :description => 'Support HTTPS',
-           :boolean => true,
-           :default => true
 
     option :name,
            :long => "--name NAME",
@@ -86,9 +65,6 @@ module KnifeCloudstack
           locate_config_value(:cloudstack_project),
           locate_config_value(:use_http_ssl)
       )
-
-      access_level = 3
-      connection.check_account_access_level access_level
 
       if locate_config_value(:fields)
         object_list = []

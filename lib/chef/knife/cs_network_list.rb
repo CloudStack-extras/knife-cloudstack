@@ -18,46 +18,18 @@
 #
 
 require 'chef/knife'
+require 'chef/knife/cs_base'
 
 module KnifeCloudstack
   class CsNetworkList < Chef::Knife
+
+    include Chef::Knife::KnifeCloudstackBase
 
     deps do
       require 'knife-cloudstack/connection'
     end
 
     banner "knife cs network list (options)"
-
-    option :cloudstack_url,
-           :short => "-U URL",
-           :long => "--cloudstack-url URL",
-           :description => "The CloudStack endpoint URL",
-           :proc => Proc.new { |url| Chef::Config[:knife][:cloudstack_url] = url }
-
-    option :cloudstack_api_key,
-           :short => "-A KEY",
-           :long => "--cloudstack-api-key KEY",
-           :description => "Your CloudStack API key",
-           :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_api_key] = key }
-
-    option :cloudstack_secret_key,
-           :short => "-K SECRET",
-           :long => "--cloudstack-secret-key SECRET",
-           :description => "Your CloudStack secret key",
-           :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
-
-    option :cloudstack_project,
-           :short => "-P PROJECT_NAME",
-           :long => '--cloudstack-project PROJECT_NAME',
-           :description => "Cloudstack Project in which to create server",
-           :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
-           :default => nil
-
-    option :use_http_ssl,
-           :long => '--[no-]use-http-ssl',
-           :description => 'Support HTTPS',
-           :boolean => true,
-           :default => true
 
     option :listall,
            :long => "--listall",
