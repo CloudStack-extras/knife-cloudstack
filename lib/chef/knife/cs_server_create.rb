@@ -287,7 +287,7 @@ module KnifeCloudstack
       puts "#{ui.color('Password', :cyan)}: #{server['password']}" if locate_config_value(:cloudstack_password)
       puts "#{ui.color('Public IP', :cyan)}: #{public_ip}"
 
-      return if config[:no_bootstrap]
+      return unless config[:bootstrap]
 
       if @bootstrap_protocol == 'ssh'
         print "\n#{ui.color("Waiting for sshd", :magenta)}"
