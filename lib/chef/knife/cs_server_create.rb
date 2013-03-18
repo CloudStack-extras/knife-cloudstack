@@ -399,28 +399,30 @@ module KnifeCloudstack
 
     def create_port_forwarding_rules(ip_address, server_id, connection)
       rules = locate_config_value(:port_rules)
-      if @bootstrap_protocol == 'ssh'
-        rules += ["#{locate_config_value(:ssh_port)}"] #SSH Port
-      elsif @bootstrap_protocol == 'winrm'
-        rules +=[locate_config_value(:winrm_port)]
-      else
-        puts("\nUnsupported bootstrap protocol : #{@bootstrap_protocol}")
-        exit 1
-      end
-        return unless rules
-      rules.each do |rule|
-        args = rule.split(':')
-        public_port = args[0]
-        private_port = args[1] || args[0]
-        protocol = args[2] || "TCP"
-        if locate_config_value :static_nat
-          Chef::Log.debug("Creating IP Forwarding Rule for
-            #{ip_address['ipaddress']} with protocol: #{protocol}, public port: #{public_port}")
-          connection.create_ip_fwd_rule(ip_address['id'], protocol, public_port, public_port)
+      if locate_config_value(:bootstrap)
+        if @bootstrap_protocol == 'ssh'
+          rules += ["#{locate_config_value(:ssh_port)}"] #SSH Port
+        elsif @bootstrap_protocol == 'winrm'
+          rules +=[locate_config_value(:winrm_port)]
         else
-          Chef::Log.debug("Creating Port Forwarding Rule for #{ip_address['id']} with protocol: #{protocol},
-            public port: #{public_port} and private port: #{private_port} and server: #{server_id}")
-          connection.create_port_forwarding_rule(ip_address['id'], private_port, protocol, public_port, server_id)
+          puts("\nUnsupported bootstrap protocol : #{@bootstrap_protocol}")
+          exit 1
+        end
+          return unless rules
+        rules.each do |rule|
+          args = rule.split(':')
+          public_port = args[0]
+          private_port = args[1] || args[0]
+          protocol = args[2] || "TCP"
+          if locate_config_value :static_nat
+            Chef::Log.debug("Creating IP Forwarding Rule for
+              #{ip_address['ipaddress']} with protocol: #{protocol}, public port: #{public_port}")
+            connection.create_ip_fwd_rule(ip_address['id'], protocol, public_port, public_port)
+          else
+            Chef::Log.debug("Creating Port Forwarding Rule for #{ip_address['id']} with protocol: #{protocol},
+              public port: #{public_port} and private port: #{private_port} and server: #{server_id}")
+            connection.create_port_forwarding_rule(ip_address['id'], private_port, protocol, public_port, server_id)
+          end
         end
       end
     end
