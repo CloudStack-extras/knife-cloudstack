@@ -85,6 +85,12 @@ module KnifeCloudstack
 	   :boolean => true,
 	   :default => false
 
+    option :passwordenabled,
+           :long => "--[no-]passwordenabled",
+	   :description => "Make the template password reset enabled  after creation",
+	   :boolean => true,
+	   :default => true
+
     def run
 
       $stdout.sync = true
@@ -114,7 +120,8 @@ module KnifeCloudstack
         locate_config_value(:ostypeid),
         locate_config_value(:volumeid),
 	locate_config_value(:ispublic),
-	locate_config_value(:isfeatured)
+	locate_config_value(:isfeatured),
+	locate_config_value(:passwordenabled)
       )
     end
 
