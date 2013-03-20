@@ -325,13 +325,15 @@ module CloudstackClient
     ##
     # Creates a new template using the specified parameters.
 
-    def create_template(name, displaytext, ostypeid, volumeid)
+    def create_template(name, displaytext, ostypeid, volumeid, ispublic, isfeatured)
       params = {
         'command' => 'createTemplate',
         'name' => name,
         'displaytext' => displaytext,
         'ostypeid' => ostypeid,
-        'volumeid' => volumeid
+        'volumeid' => volumeid,
+	'ispublic' => ispublic,
+	'isfeatured' => isfeatured
       }
 
       json = send_request(params)

@@ -1,5 +1,6 @@
 #
 # Author:: Sander Botman (<sbotman@schubergphilis.com>)
+# Author:: Frank Breedijk (<fbreedijk@schubergphilis.com>)
 # Copyright:: Copyright (c) 2012 Schuberg Philis.
 # License:: Apache License, Version 2.0
 #
@@ -72,6 +73,18 @@ module KnifeCloudstack
            :required => true,
            :on => :head
 
+    option :ispublic,
+           :long => "--[no-]public",
+	   :description => "Make the template public after creation",
+	   :boolean => true,
+	   :default => false
+
+    option :isfeatured,
+           :long => "--[no-]featured",
+	   :description => "Make the template featured after creation",
+	   :boolean => true,
+	   :default => false
+
     def run
 
       $stdout.sync = true
@@ -86,7 +99,7 @@ module KnifeCloudstack
           exit 1
         end
       end
-       
+
       connection = CloudstackClient::Connection.new(
         locate_config_value(:cloudstack_url),
         locate_config_value(:cloudstack_api_key),
@@ -99,7 +112,9 @@ module KnifeCloudstack
         templatename,
         locate_config_value(:displaytext),
         locate_config_value(:ostypeid),
-        locate_config_value(:volumeid)
+        locate_config_value(:volumeid),
+	locate_config_value(:ispublic),
+	locate_config_value(:isfeatured)
       )
     end
 
