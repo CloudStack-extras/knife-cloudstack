@@ -91,6 +91,12 @@ module KnifeCloudstack
 	   :boolean => true,
 	   :default => true
 
+    option :extractable,
+           :logn => "--[no-]extractable",
+	   :description => "Make the template extractable after creation",
+	   :boolean => "true",
+	   :default => false
+
     def run
 
       $stdout.sync = true
@@ -121,7 +127,8 @@ module KnifeCloudstack
         locate_config_value(:volumeid),
 	locate_config_value(:ispublic),
 	locate_config_value(:isfeatured),
-	locate_config_value(:passwordenabled)
+	locate_config_value(:passwordenabled),
+	locate_config_value(:extractable)
       )
     end
 

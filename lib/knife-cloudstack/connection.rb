@@ -325,7 +325,7 @@ module CloudstackClient
     ##
     # Creates a new template using the specified parameters.
 
-    def create_template(name, displaytext, ostypeid, volumeid, ispublic, isfeatured, passwordenabled)
+    def create_template(name, displaytext, ostypeid, volumeid, ispublic, isfeatured, passwordenabled, extractable)
       params = {
         'command' => 'createTemplate',
         'name' => name,
@@ -334,7 +334,8 @@ module CloudstackClient
         'volumeid' => volumeid,
 	'ispublic' => ispublic,
 	'isfeatured' => isfeatured,
-	'passwordenabled' => passwordenabled
+	'passwordenabled' => passwordenabled,
+	'extractable' => extractable
       }
 
       json = send_request(params)
@@ -665,8 +666,35 @@ module CloudstackClient
 
       nil
     end
-
+    
     # Finds the template with the specified name.
+
+    def extract_template(templateId,mode,url,zoneid)
+
+      # TODO: use name parameter
+      # listTemplates in CloudStack 2.2 doesn't seem to work
+      # when the name parameter is specified. When this is fixed,
+      # the name parameter should be added to the request.
+      params = {
+          'command' => 'extractTemplate',
+	  'id' => templateId,
+          'mode' => mode,
+      }
+      params['url'] = url if url
+      params['zoneid'] = zoneid if zoneid
+
+      json = send_async_request(params)
+
+      if ( !json ) then
+        return nil
+      else 
+        return json
+      end
+
+      nil
+    end
+
+    # Finds the iso with the specified name.
 
     def get_iso(name)
 
