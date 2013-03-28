@@ -93,7 +93,7 @@ module KnifeCloudstack
         ui.msg("Deleted server #{hostname}")
 
         # delete chef client and node
-        node_name = connection.get_server_fqdn server
+        node_name = connection.get_server server
         ui.confirm("Do you want to delete the chef node and client '#{node_name}")
         delete_node node_name
         delete_client node_name
