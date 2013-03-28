@@ -1,6 +1,7 @@
 #
 # Author:: Ryan Holmes (<rholmes@edmunds.com>)
 # Author:: KC Braunschweig (<kcbraunschweig@gmail.com>)
+# Revised:: 20121210 Sander Botman (<sbotman@schubergphilis.com>)
 # Copyright:: Copyright (c) 2011 Edmunds, Inc.
 # License:: Apache License, Version 2.0
 #
@@ -24,6 +25,21 @@ require 'uri'
 require 'cgi'
 require 'net/http'
 require 'json'
+require 'highline/import'
+
+class String
+  def to_regexp
+    return nil unless self.strip.match(/\A\/(.*)\/(.*)\Z/mx)
+    regexp , flags = $1 , $2
+    return nil if !regexp || flags =~ /[^xim]/m
+
+    x = /x/.match(flags) && Regexp::EXTENDED
+    i = /i/.match(flags) && Regexp::IGNORECASE
+    m = /m/.match(flags) && Regexp::MULTILINE
+
+    Regexp.new regexp , [x,i,m].inject(0){|a,f| f ? a+f : a }
+  end
+end
 
 module CloudstackClient
   class Connection
@@ -45,7 +61,11 @@ module CloudstackClient
         end
         @project_id = project['id']
       end
+    end
 
+    def ui
+      require 'chef/knife/core/ui'
+      @ui ||= Chef::Knife::UI.new(STDOUT, STDERR, STDIN, {})
     end
 
     ##
@@ -56,9 +76,6 @@ module CloudstackClient
           'command' => 'listVirtualMachines',
           'name' => name
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
       json = send_request(params)
       machines = json['virtualmachine']
 
@@ -81,7 +98,7 @@ module CloudstackClient
         return ssh_rule['ipaddress']
       end
       #check for static NAT
-      ip_addr = list_public_ip_addresses.find {|v| v['virtualmachineid'] == server['id']}
+      ip_addr = list_public_ip_addresses.find {|v| v['virtualmachineid'] == server['id']} unless list_public_ip_addresses.nil?
       if ip_addr
         return ip_addr['ipaddress']
       end
@@ -95,7 +112,7 @@ module CloudstackClient
       return nil unless server
 
       nic = get_server_default_nic(server) || {}
-      networks = list_networks || {}
+      networks = list_object('listNetworks','network') || {}
 
       id = nic['networkid']
       network = networks.select { |net|
@@ -113,41 +130,269 @@ module CloudstackClient
     end
 
     ##
-    # Lists all the servers in your account.
+    # Returns the object data based on the command, json_result parameter.
 
-    def list_servers
+    def list_object(command, json_result, filter=nil, listall=nil, keyword=nil, name=nil, templatefilter=nil)
       params = {
-          'command' => 'listVirtualMachines'
+          'command' => command
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
+      params['listall'] = true if listall || name || keyword || filter unless listall == false
+      params['keyword'] = keyword if keyword
+      params['name'] = name if name
+
+      if templatefilter
+        template = 'featured'
+        template = templatefilter.downcase if ["featured","self","self-executable","executable","community"].include?(templatefilter.downcase)
+        params['templateFilter'] = template
+      end
+
       json = send_request(params)
-      json['virtualmachine'] || []
+      Chef::Log.debug("JSON (list_object) result: #{json}")
+
+      result = json["#{json_result}"] || []
+      result = data_filter(result, filter) if filter
+      result
+    end
+
+    def show_object_fields(object)
+      exit 1 if object.nil? || object.empty?
+      object_fields = [
+        ui.color('Key', :bold),
+        ui.color('Type', :bold),
+        ui.color('Value', :bold)
+      ]
+      
+      object.first.sort.each do |k,v|
+        object_fields << k
+        object_fields << v.class.to_s
+        if v.kind_of?(Array) 
+          object_fields << '<Array>'
+        else
+          object_fields << ("#{v}").strip.to_s
+        end
+      end
+      puts "\n"
+      puts ui.list(object_fields, :uneven_columns_across, 3)
+    end
+    
+    def check_account_access_level(l)
+  
+      r = list_object("listAccounts", "account", nil, false)
+      n = r.first['accounttype']
+
+      case n
+        when 2 then account = "domain admin"; s = 2
+        when 1 then account = "admin"; s = 3
+        when 0 then account = "user"; s = 1
+      end
+           
+      Chef::Log.debug("Account access level needed  : #{l}")
+      Chef::Log.debug("Current account access level : #{s}")
+      if s < l
+         ui.error "Your #{account} account is not allowed to execute this command."
+        exit 1
+      end
+    end
+
+    ##
+    # Create a new domain using the specified parameters
+
+    def create_domain(domainname, parentdomain, networkdomain)
+      if parentdomain then
+        domainpath = parentdomain + "/" + domainname 
+      else 
+        domainpath = domainname
+      end
+ 
+      if domainname then
+        if get_domain(domainpath) then
+          puts "Error: Domain '#{domainpath}' already exists."
+          exit 1
+        end
+      end
+
+      params = {
+        'command' => 'createDomain',
+        'name' => domainname
+      }
+      if parentdomain then
+        parentdomaindata = get_domain(parentdomain)
+        if parentdomaindata.nil? then 
+          puts "Error: Cannot find domain ID for: #{parentdomain}."
+          exit 1
+        else
+          params['parentdomainid'] = parentdomaindata['id'] if parentdomain
+        end
+      end
+
+ 
+      json = send_request(params)
+      json['domain']
+      puts json
+    end
+
+    ##
+    # Deploys a new service offering using the specified parameters.
+
+    def create_service(service_name, cpunumber, cpuspeed, displaytext, memory, 
+                       domainname=nil, hosttags=nil, issystem=nil, limitcpuuse=nil, 
+                       networkrate=nil, offerha=nil, storagetype=nil, systemvmtype=nil, tags=nil)
+
+      if service_name then
+        if get_service_offering(service_name) then
+          puts "Error: Service '#{service_name}' already exists."
+          exit 1
+        end
+      end
+
+      if !cpunumber then
+        puts "Error: The cpunumber parameter is missing."
+        exit 1
+      end
+
+      if !cpuspeed then
+        puts "Error: The cpuspeed parameter is missing."
+        exit 1
+      end
+
+      if !displaytext then
+        puts "Error: The displaytext parameter is missing."
+        exit 1
+      end
+
+      if !memory then
+        puts "Error: The memory parameter is missing."
+        exit 1
+      end
+
+      params = {
+        'command' => 'createServiceOffering',
+        'cpunumber' => cpunumber,
+        'cpuspeed' => cpuspeed,
+        'displaytext' => displaytext,
+        'memory' => memory,
+        'name' => service_name
+      }
+
+      domain = get_domain(domainname) if domainname
+      params['domainid'] = domain['id'] if domain
+      params['hosttags'] = hosttags if hosttags
+      params['issystem'] = issystem if issystem
+      params['limitcpuuse'] = limitcpuuse if limitcpuuse
+      params['networkrate'] = networkrate if networkrate
+      params['offerha'] = offerha if offerha
+      params['storagetype'] = storagetype if storagetype
+      params['systemvmtype'] = systemvmtype if systemvmtype
+      params['tags'] = tags if tags
+
+      json = send_request(params)
+      json['serviceoffering']
+    end
+
+    ##
+    # Deploys a new disk offering using the specified parameters.
+ 
+    def create_diskoffering(diskname, displaytext, disksize, domainpath=nil, tags=nil, iscustom=nil)
+
+      if diskname then
+        if get_disk_offering(diskname) then
+          puts "Error: Disk offering: '#{diskname}' already exists."
+          exit 1
+        end
+      end
+
+      if !displaytext then
+        puts "Error: The displaytext parameter is missing."
+        exit 1
+      end
+
+      params = {
+        'command' => 'createDiskOffering',
+        'displaytext' => displaytext,
+        'name' => diskname
+      }
+      domain = get_domain(domainpath) if domainpath
+      params['domainid'] = domain['id'] if domain
+      params['tags'] = tags if tags
+      params['customized'] = iscustom if iscustom
+      params['disksize'] = disksize unless iscustom
+
+      json = send_request(params)
+      json['diskoffering']
+
+    end
+
+    ##
+    # Creates a new template using the specified parameters.
+
+    def create_template(name, displaytext, ostypeid, volumeid, ispublic, isfeatured, passwordenabled)
+      params = {
+        'command' => 'createTemplate',
+        'name' => name,
+        'displaytext' => displaytext,
+        'ostypeid' => ostypeid,
+        'volumeid' => volumeid,
+	'ispublic' => ispublic,
+	'isfeatured' => isfeatured,
+	'passwordenabled' => passwordenabled
+      }
+
+      json = send_request(params)
+      json['template']
+      puts json
     end
 
     ##
     # Deploys a new server using the specified parameters.
+    # If the template name is not found this routine searches for an ISO with
+    # the given name as well
 
-    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[])
+    def create_server(host_name, service_name, template_name=nil, zone_name=nil, iso_name=nil, disk_name=nil, hypervisor=nil, network_names=[])
 
       if host_name then
         if get_server(host_name) then
-          puts "Error: Server '#{host_name}' already exists."
+          puts "\nError: Server '#{host_name}' already exists."
           exit 1
         end
       end
 
       service = get_service_offering(service_name)
       if !service then
-        puts "Error: Service offering '#{service_name}' is invalid"
+        puts "\nError: Service offering '#{service_name}' is invalid"
         exit 1
       end
 
-      template = get_template(template_name)
+      if template_name then
+        if iso_name then
+	  puts "\nError: you cannot specify both a template and an iso"
+	  exit 1
+	end
+        template = get_template(template_name)
+        if !template then
+          puts "Error: Template '#{template_name}' is invalid"
+          exit 1
+	end
+      end
+
+      if iso_name then
+      	template = get_iso(iso_name) 
+	if !template then
+          puts "Error: ISO '#{template_name}' is invalid"
+          exit 1
+	end
+      end
+
       if !template then
-        puts "Error: Template '#{template_name}' is invalid"
-        exit 1
+	puts "\nError: You need to specify a template or ISO"
+	exit 1
+      end
+
+      if disk_name then
+        disk = get_disk_offering(disk_name)
+	if !disk then
+	  puts "\nError: Disk '#{disk_name}' is invalid"
+	  exit 1
+	end
       end
 
       zone = zone_name ? get_zone(zone_name) : get_default_zone
@@ -184,11 +429,10 @@ module CloudstackClient
           'zoneId' => zone['id'],
           'networkids' => network_ids.join(',')
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
 
       params['name'] = host_name if host_name
+      params['diskofferingid'] = disk['id'] if iso_name 
+      params['hypervisor'] = hypervisor if hypervisor
 
       json = send_async_request(params)
       json['virtualmachine']
@@ -196,7 +440,6 @@ module CloudstackClient
 
     ##
     # Deletes the server with the specified name.
-    #
 
     def delete_server(name)
       server = get_server(name)
@@ -209,14 +452,12 @@ module CloudstackClient
           'command' => 'destroyVirtualMachine',
           'id' => server['id']
       }
-
       json = send_async_request(params)
       json['virtualmachine']
     end
 
     ##
     # Stops the server with the specified name.
-    #
 
     def stop_server(name, forced=nil)
       server = get_server(name)
@@ -237,7 +478,73 @@ module CloudstackClient
 
     ##
     # Start the server with the specified name.
-    #
+
+    def server_action(command, json_result, server, quiet=nil, forced=nil)
+      result = []
+      server.each do |s|
+        if s['id'] then
+          params = { 'command' => command }
+          case command
+            when "migrateVirtualMachine" then params['virtualmachineid'] = s['id']
+            else params['id'] = s['id']
+          end  
+          
+          if quiet then
+            print "Starting host: " + s['name'] if command == "startVirtualMachine"
+            print "Stopping host: " + s['name'] if command == "stopVirtualMachine"
+            json = send_async_request(params)
+            result << json["#{json_result}"]
+          else
+            object_fields = [
+              ui.color('Key', :bold),
+              ui.color('Value', :bold)
+            ]
+
+            object_fields << ui.color("Name", :yellow, :bold)
+            object_fields << s['name'].to_s
+            object_fields << ui.color("Public IP", :yellow, :bold)
+            object_fields << (get_server_public_ip(s) || 'N/A')
+            object_fields << ui.color("Service", :yellow, :bold)
+            object_fields << s['serviceofferingname'].to_s
+            object_fields << ui.color("Template", :yellow, :bold)
+            object_fields << s['templatename']
+            object_fields << ui.color("Domain", :yellow, :bold)
+            object_fields << s['domain']
+            object_fields << ui.color("Zone", :yellow, :bold)
+            object_fields << s['zonename']
+            object_fields << ui.color("State", :yellow, :bold)
+            object_fields << s['state']
+          
+            puts "\n"
+            puts ui.list(object_fields, :uneven_columns_across, 2)
+            response = yesno("Do you really want to start this server") if command == "startVirtualMachine"
+            response = yesno("Do you really want to stop this server") if command == "stopVirtualMachine"
+
+            if response
+              print "Starting host: " + s['name'] if command == "startVirtualMachine"
+              print "Stopping host: " + s['name'] if command == "stopVirtualMachine"
+              json = send_async_request(params)
+              result << json["#{json_result}"]
+            end
+          end
+          puts "\n"
+        end
+      end
+      result
+    end
+
+
+    def yesno(prompt = 'Continue?', default = true)
+      a = ''
+      s = default ? '[Y/n]' : '[y/N]'
+      d = default ? 'y' : 'n'
+      until %w[y n].include? a
+        a = ask("#{prompt} #{s} ") { |q| q.limit = 1; q.case = :downcase }
+        a = d if a.length == 0
+      end
+      a == 'y'
+    end
+
 
     def start_server(name)
       server = get_server(name)
@@ -257,7 +564,6 @@ module CloudstackClient
 
     ##
     # Reboot the server with the specified name.
-    #
 
     def reboot_server(name)
       server = get_server(name)
@@ -279,11 +585,6 @@ module CloudstackClient
     # Finds the service offering with the specified name.
 
     def get_service_offering(name)
-
-      # TODO: use name parameter
-      # listServiceOfferings in CloudStack 2.2 doesn't seem to work
-      # when the name parameter is specified. When this is fixed,
-      # the name parameter should be added to the request.
       params = {
           'command' => 'listServiceOfferings'
       }
@@ -297,22 +598,46 @@ module CloudstackClient
           return s
         end
       }
-
       nil
     end
 
-    ##
-    # Lists all available service offerings.
-
-    def list_service_offerings
+    def get_disk_offering(name)
       params = {
-          'command' => 'listServiceOfferings'
+        'command' => 'listDiskOfferings'
       }
       json = send_request(params)
-      json['serviceoffering'] || []
+
+      diskoffering = json['diskoffering']
+      return nil unless diskoffering
+
+      diskoffering.each { |s|
+        if s['name'] == name then
+          return s
+        end
+      }
+      nil
     end
 
-    ##
+    def get_domain(domainname)
+      params = {
+        'command' => 'listDomains',
+        'listall' => 'true'
+      }
+      json = send_request(params)
+
+      domaindata = json['domain']
+      return nil unless domaindata
+      
+      domainname = "root/" + domainname unless domainname =~ /^root.*$/i 
+
+      domaindata.each { |domain|
+        if domain['path'].downcase == (domainname.downcase).gsub("\\","/") then
+          return domain
+        end
+      }
+      nil
+    end
+
     # Finds the template with the specified name.
 
     def get_template(name)
@@ -341,31 +666,36 @@ module CloudstackClient
       nil
     end
 
-    ##
-    # Lists all templates that match the specified filter.
-    #
-    # Allowable filter values are:
-    #
-    # * featured - templates that are featured and are public
-    # * self - templates that have been registered/created by the owner
-    # * self-executable - templates that have been registered/created by the owner that can be used to deploy a new VM
-    # * executable - all templates that can be used to deploy a new VM
-    # * community - templates that are public
+    # Finds the template with the specified name.
 
-    def list_templates(filter)
-      filter ||= 'featured'
+    def get_iso(name)
+
+      # TODO: use name parameter
       params = {
-          'command' => 'listTemplates',
-          'templateFilter' => filter
+          'command' => 'listIsos',
+          'templateFilter' => 'executable'
       }
       json = send_request(params)
-      json['template'] || []
+
+      isos = json['iso']
+      if !isos then
+        return nil
+      end
+
+      isos.each { |i|
+        if i['name'] == name then
+          return i
+        end
+      }
+
+      nil
     end
 
     #Fetch project with the specified name
     def get_project(name)
       params = {
-        'command' => 'listProjects'
+        'command' => 'listProjects',
+        'listall' => 'true'
       }
 
       json = send_request(params)
@@ -380,6 +710,20 @@ module CloudstackClient
       nil
     end
 
+    # Filter data based on user input which can be string or regexp
+    def data_filter(data, filters)
+      filters.split(',').each do |filter|
+        field = filter.split(':')[0].strip.downcase
+        search = filter.split(':')[1].strip
+        if search =~ /^\/.*\/?/
+          data = data.find_all { |k| k["#{field}"].to_s =~ search.to_regexp } if field && search
+        else
+          data = data.find_all { |k| k["#{field}"].to_s == "#{search}" } if field && search
+        end
+      end
+      data
+    end
+
 
     ##
     # Finds the network with the specified name.
@@ -388,9 +732,6 @@ module CloudstackClient
       params = {
           'command' => 'listNetworks'
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
       json = send_request(params)
 
       networks = json['network']
@@ -414,9 +755,6 @@ module CloudstackClient
           'isDefault' => true,
           'zoneid' => zone
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
       json = send_request(params)
 
       networks = json['network']
@@ -435,18 +773,7 @@ module CloudstackClient
       default
     end
 
-    ##
-    # Lists all available networks.
-
-    def list_networks
-      params = {
-          'command' => 'listNetworks'
-      }
-      json = send_request(params)
-      json['network'] || []
-    end
-
-    ##
+   ##
     # Finds the zone with the specified name.
 
     def get_zone(name)
@@ -482,18 +809,6 @@ module CloudstackClient
       return nil unless zones
 
       zones.first
-    end
-
-    ##
-    # Lists all available zones.
-
-    def list_zones
-      params = {
-          'command' => 'listZones',
-          'available' => 'true'
-      }
-      json = send_request(params)
-      json['zone'] || []
     end
 
     ##
@@ -626,9 +941,7 @@ module CloudstackClient
     # contents of that element are returned.
 
     def send_request(params)
-      if @project_id
-        params['projectId'] = @project_id
-      end
+      params['projectId'] = @project_id if @project_id
       params['response'] = 'json'
       params['apiKey'] = @api_key
 
@@ -637,13 +950,16 @@ module CloudstackClient
         params_arr << elem[0].to_s + '=' + elem[1].to_s
       }
       data = params_arr.join('&')
-      encoded_data = URI.encode(data.downcase).gsub('+', '%20').gsub(',', '%2c')
+      encoded_data = URI.encode(data.downcase).gsub('+', '%20').gsub(',', '%2c').gsub(' ','%20')
       signature = OpenSSL::HMAC.digest('sha1', @secret_key, encoded_data)
       signature = Base64.encode64(signature).chomp
       signature = CGI.escape(signature)
 
       url = "#{@api_url}?#{data}&signature=#{signature}"
+      url = url.gsub('+', '%20').gsub(' ','%20')
       uri = URI.parse(url)
+
+      Chef::Log.debug("URL: #{url}" )
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = @use_ssl
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE

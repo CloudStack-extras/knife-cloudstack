@@ -1,8 +1,6 @@
 #
-# Author:: Ryan Holmes (<rholmes@edmunds.com>)
-# Author:: KC Braunschweig (<kcbraunschweig@gmail.com>)
-# Revised:: 20121210 Sander Botman (<sbotman@schubergphilis.com>)
-# Copyright:: Copyright (c) 2011 Edmunds, Inc.
+# Author:: Sander Botman (<sbotman@schubergphilis.com>)
+# Copyright:: Copyright (c) 2012 Schuberg Philis.
 # License:: Apache License, Version 2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,55 +17,18 @@
 #
 
 require 'chef/knife'
+require 'chef/knife/cs_base'
 
 module KnifeCloudstack
-  class CsHosts < Chef::Knife
+  class CsOstypeList < Chef::Knife
+
+    include Chef::Knife::KnifeCloudstackBase
 
     deps do
       require 'knife-cloudstack/connection'
     end
 
-    banner "knife cs hosts"
-
-    option :cloudstack_url,
-           :short => "-U URL",
-           :long => "--cloudstack-url URL",
-           :description => "The CloudStack endpoint URL",
-           :proc => Proc.new { |url| Chef::Config[:knife][:cloudstack_url] = url }
-
-    option :cloudstack_api_key,
-           :short => "-A KEY",
-           :long => "--cloudstack-api-key KEY",
-           :description => "Your CloudStack API key",
-           :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_api_key] = key }
-
-    option :cloudstack_secret_key,
-           :short => "-K SECRET",
-           :long => "--cloudstack-secret-key SECRET",
-           :description => "Your CloudStack secret key",
-           :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
-
-   option  :cloudstack_project,
-           :short => "-P PROJECT_NAME",
-           :long => '--cloudstack-project PROJECT_NAME',
-           :description => "Cloudstack Project in which to create server",
-           :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
-           :default => nil
-
-    option :use_http_ssl,
-           :long => '--[no-]use-http-ssl',
-           :description => 'Support HTTPS',
-           :boolean => true,
-           :default => true
-
-    option :listall,
-           :long => "--listall",
-           :description => "List all hosts",
-           :boolean => true
-
-    option :name,
-           :long => "--name NAME",
-           :description => "Specify hostname to list"
+    banner "knife cs ostype list (options)"
 
     option :keyword,
            :long => "--keyword KEY",
@@ -106,8 +67,9 @@ module KnifeCloudstack
         locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
       else
         object_list = [
-          ui.color('IPAddress', :bold),
-          ui.color('Host', :bold),
+          ui.color('ID', :bold),
+          ui.color('Description', :bold),
+          ui.color('OS Categorie ID', :bold)
         ]
       end
 
@@ -115,22 +77,20 @@ module KnifeCloudstack
       object_list = [] if locate_config_value(:noheader)
 
       connection_result = connection.list_object(
-        "listVirtualMachines",
-        "virtualmachine",
+        "listOsTypes",
+        "ostype",
         locate_config_value(:filter),
-        locate_config_value(:listall),
-        locate_config_value(:keyword),
-        locate_config_value(:name)
+        false,
+        locate_config_value(:keyword)
       )
 
-      rules = connection.list_port_forwarding_rules
-
       connection_result.each do |r|
-        if locate_config_value(:fields)
+       if locate_config_value(:fields)
           locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
         else
-          object_list << (connection.get_server_public_ip(r, rules) || '')
-          object_list << (r['name'] || '')
+          object_list << r['id'].to_s
+          object_list << r['description'].to_s
+          object_list << r['oscategoryid'].to_s
         end
       end
       puts ui.list(object_list, :uneven_columns_across, columns)

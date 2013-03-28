@@ -1,4 +1,32 @@
-= Changes
+== 2013-01-12 (0.0.14.1)
+* Added the option: <tt>-P</tt> / <tt>--cloudstack-project</tt> to the following commands: <tt>account list</tt>, <tt>firewallrule list</tt>, <tt>hosts</tt>,
+  <tt>iso list</tt>, <tt>network list</tt>, <tt>router list</tt>, <tt>server list</tt>, <tt>template list</tt>, <tt>volume list</tt>
+
+== 2012-10-12 (0.0.14)
+* Added subcommands: <tt>account list</tt>, <tt>cluster list</tt>, <tt>config list</tt>, <tt>disk create</tt>, 
+  <tt>disk list</tt>, <tt>domain create</tt>, <tt>domain list</tt>,<tt>firewallrule list</tt>, <tt>host list</tt>, 
+  <tt>iso list</tt>, <tt>ostype list</tt>, <tt>oscategory list</tt>, <tt>pod list</tt>, <tt>project list</tt>, 
+  <tt>router list</tt>, <tt>service create</tt>, <tt>user list</tt>, <tt>volume list</tt>
+* Updated subcommands: <tt>hosts</tt>, <tt>network list</tt>, <tt>server list</tt>, <tt>service list</tt>,
+  <tt>template list</tt>, <tt>zone list</tt>
+* Added option: <tt>--filter</tt> to all list commands. This filters your output on the fields that you specify.
+  Filter can be a string <tt>'name'</tt> or regexp <tt>'/name/i'</tt>. Example: <tt>--filter "instancename:/i-xxx/i,accountname:jenkins"</tt>
+  Additional filters can be added by separating them using a comma ','
+* Added option: <tt>--fields</tt> to all list commands. Here you specify the fields that you want to display in your output.
+  Default outputs will be shown if no fields are defined. Example: <tt>--fields "name, instancename, domain"</tt>
+* Added option: <tt>--noheader</tt> to all list commands. 
+  This will remove the column header from the output.
+* Added option: <tt>--fieldlist</tt> to all list commands. This will display the fields that you can use to filter or 
+  use in your output. Example will be given with the first result that you specify in your filter.
+* Added option: <tt>--listall</tt> to: <tt>account list</tt>, <tt>domain list</tt>, <tt>firewallrule list</tt>, <tt>hosts</tt>, <tt>iso list</tt>, 
+  <tt>network list</tt>, <tt>project list</tt>, <tt>router list</tt>, <tt>server list</tt>, <tt>template list</tt>, <tt>user list</tt>, <tt>volume list</tt>.
+* Added option: <tt>--keyword</tt> to: <tt>account list</tt>, <tt>cluster list</tt>, <tt>config list</tt>, <tt>disk list</tt>, <tt>firewallrule list</tt>, 
+  <tt>hosts</tt>, <tt>iso list</tt>, <tt>network list</tt>, <tt>ostype list</tt>, <tt>oscategory list</tt>, <tt>pod list</tt>, <tt>project list</tt>, <tt>router list</tt>, 
+  <tt>server list</tt>, <tt>service list</tt>, <tt>user list</tt>, <tt>volume list</tt>, <tt>zone list</tt>.
+* Added option: <tt>--name</tt> to: <tt>account list</tt>, <tt>cluster list</tt>, <tt>config list</tt>, <tt>disk list</tt>, <tt>host list<tt>, <tt>hosts</tt>, <tt>iso list</tt>, 
+  <tt>pod list</tt>, <tt>project list</tt>, <tt>router list</tt>, <tt>server list</tt>, <tt>service list</tt>, <tt>volume list</tt>
+* Added option: <tt>--action</tt> to <tt>server list</tt> to <tt>start</tt> or <tt>stop</tt> the machines.
+
 == 2012-11-29 (0.0.13)
 * Windows support
   https://github.com/CloudStack-extras/knife-cloudstack/issues/31

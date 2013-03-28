@@ -46,6 +46,20 @@ To get this plugin to work in public clouds, it is essential that the virtual ne
 
 This plugin provides the following Knife subcommands.  Specific command options can be found by invoking the subcommand with a <tt>--help</tt> flag
 
+=== knife cs <command> list
+
+<tt>--filter</tt> 		Filters your output on the fields that you specify. Filter can be a string 'name' or regexp '/name/i'
+			Example: --filter "instancename:/i-xxx/i, account:accname"
+
+<tt>--fields</tt> 		The fields that you want to display in your output. Default outputs will be shown if no fields are defined.
+			Example: --fields "name, instancename, domain"
+
+<tt>--fieldlist</tt> 		This will display the fields that you can use to filter or use in your output. 
+			Example will be given with the first result that you specify in your filter.
+
+<tt>--noheader</tt> 	 	this will remove the column header from the output.
+
+
 === knife cs server create
 
 Provisions a new server in CloudStack and then performs a Chef bootstrap (using the SSH protocol).  The goal of the bootstrap is to get Chef installed on the target
@@ -79,19 +93,43 @@ the associated node and client objects from the Chef server.
 Displays a list of all servers in the currently configured CloudStack account.  <b>PLEASE NOTE</b> - this shows all
 servers associated with the cloudstack account including servers that are not registered with a Chef server.
 
+<tt>--listall</tt>		This will list all the servers, depending on the account that you are using.
+
+<tt>--keyword</tt>		Filters your output on the instance name that you specify: Example: <tt>--keyword "i-324"</tt>
+			This will display all servers with <tt>'i-324'</tt> inside the instancename.
+
+<tt>--name</tt> 			Filters your output on the name that you specify. Example: <tt>--name "chef"</tt> 
+			This will display all servers with <tt>'chef'</tt> inside the hostname.
+
+<tt>--action</tt>		This action will be executed on the output of the list command. Actions can be start or stop.
+
+<tt>-P</tt> / <tt>--cloudstack-project</tt>     Executes command within the project name that you specify.
+
 === knife cs network list
 Displays a list of all networks available in the currently configured CloudStack account. A network can be specified
-when creating a new server by passing the network name as an argument to the -W (or --network) option of the
+when creating a new server by passing the network name as an argument to the <tt>-W</tt> (or <tt>--network</tt>) option of the
 <tt>knife cs server create</tt> command.
+
+<tt>--listall</tt>		This will list all the networks, depending on the account that you are using.
+
+<tt>--keyword</tt>		Filters your output on the keyword that you specify. Example: <tt>--keyword "network1"</tt> 
+			This will display all networks with <tt>'network1'</tt> inside the name.
+
+<tt>-P</tt> / <tt>--cloudstack-project</tt>     Executes command within the project name that you specify.
 
 === knife cs service list
 Displays a list of all service offerings available in the currently configured CloudStack account. A service offering
 can be specified when creating a new server by passing the name as an argument to the -S (or --service) option of the
 <tt>knife cs server create</tt> command.
 
+<tt>--keyword</tt>		Filters your output on the service name, just like <tt>--name</tt> here below.
+			
+<tt>--name</tt>			Filters your output on the name that you specify. Example: <tt>--name "medium"</tt> or <tt>--keyword "medium"</tt>
+			This will display all cpu service offerings with 'medium' inside the name.
+
 === knife cs template list
 Displays a list of all templates in the currently configured CloudStack account. Featured templates are displayed by default.
-Use the -F (or --filter) option to use a different filter. The allowable filter values are:
+Use the <tt>-F</tt> (or <tt>--templatefilter</tt>) option to use a different filter. The allowable filter values are:
 
 * featured - templates that are featured and are public (this is the default)
 * self - templates that have been registered/created by the owner
@@ -99,24 +137,140 @@ Use the -F (or --filter) option to use a different filter. The allowable filter 
 * executable - all templates that can be used to deploy a new VM
 * community - templates that are public
 
-A template can be specified when creating a new server by passing the template name as an argument to the -T
-(or --template) option of the <tt>knife cs server create</tt> command.
+A template can be specified when creating a new server by passing the template name as an argument to the <tt>-T</tt>
+(or <tt>template</tt>) option of the <tt>knife cs server create</tt> command.
+
+<tt>--listall</tt>		This will list all the templates, depending on the account that you are using.
+
+<tt>-P</tt> / <tt>--cloudstack-project</tt>     Executes command within the project name that you specify.
 
 === knife cs zone list
 Displays a list of all zones available in the currently configured CloudStack account. A zone can be specified
-when creating a new server by passing the zone name as an argument to the -Z (or --zone) option of the
+when creating a new server by passing the zone name as an argument to the <tt>-Z</tt> (or <tt>--zone</tt>) option of the
 <tt>knife cs server create</tt> command.
+
+<tt>--keyword</tt>		Filters your output on the keyword that you specify. Example: <tt>--keyword "zone1"</tt> 
+			This will display all zones with <tt>'zone1'</tt> inside the name
 
 === knife cs hosts
 Convenience command that displays the public ip address and fqdn for all servers. Matches /etc/hosts file format.
+
+<tt>--listall</tt>		This will list all the servers, depending on the account that you are using.
+
+<tt>--keyword</tt>		Filters your result based on a keyword.
+
+<tt>--name</tt>	 		Filters your output on the name that you specify.  
+
+<tt>-P</tt> / <tt>--cloudstack-project</tt>     Executes command within the project name that you specify.
+
+==== knife cs account list
+
+<tt>--listall</tt>		This will list all the possible results, depending on the account that you are using.
+
+<tt>--keyword</tt>               Filters your result based on a keyword.
+
+<tt>--name</tt>                  Filters your output on the name that you specify.
+
+<tt>-P</tt> / <tt>--cloudstack-project</tt>	Executes command within the project name that you specify.
+
+==== knife cs cluster list
+
+<tt>--keyword</tt>               Filters your result based on a keyword.
+
+<tt>--name</tt>                  Filters your output on the name that you specify.
+
+==== knife cs config list
+
+<tt>--keyword</tt>               Filters your result based on a keyword.
+
+<tt>--name</tt>                  Filters your output on the name that you specify.
+
+==== knife cs disk list
+
+<tt>--keyword</tt>               Filters your result based on a keyword.
+
+<tt>--name</tt>                  Filters your output on the name that you specify.
+
+==== knife cs domain list
+
+<tt>--listall</tt>		This will list all the domains, depending on the account that you are using.
+
+==== knife cs firewallrule list
+
+<tt>--listall</tt>		This will list all the firewallrules, depending on the account that you are using.
+
+<tt>--keyword</tt>		Filters your result based on a keyword.
+
+<tt>-P</tt> / <tt>--cloudstack-project</tt>     Executes command within the project name that you specify.
+
+==== knife cs host list
+
+<tt>--name</tt>	 		Filters your output on the name that you specify.
+
+==== knife cs iso list
+
+<tt>--listall</tt>		This will list all the iso's, depending on the account that you are using.
+
+<tt>--keyword</tt>		Filters your result based on a keyword. 
+
+<tt>--name</tt>	 		Filters your output on the name that you specify.
+
+<tt>-P</tt> / <tt>--cloudstack-project</tt>     Executes command within the project name that you specify.
+
+==== knife cs ostype list
+
+<tt>--keyword</tt>		Filters your output on the keyword that you specify.
+
+==== knife cs oscategory list
+
+<tt>--keyword</tt>		Filters your output on the keyword that you specify.
+
+==== knife cs pod list
+
+<tt>--keyword</tt>		Filters your result based on a keyword.
+
+<tt>--name</tt>	 		Filters your output on the name that you specify.
+
+==== knife project list
+
+<tt>--listall</tt>		This will list all the projects, depending on the account that you are using.
+
+<tt>--keyword</tt>		Filters your result based on a keyword. 
+
+<tt>--name</tt>	 		Filters your output on the name that you specify.
+
+==== knife cs router list
+
+<tt>--listall</tt>		This will list all the routers, depending on the account that you are using.
+
+<tt>--keyword</tt>		Filters your result based on a keyword. 
+
+<tt>--name</tt>	 		Filters your output on the name that you specify.
+
+<tt>-P</tt> / <tt>--cloudstack-project</tt>     Executes command within the project name that you specify.
+			
+==== knife cs user list
+
+<tt>--listall</tt>		This will list all the users, depending on the account that you are using.
+
+<tt>--keyword</tt>		Filters your output on the keyword that you specify.
+
+==== knife cs volume list:	
+
+<tt>--listall</tt>		This will list all the volumes, depending on the account that you are using.
+
+<tt>--keyword</tt>		Filters your output on the keyword that you specify.
+
+<tt>--name</tt>			Filters your output on the name that you specify.
+
+<tt>-P</tt> / <tt>--cloudstack-project</tt>     Executes command within the project name that you specify.
 
 === knife cs stack create
 Creates a "stack" of servers based on a JSON definition file. Simple orchestration can be performed by
 specifying one or more actions to be executed after a server (or group of servers) is created.
 
 ==== Example Stack Definition File:
-<tt>
-{
+<tt>{
   "name": "hadoop_cluster_a",
   "description": "A small hadoop cluster with hbase",
   "version": "1.0",
@@ -154,8 +308,7 @@ specifying one or more actions to be executed after a server (or group of server
         { "http_request": "http://${hadoop-master}:50070/index.jsp" }
       ]
     }
-}
-</tt>
+}</tt>
 
 ==== Stack Attributes
 name:: Stack name. May be used in the future to e.g. look up a stack in a databag.
@@ -199,6 +352,7 @@ Reboots the specified virtual machines(s).
 Author:: Ryan Holmes <rholmes@edmunds.com> 
 Author:: KC Braunschweig <kcbraunschweig@gmail.com>
 Author:: John E. Vincent <lusis.org+github.com@gmail.com>
+Author:: Sander Botman <sbotman@schubergphilis.com>
 
 Copyright:: Copyright (c) 2011 Edmunds, Inc.
 License:: Apache License, Version 2.0

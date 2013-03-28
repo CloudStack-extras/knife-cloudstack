@@ -1,5 +1,6 @@
 #
 # Author:: Ryan Holmes (<rholmes@edmunds.com>)
+# Revised:: 20121210 Sander Botman (<sbotman@schubergphilis.com>)
 # Copyright:: Copyright (c) 2011 Edmunds, Inc.
 # License:: Apache License, Version 2.0
 #
@@ -17,11 +18,12 @@
 #
 
 require 'chef/knife'
+require 'chef/knife/cs_base'
 
 module KnifeCloudstack
   class CsServiceList < Chef::Knife
 
-    MEGABYTES = 1024 * 1024
+    include Chef::Knife::KnifeCloudstackBase
 
     deps do
       require 'knife-cloudstack/connection'
@@ -29,50 +31,93 @@ module KnifeCloudstack
 
     banner "knife cs service list (options)"
 
-    option :cloudstack_url,
-           :short => "-U URL",
-           :long => "--cloudstack-url URL",
-           :description => "The CloudStack endpoint URL",
-           :proc => Proc.new { |url| Chef::Config[:knife][:cloudstack_url] = url }
+    option :name,
+           :long => "--name NAME",
+           :description => "Specify servicename to list"
 
-    option :cloudstack_api_key,
-           :short => "-A KEY",
-           :long => "--cloudstack-api-key KEY",
-           :description => "Your CloudStack API key",
-           :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_api_key] = key }
+    option :keyword,
+           :long => "--keyword NAME",
+           :description => "Specify part of servicename to list"
 
-    option :cloudstack_secret_key,
-           :short => "-K SECRET",
-           :long => "--cloudstack-secret-key SECRET",
-           :description => "Your CloudStack secret key",
-           :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
+    option :filter,
+           :long => "--filter 'FIELD:NAME'",
+           :description => "Specify field and part of name to list"
+
+    option :fields,
+           :long => "--fields 'NAME, NAME'",
+           :description => "The fields to output, comma-separated"
+
+    option :fieldlist,
+           :long => "--fieldlist",
+           :description => "The available fields to output, comma-separated",
+           :boolean => true
+
+    option :noheader,
+           :long => "--noheader",
+           :description => "Removes header from output",
+           :boolean => true
+
+    option :index,
+           :long => "--index",
+           :description => "Add index numbers to the output",
+           :boolean => true
 
     def run
 
       connection = CloudstackClient::Connection.new(
           locate_config_value(:cloudstack_url),
           locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key)
+          locate_config_value(:cloudstack_secret_key),
+          locate_config_value(:cloudstack_project),
+          locate_config_value(:use_http_ssl)
       )
 
-      service_list = [
+      object_list = []
+      object_list << ui.color('Index', :bold) if locate_config_value(:index)
+
+      if locate_config_value(:fields)
+        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
+      else
+        [
           ui.color('Name', :bold),
           ui.color('Memory', :bold),
           ui.color('CPUs', :bold),
           ui.color('CPU Speed', :bold),
           ui.color('Created', :bold)
-      ]
-
-      services = connection.list_service_offerings
-      services.each do |s|
-        service_list << s['name']
-        service_list << (human_memory(s['memory']) || 'Unknown')
-        service_list << s['cpunumber'].to_s
-        service_list << s['cpuspeed'].to_s + ' Mhz'
-        service_list << s['created']
+        ].each { |field| object_list << field }
       end
-      puts ui.list(service_list, :columns_across, 5)
 
+      columns = object_list.count
+      object_list = [] if locate_config_value(:noheader)
+
+      connection_result = connection.list_object(
+        "listServiceOfferings",
+        "serviceoffering",
+        locate_config_value(:filter),
+        false,
+        locate_config_value(:keyword),
+        locate_config_value(:name)
+      )
+
+      index_num = 0
+      connection_result.each do |r|
+        if locate_config_value(:index)
+          index_num += 1
+          object_list << index_num.to_s
+        end
+
+        if locate_config_value(:fields)
+          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
+        else
+          object_list << r['name'].to_s
+          object_list << (r['memory'] ? human_memory(r['memory']) : 'Unknown')
+          object_list << r['cpunumber'].to_s
+          object_list << r['cpuspeed'].to_s + ' Mhz'
+          object_list << r['created']
+        end
+      end
+      puts ui.list(object_list, :uneven_columns_across, columns)
+      connection.show_object_fields(connection_result) if locate_config_value(:fieldlist)
     end
 
     def human_memory n
@@ -81,7 +126,7 @@ module KnifeCloudstack
         n /= 1024.0
         count += 1
       end
-      format("%.2f", n) + %w(MB GB TB)[count]
+      format("%.0f", n) + %w(MB GB TB)[count]
     end
 
     def locate_config_value(key)
