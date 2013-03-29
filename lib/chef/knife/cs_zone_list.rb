@@ -1,6 +1,8 @@
 #
 # Author:: Ryan Holmes (<rholmes@edmunds.com>)
+# Author:: Sander Botman (<sbotman@schubergphilis.com>)
 # Copyright:: Copyright (c) 2011 Edmunds, Inc.
+# Copyright:: Copyright (c) 2013 Sander Botman.
 # License:: Apache License, Version 2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,9 +19,14 @@
 #
 
 require 'chef/knife'
+require 'chef/knife/cs_base'
+require 'chef/knife/cs_baselist'
 
 module KnifeCloudstack
   class CsZoneList < Chef::Knife
+
+    include Chef::Knife::KnifeCloudstackBase
+    include Chef::Knife::KnifeCloudstackBaseList
 
     deps do
       require 'knife-cloudstack/connection'
@@ -27,51 +34,67 @@ module KnifeCloudstack
 
     banner "knife cs zone list (options)"
 
-    option :cloudstack_url,
-           :short => "-U URL",
-           :long => "--cloudstack-url URL",
-           :description => "The CloudStack endpoint URL",
-           :proc => Proc.new { |url| Chef::Config[:knife][:cloudstack_url] = url }
+    option :keyword,
+           :long => "--keyword KEY",
+           :description => "List by keyword"
 
-    option :cloudstack_api_key,
-           :short => "-A KEY",
-           :long => "--cloudstack-api-key KEY",
-           :description => "Your CloudStack API key",
-           :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_api_key] = key }
-
-    option :cloudstack_secret_key,
-           :short => "-K SECRET",
-           :long => "--cloudstack-secret-key SECRET",
-           :description => "Your CloudStack secret key",
-           :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
+    option :index,
+           :long => "--index",
+           :description => "Add index numbers to the output",
+           :boolean => true
 
     def run
 
       connection = CloudstackClient::Connection.new(
           locate_config_value(:cloudstack_url),
           locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key)
+          locate_config_value(:cloudstack_secret_key),
+          locate_config_value(:cloudstack_project),
+          locate_config_value(:use_http_ssl)
       )
+ 
+      object_list = []
+      object_list << ui.color('Index', :bold) if locate_config_value(:index)
 
-      zone_list = [
-          ui.color('Name', :bold),
+      if locate_config_value(:fields)
+        object_list = []
+        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
+      else
+        [
+ 	  ui.color('Name', :bold),
           ui.color('Network Type', :bold),
           ui.color('Security Groups', :bold)
-      ]
-
-      zones = connection.list_zones
-      zones.each do |z|
-        zone_list << z['name']
-        zone_list << z['networktype']
-        zone_list << z['securitygroupsenabled'].to_s
+        ].each { |field| object_list << field }
       end
-      puts ui.list(zone_list, :columns_across, 3)
 
-    end
+      columns = object_list.count
+      object_list = [] if locate_config_value(:noheader)
 
-    def locate_config_value(key)
-      key = key.to_sym
-      Chef::Config[:knife][key] || config[key]
+      connection_result = connection.list_object(
+        "listZones",
+        "zone", 
+        locate_config_value(:filter),
+	false,
+        locate_config_value(:keyword)
+      )
+
+      index_num = 0
+      connection_result.each do |r|
+        if locate_config_value(:index)
+          index_num += 1
+          object_list << index_num.to_s
+        end
+
+        if locate_config_value(:fields)
+          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
+        else
+          object_list << r['name'].to_s
+          object_list << r['networktype'].to_s
+          object_list << r['securitygroupsenabled'].to_s
+        end
+      end
+      puts ui.list(object_list, :uneven_columns_across, columns)
+      connection.show_object_fields(connection_result) if locate_config_value(:fieldlist)
     end
 
   end
