@@ -24,6 +24,22 @@ require 'uri'
 require 'cgi'
 require 'net/http'
 require 'json'
+require 'highline/import'
+
+class String
+  def to_regexp
+    return nil unless self.strip.match(/\A\/(.*)\/(.*)\Z/mx)
+    regexp , flags = $1 , $2
+    return nil if !regexp || flags =~ /[^xim]/m
+
+    x = /x/.match(flags) && Regexp::EXTENDED
+    i = /i/.match(flags) && Regexp::IGNORECASE
+    m = /m/.match(flags) && Regexp::MULTILINE
+
+    Regexp.new regexp , [x,i,m].inject(0){|a,f| f ? a+f : a }
+  end
+end
+
 
 module CloudstackClient
   class Connection
@@ -46,6 +62,14 @@ module CloudstackClient
         @project_id = project['id']
       end
 
+    end
+
+    ##
+    # Enable core/ui to display nicely formatted output
+
+    def ui
+      require 'chef/knife/core/ui'
+      @ui ||= Chef::Knife::UI.new(STDOUT, STDERR, STDIN, {})
     end
 
     ##
@@ -110,6 +134,55 @@ module CloudstackClient
       server['nic'].each do |nic|
         return nic if nic['isdefault']
       end
+    end
+
+    ## 
+    # List all the objects based on the command that is specified.
+    
+        def list_object(command, json_result, filter=nil, listall=nil, keyword=nil, name=nil, templatefilter=nil)
+      params = {
+          'command' => command
+      }
+      params['listall'] = true if listall || name || keyword || filter unless listall == false
+      params['keyword'] = keyword if keyword
+      params['name'] = name if name
+
+      if templatefilter
+        template = 'featured'
+        template = templatefilter.downcase if ["featured","self","self-executable","executable","community"].include?(templatefilter.downcase)
+        params['templateFilter'] = template
+      end
+
+      json = send_request(params)
+      Chef::Log.debug("JSON (list_object) result: #{json}")
+
+      result = json["#{json_result}"] || []
+      result = data_filter(result, filter) if filter
+      result
+    end
+
+    ##
+    # List all object fields if --fieldlist parameter is given.
+
+    def list_object_fields(object)
+      exit 1 if object.nil? || object.empty?
+      object_fields = [
+        ui.color('Key', :bold),
+        ui.color('Type', :bold),
+        ui.color('Value', :bold)
+      ]
+
+      object.first.sort.each do |k,v|
+        object_fields << k
+        object_fields << v.class.to_s
+        if v.kind_of?(Array)
+          object_fields << '<Array>'
+        else
+          object_fields << ("#{v}").strip.to_s
+        end
+      end
+      puts "\n"
+      puts ui.list(object_fields, :uneven_columns_across, 3)
     end
 
     ##
@@ -184,9 +257,6 @@ module CloudstackClient
           'zoneId' => zone['id'],
           'networkids' => network_ids.join(',')
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
 
       params['name'] = host_name if host_name
 
@@ -378,6 +448,22 @@ module CloudstackClient
       }
 
       nil
+    end
+
+    ##
+    # Filter data on regex or just on string
+
+    def data_filter(data, filters)
+      filters.split(',').each do |filter|
+        field = filter.split(':').first.strip.downcase
+        search = filter.split(':').last.strip
+        if search =~ /^\/.*\/?/
+          data = data.find_all { |k| k["#{field}"].to_s =~ search.to_regexp } if field && search
+        else
+          data = data.find_all { |k| k["#{field}"].to_s == "#{search}" } if field && search
+        end
+      end
+      data
     end
 
 
