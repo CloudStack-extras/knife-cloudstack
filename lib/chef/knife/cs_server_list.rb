@@ -114,7 +114,7 @@ module KnifeCloudstack
       end
 
       puts ui.list(object_list, :uneven_columns_across, columns)
-      connection.show_object_fields(connection_result) if locate_config_value(:fieldlist)
+      connection.list_object_fields(connection_result) if locate_config_value(:fieldlist)
 
       if locate_config_value(:action)
         case locate_config_value(:action).downcase
