@@ -1,6 +1,8 @@
 #
 # Author:: Ryan Holmes (<rholmes@edmunds.com>)
+# Author:: Sander Botman (<sbotman@schubergphilis.com>)
 # Copyright:: Copyright (c) 2011 Edmunds, Inc.
+# Copyright:: Copyright (c) 2013 Sander Botman.
 # License:: Apache License, Version 2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,16 +19,17 @@
 #
 
 require 'chef/knife'
+require 'chef/knife/cs_base'
 require 'json'
 require 'chef/knife/winrm_base'
 require 'winrm'
 require 'httpclient'
 require 'em-winrm'
 
-
 module KnifeCloudstack
   class CsServerCreate < Chef::Knife
 
+    include Chef::Knife::KnifeCloudstackBase
     include Chef::Knife::WinrmBase
 
     # Seconds to delay between detecting ssh and initiating the bootstrap
@@ -109,24 +112,6 @@ module KnifeCloudstack
            :long => "--identity-file IDENTITY_FILE",
            :description => "The SSH identity file used for authentication"
 
-    option :cloudstack_url,
-           :short => "-U URL",
-           :long => "--cloudstack-url URL",
-           :description => "The CloudStack API endpoint URL",
-           :proc => Proc.new { |u| Chef::Config[:knife][:cloudstack_url] = u }
-
-    option :cloudstack_api_key,
-           :short => "-A KEY",
-           :long => "--cloudstack-api-key KEY",
-           :description => "Your CloudStack API key",
-           :proc => Proc.new { |k| Chef::Config[:knife][:cloudstack_api_key] = k }
-
-    option :cloudstack_secret_key,
-           :short => "-K SECRET",
-           :long => "--cloudstack-secret-key SECRET",
-           :description => "Your CloudStack secret key",
-           :proc => Proc.new { |s| Chef::Config[:knife][:cloudstack_secret_key] = s }
-
     option :prerelease,
            :long => "--prerelease",
            :description => "Install the pre-release chef gems"
@@ -183,25 +168,25 @@ module KnifeCloudstack
            :default => nil
 
     option :static_nat,
-            :long => '--static-nat',
-            :description => 'Support Static NAT',
-            :boolean => true,
-            :default => false
+           :long => '--static-nat',
+           :description => 'Support Static NAT',
+           :boolean => true,
+           :default => false
 
     option :use_http_ssl,
-            :long => '--[no-]use-http-ssl',
-            :description => 'Support HTTPS',
-            :boolean => true,
-            :default => true
+           :long => '--[no-]use-http-ssl',
+           :description => 'Support HTTPS',
+           :boolean => true,
+           :default => true
             
     option :bootstrap_protocol,
-      :long => "--bootstrap-protocol protocol",
-      :description => "Protocol to bootstrap windows servers. options: winrm/ssh",
-      :default => "ssh"
+           :long => "--bootstrap-protocol protocol",
+           :description => "Protocol to bootstrap windows servers. options: winrm/ssh",
+           :default => "ssh"
 
     option :fqdn,
-      :long => '--fqdn',
-      :description => "FQDN which Kerberos Understands (only for Windows Servers)"
+           :long => '--fqdn',
+           :description => "FQDN which Kerberos Understands (only for Windows Servers)"
 
 
     def connection
@@ -308,29 +293,31 @@ module KnifeCloudstack
         ui.error "Cloudstack service offering not specified"
         exit 1
       end
-      if locate_config_value(:bootstrap_protocol) == 'ssh'
-        identity_file = locate_config_value :identity_file
-        ssh_user = locate_config_value :ssh_user
-        ssh_password = locate_config_value :ssh_password
-        unless identity_file || (ssh_user && ssh_password)
-          ui.error("You must specify either an ssh identity file or an ssh user and password")
-          exit 1
+      unless config[:no_bootstrap]
+        if locate_config_value(:bootstrap_protocol) == 'ssh'
+          identity_file = locate_config_value :identity_file
+          ssh_user = locate_config_value :ssh_user
+          ssh_password = locate_config_value :ssh_password
+          unless identity_file || (ssh_user && ssh_password)
+            ui.error("You must specify either an ssh identity file or an ssh user and password")
+            exit 1
+          end
+          @bootstrap_protocol = 'ssh'
+        elsif locate_config_value(:bootstrap_protocol) == 'winrm'
+          if not @windows_image
+            ui.error("Only Windows Images support WinRM protocol for bootstrapping.")
+            exit 1
+          end
+          winrm_user = locate_config_value :winrm_user
+          winrm_password = locate_config_value :winrm_password
+          winrm_transport = locate_config_value :winrm_transport
+          winrm_port = locate_config_value :winrm_port
+          unless winrm_user && winrm_password && winrm_transport && winrm_port
+            ui.error("WinRM User, Password, Transport and Port are compulsory parameters")
+            exit 1
+          end
+          @bootstrap_protocol = 'winrm'
         end
-        @bootstrap_protocol = 'ssh'
-      elsif locate_config_value(:bootstrap_protocol) == 'winrm'
-        if not @windows_image
-          ui.error("Only Windows Images support WinRM protocol for bootstrapping.")
-          exit 1
-        end
-        winrm_user = locate_config_value :winrm_user
-        winrm_password = locate_config_value :winrm_password
-        winrm_transport = locate_config_value :winrm_transport
-        winrm_port = locate_config_value :winrm_port
-        unless winrm_user && winrm_password && winrm_transport && winrm_port
-          ui.error("WinRM User, Password, Transport and Port are compulsory parameters")
-          exit 1
-        end
-        @bootstrap_protocol = 'winrm'
       end
     end
 
@@ -342,7 +329,6 @@ module KnifeCloudstack
       else
         puts("\nAllocate ip address, create forwarding rules")
         ip_address = connection.associate_ip_address(server['zoneid'], locate_config_value(:cloudstack_networks))
-        #ip_address = connection.get_public_ip_address('202.2.94.158')
         puts("\nAllocated IP Address: #{ip_address['ipaddress']}")
         Chef::Log.debug("IP Address Info: #{ip_address}")
 
