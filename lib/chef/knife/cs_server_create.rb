@@ -99,7 +99,6 @@ module KnifeCloudstack
            :long => "--ssh-password PASSWORD",
            :description => "The ssh password"
 
-
     option :ssh_port,
            :long => "--ssh-port PORT",
            :description => "The ssh port",
@@ -164,10 +163,10 @@ module KnifeCloudstack
            :default => false
 
     option :no_bootstrap,
-           :long => "--no-bootstrap",
+           :long => "--[no-]bootstrap",
            :description => "Disable Chef bootstrap",
            :boolean => true,
-           :default => false
+           :default => true
 
     option :port_rules,
            :short => "-p PORT_RULES",
