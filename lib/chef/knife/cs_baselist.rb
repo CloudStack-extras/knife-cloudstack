@@ -1,6 +1,6 @@
 #
 # Author:: Sander Botman (<sbotman@schubergphilis.com>)
-# Copyright:: Copyright (c) 2012 Sander Botman.
+# Copyright:: Copyright (c) 2013 Sander Botman.
 # License:: Apache License, Version 2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,11 +24,6 @@ class Chef
 
       def self.included(includer)
         includer.class_eval do
-
-         # deps do
-         #   require 'readline'
-         #   require 'chef/json_compat'
-         # end
 
           option :filter,
                  :long => "--filter 'FIELD:NAME'",
