@@ -1,6 +1,8 @@
 #
 # Author:: Ryan Holmes (<rholmes@edmunds.com>)
+# Author:: Sander Botman (<sbotman@schubergphilis.com>)
 # Copyright:: Copyright (c) 2011 Edmunds, Inc.
+# Copyright:: Copyright (c) 2013 Sander Botman.
 # License:: Apache License, Version 2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,9 +19,14 @@
 #
 
 require 'chef/knife'
+require 'chef/knife/cs_base'
+require 'chef/knife/cs_baselist'
 
 module KnifeCloudstack
   class CsNetworkList < Chef::Knife
+
+    include Chef::Knife::KnifeCloudstackBase
+    include Chef::Knife::KnifeCloudstackBaseList
 
     deps do
       require 'knife-cloudstack/connection'
@@ -27,58 +34,66 @@ module KnifeCloudstack
 
     banner "knife cs network list (options)"
 
-    option :cloudstack_url,
-           :short => "-U URL",
-           :long => "--cloudstack-url URL",
-           :description => "The CloudStack endpoint URL",
-           :proc => Proc.new { |url| Chef::Config[:knife][:cloudstack_url] = url }
+    option :listall,
+           :long => "--listall",
+           :description => "List all networks",
+           :boolean => true
 
-    option :cloudstack_api_key,
-           :short => "-A KEY",
-           :long => "--cloudstack-api-key KEY",
-           :description => "Your CloudStack API key",
-           :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_api_key] = key }
-
-    option :cloudstack_secret_key,
-           :short => "-K SECRET",
-           :long => "--cloudstack-secret-key SECRET",
-           :description => "Your CloudStack secret key",
-           :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
+    option :keyword,
+           :long => "--keyword KEY",
+           :description => "List by keyword"
 
     def run
 
       connection = CloudstackClient::Connection.new(
           locate_config_value(:cloudstack_url),
           locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key)
+          locate_config_value(:cloudstack_secret_key),
+          locate_config_value(:cloudstack_project),
+          locate_config_value(:use_http_ssl)
       )
 
-      network_list = [
-          ui.color('Name', :bold),
-          ui.color('Type', :bold),
-          ui.color('Default', :bold),
-          ui.color('Shared', :bold),
-          ui.color('Gateway', :bold),
-          ui.color('Netmask', :bold)
-      ]
-
-      networks = connection.list_networks
-      networks.each do |n|
-        network_list << n['name']
-        network_list << n['type']
-        network_list << n['isdefault'].to_s
-        network_list << n['isshared'].to_s
-        network_list << (n['gateway'] || '')
-        network_list << (n['netmask'] || '')
+      object_list = []
+      if locate_config_value(:fields)
+        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
+      else
+        object_list << ui.color('Name', :bold)
+        object_list << ui.color('Type', :bold)
+        object_list << ui.color('Default', :bold)
+        object_list << ui.color('Shared', :bold)
+        object_list << ui.color('Gateway', :bold)
+        object_list << ui.color('Netmask', :bold)
+        object_list << ui.color('Account', :bold) unless locate_config_value(:cloudstack_project)
+        object_list << ui.color('Domain', :bold)
       end
-      puts ui.list(network_list, :columns_across, 6)
 
+      columns = object_list.count
+      object_list = [] if locate_config_value(:noheader)
+
+      connection_result = connection.list_object(
+        "listNetworks",
+        "network",
+        locate_config_value(:filter),
+        locate_config_value(:listall),
+        locate_config_value(:keyword)
+      )
+
+      connection_result.each do |r|
+        if locate_config_value(:fields)
+          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
+        else
+          object_list << r['name'].to_s
+          object_list << r['type'].to_s
+          object_list << (r['isdefault'] ? r['isdefault'].to_s : 'false')
+          object_list << (r['isshared'] ? r['isshared'].to_s : 'false')
+          object_list << (r['gateway'] || '')
+          object_list << (r['netmask'] || '')
+          object_list << (r['account'] || '') unless locate_config_value(:cloudstack_project)
+          object_list << (r['domain'] || '')
+        end
+      end
+      puts ui.list(object_list, :uneven_columns_across, columns)
+      connection.list_object_fields(connection_result) if locate_config_value(:fieldlist)
     end
-
-    def locate_config_value(key)
-      key = key.to_sym
-      Chef::Config[:knife][key] || config[key]
-    end
-
   end
 end
