@@ -41,6 +41,7 @@ module KnifeCloudstack
            :description => "Specify part of hostname to list"
 
     def run
+      validate_base_options
 
       connection = CloudstackClient::Connection.new(
           locate_config_value(:cloudstack_url),

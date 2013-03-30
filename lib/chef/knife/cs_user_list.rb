@@ -42,6 +42,7 @@ module KnifeCloudstack
            :description => "List by keyword"
 
     def run
+      validate_base_options
 
       connection = CloudstackClient::Connection.new(
           locate_config_value(:cloudstack_url),
