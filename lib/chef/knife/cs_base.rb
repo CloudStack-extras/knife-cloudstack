@@ -61,6 +61,21 @@ class Chef
                  :boolean => true,
                  :default => true
         
+          def validate_base_options
+            unless locate_config_value :cloudstack_url
+              ui.error "Cloudstack URL not specified"
+              exit 1
+            end
+            unless locate_config_value :cloudstack_api_key
+              ui.error "Cloudstack API key not specified"
+              exit 1
+            end
+            unless locate_config_value :cloudstack_secret_key
+              ui.error "Cloudstack Secret key not specified"
+              exit 1
+            end
+          end
+
           def locate_config_value(key)
             key = key.to_sym
             Chef::Config[:knife][key] || config[key]

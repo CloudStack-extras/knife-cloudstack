@@ -44,6 +44,7 @@ module KnifeCloudstack
            :boolean => true
 
     def run
+      validate_base_options
 
       connection = CloudstackClient::Connection.new(
           locate_config_value(:cloudstack_url),

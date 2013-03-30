@@ -38,7 +38,7 @@ module KnifeCloudstack
            :boolean => true
 
     def run
-
+      validate_base_options
       $stdout.sync = true
 
       connection = CloudstackClient::Connection.new(
