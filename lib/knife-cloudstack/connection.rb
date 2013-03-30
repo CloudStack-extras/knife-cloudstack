@@ -143,7 +143,7 @@ module CloudstackClient
       params = {
           'command' => command
       }
-      params['listall'] = true if listall || name || keyword || filter unless listall == false
+      params['listall'] = true if listall || name || keyword unless listall == false
       params['keyword'] = keyword if keyword
       params['name'] = name if name
 
