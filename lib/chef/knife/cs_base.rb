@@ -70,7 +70,7 @@ class Chef
               ui.error "Cloudstack API key not specified"
               exit 1
             end
-            unless locate_config_value :cloudstack_isecret_key
+            unless locate_config_value :cloudstack_secret_key
               ui.error "Cloudstack Secret key not specified"
               exit 1
             end
