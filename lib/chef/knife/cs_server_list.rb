@@ -117,12 +117,74 @@ module KnifeCloudstack
       connection.list_object_fields(connection_result) if locate_config_value(:fieldlist)
 
       if locate_config_value(:action)
-        case locate_config_value(:action).downcase
-          when "start" then connection.server_action("startVirtualMachine", "virtualmachine", connection_result, locate_config_value(:yes))
-          when "stop" then connection.server_action("stopVirtualMachine", "virtualmachine", connection_result, locate_config_value(:yes))
+        connection_result.each do |r|
+          hostname = r['name'] 
+          case locate_config_value(:action).downcase
+            when "start" then
+              show_object_details(r, connection, rules)
+              result = confirm_action("Do you really want to start this server ")
+              if result then 
+                print "#{ui.color("Waiting for startup", :magenta)}"
+	        connection.start_server(hostname)
+                puts "\n"
+                ui.msg("Started server #{hostname}")
+              end 
+            when "stop" then 
+              show_object_details(r, connection, rules)
+              result = confirm_action("Do you really want to stop this server ")
+              if result then 
+                print "#{ui.color("Waiting for shutdown", :magenta)}"
+                connection.stop_server(hostname)
+                puts "\n"
+                ui.msg("Shutdown server #{hostname}")
+              end 
+            
+          end
         end
       end
-
     end
+  
+    def show_object_details(s, connection, rules)
+      object_fields = [
+        ui.color('Key', :bold),
+        ui.color('Value', :bold)
+      ]
+
+      object_fields << ui.color("Name", :yellow, :bold)
+      object_fields << s['name'].to_s
+      object_fields << ui.color("Public IP", :yellow, :bold)
+      object_fields << (connection.get_server_public_ip(s, rules) || '')
+      object_fields << ui.color("Service", :yellow, :bold)
+      object_fields << s['serviceofferingname'].to_s
+      object_fields << ui.color("Template", :yellow, :bold)
+      object_fields << s['templatename']
+      object_fields << ui.color("Domain", :yellow, :bold)
+      object_fields << s['domain']
+      object_fields << ui.color("Zone", :yellow, :bold)
+      object_fields << s['zonename']
+      object_fields << ui.color("State", :yellow, :bold)
+      object_fields << s['state']
+
+      puts "\n"
+      puts ui.list(object_fields, :uneven_columns_across, 2)
+      puts "\n"
+    end
+
+    def confirm_action(question)
+      result = ui.ask_question(question, :default => "Y" )
+      if result == "Y" || result == "y" then 
+        return true 
+      else 
+        return false
+      end
+    end
+
+    def msg(label, value)
+      if value && !value.empty?
+        puts "#{ui.color(label, :cyan)}: #{value}"
+      end
+    end
+
+
   end
 end

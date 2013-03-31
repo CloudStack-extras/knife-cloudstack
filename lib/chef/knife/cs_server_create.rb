@@ -160,25 +160,12 @@ module KnifeCloudstack
            :proc => lambda { |o| o.split(/[\s,]+/) },
            :default => []
 
-    option :cloudstack_project,
-           :short => "-P PROJECT_NAME",
-           :long => '--cloudstack-project PROJECT_NAME',
-           :description => "Cloudstack Project in which to create server",
-           :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
-           :default => nil
-
     option :static_nat,
            :long => '--static-nat',
            :description => 'Support Static NAT',
            :boolean => true,
            :default => false
 
-    option :use_http_ssl,
-           :long => '--[no-]use-http-ssl',
-           :description => 'Support HTTPS',
-           :boolean => true,
-           :default => true
-            
     option :bootstrap_protocol,
            :long => "--bootstrap-protocol protocol",
            :description => "Protocol to bootstrap windows servers. options: winrm/ssh",
@@ -200,6 +187,8 @@ module KnifeCloudstack
     end
 
     def run
+      validate_base_options
+
       Chef::Log.debug("Validate hostname and options")
       hostname = @name_args.first
       unless /^[a-zA-Z0-9][a-zA-Z0-9-]*$/.match hostname then
