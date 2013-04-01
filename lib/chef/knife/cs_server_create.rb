@@ -81,6 +81,11 @@ module KnifeCloudstack
            :proc => lambda { |n| n.split(',').map {|sn| sn.strip}} ,
            :default => []
 
+    option :cloudstack_password,
+           :long => "--cs-password",
+           :description => "Enables auto-generated passwords by Cloudstack",
+           :boolean => true
+
     option :public_ip,
            :long => "--[no-]public-ip",
            :description => "Allocate a public IP for this server",
@@ -229,6 +234,7 @@ module KnifeCloudstack
 
       puts "\n\n"
       puts "#{ui.color('Name', :cyan)}: #{server['name']}"
+      puts "#{ui.color('Password', :cyan)}: #{server['password']}" if locate_config_value(:cloudstack_password)
       puts "#{ui.color('Public IP', :cyan)}: #{public_ip}"
 
       return if config[:no_bootstrap]
@@ -287,7 +293,7 @@ module KnifeCloudstack
           identity_file = locate_config_value :identity_file
           ssh_user = locate_config_value :ssh_user
           ssh_password = locate_config_value :ssh_password
-          unless identity_file || (ssh_user && ssh_password)
+          unless identity_file || (ssh_user && ssh_password) || locate_config_value(:cloudstack_password)
             ui.error("You must specify either an ssh identity file or an ssh user and password")
             exit 1
           end
@@ -301,7 +307,7 @@ module KnifeCloudstack
           winrm_password = locate_config_value :winrm_password
           winrm_transport = locate_config_value :winrm_transport
           winrm_port = locate_config_value :winrm_port
-          unless winrm_user && winrm_password && winrm_transport && winrm_port
+          unless (winrm_user && winrm_transport && winrm_port) && (locate_config_value(:cloudstack_password) || winrm_password)
             ui.error("WinRM User, Password, Transport and Port are compulsory parameters")
             exit 1
           end
@@ -430,14 +436,14 @@ module KnifeCloudstack
             end
             bootstrap.name_args = [fqdn]
             bootstrap.config[:winrm_user] = locate_config_value(:winrm_user) || 'Administrator'
-            bootstrap.config[:winrm_password] = locate_config_value(:winrm_password)
+            locate_config_value(:cloudstack_password) ? bootstrap.config[:winrm_password] = server['password'] : bootstrap.config[:winrm_password] = locate_config_value(:winrm_password)
             bootstrap.config[:winrm_transport] = locate_config_value(:winrm_transport)
             bootstrap.config[:winrm_port] = locate_config_value(:winrm_port)
 
         elsif locate_config_value(:bootstrap_protocol) == 'ssh'
             bootstrap = Chef::Knife::BootstrapWindowsSsh.new
             bootstrap.config[:ssh_user] = locate_config_value(:ssh_user)
-            bootstrap.config[:ssh_password] = locate_config_value(:ssh_password)
+            locate_config_value(:cloudstack_password) ? bootstrap.config[:ssh_password] = server['password'] : bootstrap.config[:ssh_password] = locate_config_value(:ssh_password)
             bootstrap.config[:ssh_port] = locate_config_value(:ssh_port)
             bootstrap.config[:identity_file] = locate_config_value(:identity_file)
             bootstrap.config[:no_host_key_verify] = locate_config_value(:no_host_key_verify)
@@ -445,6 +451,7 @@ module KnifeCloudstack
             ui.error("Unsupported Bootstrapping Protocol. Supported : winrm, ssh")
             exit 1
         end
+        bootstrap.config[:environment] = locate_config_value(:environment)
         bootstrap.config[:chef_node_name] = config[:chef_node_name] || server['id']
         bootstrap.config[:encrypted_data_bag_secret] = config[:encrypted_data_bag_secret]
         bootstrap.config[:encrypted_data_bag_secret_file] = config[:encrypted_data_bag_secret_file]
@@ -466,7 +473,7 @@ module KnifeCloudstack
       bootstrap.name_args = [fqdn]
       # bootstrap.config[:run_list] = config[:run_list]
       bootstrap.config[:ssh_user] = locate_config_value(:ssh_user)
-      bootstrap.config[:ssh_password] = locate_config_value(:ssh_password)
+      locate_config_value(:cloudstack_password) ? bootstrap.config[:ssh_password] = server['password'] : bootstrap.config[:ssh_password] = locate_config_value(:ssh_password)
       bootstrap.config[:ssh_port] = locate_config_value(:ssh_port) || 22
       bootstrap.config[:identity_file] = locate_config_value(:identity_file)
       bootstrap.config[:chef_node_name] = locate_config_value(:chef_node_name) || server["name"]

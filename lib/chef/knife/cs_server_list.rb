@@ -114,37 +114,49 @@ module KnifeCloudstack
       end
 
       puts ui.list(object_list, :uneven_columns_across, columns)
-      connection.list_object_fields(connection_result) if locate_config_value(:fieldlist)
+      list_object_fields(connection_result) if locate_config_value(:fieldlist)
+
+      ## 
+      # Executing actions against the list results that are returned.
 
       if locate_config_value(:action)
         connection_result.each do |r|
           hostname = r['name'] 
           case locate_config_value(:action).downcase
-            when "start" then
-              show_object_details(r, connection, rules)
-              result = confirm_action("Do you really want to start this server ")
-              if result then 
-                print "#{ui.color("Waiting for startup", :magenta)}"
-	        connection.start_server(hostname)
-                puts "\n"
-                ui.msg("Started server #{hostname}")
-              end 
-            when "stop" then 
-              show_object_details(r, connection, rules)
-              result = confirm_action("Do you really want to stop this server ")
-              if result then 
-                print "#{ui.color("Waiting for shutdown", :magenta)}"
-                connection.stop_server(hostname)
-                puts "\n"
-                ui.msg("Shutdown server #{hostname}")
-              end 
-            
+          when "start" then
+            show_object_details(r, connection, rules)
+            result = confirm_action("Do you really want to start this server ")
+            if result then 
+              print "#{ui.color("Waiting for startup", :magenta)}"
+	      connection.start_server(hostname)
+              puts "\n"
+              ui.msg("Started server #{hostname}")
+            end 
+          when "stop" then 
+            show_object_details(r, connection, rules)
+            result = confirm_action("Do you really want to stop this server ")
+            if result then 
+              print "#{ui.color("Waiting for shutdown", :magenta)}"
+              connection.stop_server(hostname)
+              puts "\n"
+              ui.msg("Shutdown server #{hostname}")
+            end 
+          when "destroy" then 
+            show_object_details(r, connection, rules)
+            result = confirm_action("Do you really want to destroy this server ")
+            if result then
+              print "#{ui.color("Waiting for demolition", :magenta)}"
+              connection.delete_server(hostname)
+              puts "\n"
+              ui.msg("Destroyed server #{hostname}")
+            end
           end
         end
       end
     end
   
     def show_object_details(s, connection, rules)
+      return if locate_config_value(:yes)
       object_fields = [
         ui.color('Key', :bold),
         ui.color('Value', :bold)
@@ -171,6 +183,7 @@ module KnifeCloudstack
     end
 
     def confirm_action(question)
+      return true if locate_config_value(:yes)
       result = ui.ask_question(question, :default => "Y" )
       if result == "Y" || result == "y" then 
         return true 
