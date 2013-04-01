@@ -44,6 +44,28 @@ class Chef
                  :boolean => true
         end
       end
+
+      def list_object_fields(object)
+        exit 1 if object.nil? || object.empty?
+        object_fields = [
+          ui.color('Key', :bold),
+          ui.color('Type', :bold),
+          ui.color('Value', :bold)
+        ]
+
+        object.first.sort.each do |k,v|
+          object_fields << ui.color(k, :yellow, :bold)
+          object_fields << v.class.to_s
+          if v.kind_of?(Array)
+            object_fields << '<Array>'
+          else
+            object_fields << ("#{v}").strip.to_s
+          end
+        end
+        puts "\n"
+        puts ui.list(object_fields, :uneven_columns_across, 3)
+      end
+    
     end
   end
 end

@@ -65,14 +65,6 @@ module CloudstackClient
     end
 
     ##
-    # Enable core/ui to display nicely formatted output
-
-    def ui
-      require 'chef/knife/core/ui'
-      @ui ||= Chef::Knife::UI.new(STDOUT, STDERR, STDIN, {})
-    end
-
-    ##
     # Finds the server with the specified name.
 
     def get_server(name)
@@ -159,30 +151,6 @@ module CloudstackClient
       result = json["#{json_result}"] || []
       result = data_filter(result, filter) if filter
       result
-    end
-
-    ##
-    # List all object fields if --fieldlist parameter is given.
-
-    def list_object_fields(object)
-      exit 1 if object.nil? || object.empty?
-      object_fields = [
-        ui.color('Key', :bold),
-        ui.color('Type', :bold),
-        ui.color('Value', :bold)
-      ]
-
-      object.first.sort.each do |k,v|
-        object_fields << k
-        object_fields << v.class.to_s
-        if v.kind_of?(Array)
-          object_fields << '<Array>'
-        else
-          object_fields << ("#{v}").strip.to_s
-        end
-      end
-      puts "\n"
-      puts ui.list(object_fields, :uneven_columns_across, 3)
     end
 
     ##
