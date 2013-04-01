@@ -48,13 +48,13 @@ class Chef
       def list_object_fields(object)
         exit 1 if object.nil? || object.empty?
         object_fields = [
-          ui.color('Key', :yellow, :bold),
-          ui.color('Type', :yellow, :bold),
-          ui.color('Value', :yellow, :bold)
+          ui.color('Key', :bold),
+          ui.color('Type', :bold),
+          ui.color('Value', :bold)
         ]
 
         object.first.sort.each do |k,v|
-          object_fields << k
+          object_fields << ui.color(k, :yellow, :bold)
           object_fields << v.class.to_s
           if v.kind_of?(Array)
             object_fields << '<Array>'
