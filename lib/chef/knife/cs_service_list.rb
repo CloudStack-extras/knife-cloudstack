@@ -103,7 +103,7 @@ module KnifeCloudstack
         end
       end
       puts ui.list(object_list, :uneven_columns_across, columns)
-      connection.list_object_fields(connection_result) if locate_config_value(:fieldlist)
+      list_object_fields(connection_result) if locate_config_value(:fieldlist)
     end
 
     def human_memory n
