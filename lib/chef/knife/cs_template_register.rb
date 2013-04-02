@@ -34,7 +34,7 @@ module KnifeCloudstack
 
     option :name,
            :long => "--name NAME",
-           :description => "Name of template to extract (without format checking)"
+           :description => "Name of template to register (without format checking)"
     
     option :description,
            :long => "--description DESCRIPTION",
@@ -50,15 +50,17 @@ module KnifeCloudstack
 	   :description => "Target hypervisor for the template (default XEN)",
 	   :default => "XenServer"
 
-    option :ostype,
+    option :ostypeid,
+	   :long => '--ostypeid OSTYPEID',
            :description => "The ID of the OS Type that best represents the OS of this template"
 
     option :url,
+           :long => '--url URL',
            :description => "The URL of where the template is hosted. Including http:// and https://"
 
     option :zone,
            :long => "--zone NAME",
-	   :description => "Name of the zone to extract the template in. Default: All zones",
+	   :description => "Name of the zone to register the template in. Default: All zones",
 	   :default => -1
 
     option :bits,
@@ -66,7 +68,7 @@ module KnifeCloudstack
 	   :description => "32 or 64 bits support, defaults to 64",
 	   :default => 64
 
-    option :extracable,
+    option :extractable,
            :long => "--[no-]extractable",
 	   :description => "Is the template extracable. Default: NO",
 	   :boolean => true,
@@ -75,6 +77,30 @@ module KnifeCloudstack
     option :featured,
            :long => "--[no-]featured",
 	   :description => "Is the tempalte featured? Default: NO",
+	   :boolean => true,
+	   :default => false
+
+    option :public,
+           :long => "--[no-]public",
+	   :description => "Is the template public? Default: NO",
+	   :boolean => true,
+	   :default => false
+
+    option :passwordenabled,
+           :long => "--[no-]passwordenabled",
+	   :description => "Is the password reset feature enabled, Default: YES",
+	   :boolean => true,
+	   :default => true
+
+    option :requireshvm,
+           :long => "--[no-]requireshvm",
+	   :description => "Does the template require HVM? Default: NO",
+	   :boolean => true,
+	   :default => false
+
+    option :sshkeyenabled,
+           :long => "--[no-]sshkeyenabled",
+	   :description => "Does this tempalte support the sshkey upload feature? Default: NO",
 	   :boolean => true,
 	   :default => false
 
@@ -93,10 +119,18 @@ module KnifeCloudstack
         end
       end
 
-      zonename = locate_config_value(:zone)
-      if ! zonename
-      then
-        ui.error "No zone specified"
+      unless locate_config_value(:ostypeid) then
+        ui.error "No os type id specified"
+	exit 1
+      end
+      
+      unless /^http(s)?\:\/\//.match locate_config_value(:url) then
+        ui.error "URL (#{locate_config_value(:url)}) is not a well formatted url"
+	exit 1
+      end
+
+      unless (locate_config_value(:bits) == 64 or locate_config_value(:bits) == 32 ) then
+        ui.error "Bits must be 32 or 64"
 	exit 1
       end
 
@@ -108,43 +142,31 @@ module KnifeCloudstack
 	locate_config_value(:use_http_ssl)
       )
 
-      print "#{ui.color("Extracting template: #{templatename}", :magenta)}\n"
+      print "#{ui.color("Registring template: #{templatename}", :magenta)}\n"
 
-      Chef::Log.debug("Getting template")
-
-      zone = connection.get_zone(
-        zonename,
-      )
-      if ! zone then
-        ui.error "Zone #{zonename} not found"
-	exit 1
-      end
-
-      Chef::Log.debug("Getting template")
-
-      template = connection.get_template(
+      template = connection.register_template(
         templatename,
+        locate_config_value(:description),
+        locate_config_value(:format),
+        locate_config_value(:hypervisor),
+        locate_config_value(:ostypeid),
+        locate_config_value(:url),
+        locate_config_value(:zone),
+        locate_config_value(:bits),
+        locate_config_value(:extractable),
+        locate_config_value(:public),
+        locate_config_value(:featured),
+        locate_config_value(:passwordenabled),
+        locate_config_value(:sshkeyenabled),
+        locate_config_value(:requireshvm)
       )
       if ! template then
-        ui.error "Template #{templatename} not found"
+        ui.error "Template #{templatename} not registered"
 	exit 1
       end
 
-      Chef::Log.debug("Extracting template")
-      extract = connection.extract_template(
-        template["id"],
-	"HTTP_DOWNLOAD",
-	nil,
-	zone["id"]
-      )
-
-      if extract then
-      	url = extract["template"]["url"]
-        print "\n#{url}\n"
-      else
-	ui.error "Template extraction failed.\n"
-	exit 1
-      end
+      print "TemplateId #{template['id']} is being created"
+      Chef::Log.debug("Template: #{template}")
     end
 
     def locate_config_value(key)

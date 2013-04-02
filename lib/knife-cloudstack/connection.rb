@@ -340,7 +340,32 @@ module CloudstackClient
 
       json = send_request(params)
       json['template']
-      puts json
+    end
+
+    ##
+    # Registers a new template using the specified parameters.
+
+    def register_template(name, displaytext, format, hypervisor, ostypeid, url, zone, bits, isextractable, ispublic, isfeatured, passwordenabled, sshkeyenabled, requireshvm)
+      params = {
+        'command' => 'registerTemplate',
+        'name' => name,
+        'displaytext' => displaytext,
+	'format' => format,
+	'hypervisor' => hypervisor,
+        'ostypeid' => ostypeid,
+	'url' => url,
+	'zoneid' => zone,
+	'bits' => bits,
+      }
+      params['isextractable'] = isextractable if isextractable
+      params['ispublic'] = ispublic if ispublic
+      params['isfeatured'] = isfeatured if isfeatured
+      params['passwordenabled'] = passwordenabled if passwordenabled
+      params['sshkeyenabled'] = sshkeyenabled if sshkeyenabled
+      params['requireshvm'] = requireshv if requireshvm
+
+      json = send_request(params)
+      json['template']
     end
 
     ##
@@ -975,16 +1000,18 @@ module CloudstackClient
 
       params_arr = []
       params.sort.each { |elem|
-        params_arr << elem[0].to_s + '=' + elem[1].to_s
+        #params_arr << elem[0].to_s + '=' + elem[1].to_s
+        params_arr << elem[0].to_s + '=' + CGI.escape(elem[1].to_s)
       }
       data = params_arr.join('&')
-      encoded_data = URI.encode(data.downcase).gsub('+', '%20').gsub(',', '%2c').gsub(' ','%20')
-      signature = OpenSSL::HMAC.digest('sha1', @secret_key, encoded_data)
+      #encoded_data = URI.encode(data.downcase).gsub('+', '%20').gsub(',', '%2c').gsub(' ','%20')
+      #signature = OpenSSL::HMAC.digest('sha1', @secret_key, encoded_data)
+      signature = OpenSSL::HMAC.digest('sha1', @secret_key, data.downcase)
       signature = Base64.encode64(signature).chomp
       signature = CGI.escape(signature)
 
       url = "#{@api_url}?#{data}&signature=#{signature}"
-      url = url.gsub('+', '%20').gsub(' ','%20')
+      #url = url.gsub('+', '%20').gsub(' ','%20')
       uri = URI.parse(url)
 
       Chef::Log.debug("URL: #{url}" )
