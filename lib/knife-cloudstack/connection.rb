@@ -101,7 +101,7 @@ module CloudstackClient
       if ip_addr
         return ip_addr['ipaddress']
       end
-      nic['ipaddress']
+      nic['ipaddress'] || []
     end
 
     ##
