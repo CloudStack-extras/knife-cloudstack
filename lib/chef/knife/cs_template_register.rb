@@ -104,8 +104,7 @@ module KnifeCloudstack
 	   :default => false
 
     def run
-
-      $stdout.sync = true
+      validate_base_options
 
       Chef::Log.debug("Validate template name")
       if  locate_config_value(:name)

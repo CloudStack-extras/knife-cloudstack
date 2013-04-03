@@ -51,7 +51,6 @@ module KnifeCloudstack
 
     def run
       validate_base_options
-      $stdout.sync = true
 
       connection = CloudstackClient::Connection.new(
           locate_config_value(:cloudstack_url),

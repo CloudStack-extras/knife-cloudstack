@@ -40,6 +40,7 @@ module KnifeCloudstack
 	   :description => "Name of the zone to extract the template in"
 
     def run
+      validate_base_options
 
       Chef::Log.debug("Validate template name")
       if  locate_config_value(:name)

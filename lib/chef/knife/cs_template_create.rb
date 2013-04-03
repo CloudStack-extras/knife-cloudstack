@@ -19,16 +19,12 @@
 
 require 'chef/knife'
 require 'chef/knife/cs_base'
-require 'json'
 
 module KnifeCloudstack
   class CsTemplateCreate < Chef::Knife
     include Chef::Knife::KnifeCloudstackBase
 
     deps do
-      require 'socket'
-      require 'net/ssh/multi'
-      require 'chef/json_compat'
       require 'knife-cloudstack/connection'
     end
 
@@ -82,6 +78,7 @@ module KnifeCloudstack
 	   :default => false
 
     def run
+      validate_base_options
 
       Chef::Log.debug("Validate hostname and options")
       if  locate_config_value(:name)
