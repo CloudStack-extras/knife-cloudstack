@@ -169,7 +169,7 @@ module KnifeCloudstack
         'bits' => locate_config_value(:bits),
       }
       params['extracable'] = locate_config_value(:extractable) if locate_config_value(:extractable)
-      params['isplublic'] = locate_config_value(:public) if locate_config_value(:public)
+      params['ispublic'] = locate_config_value(:public) if locate_config_value(:public)
       params['isfeatured'] = locate_config_value(:featured) if locate_config_value(:featured)
       params['passwordenabled'] = locate_config_value(:passwordenabled) if locate_config_value(:passwordenabled)
       params['sshkeyenabled'] = locate_config_value(:sshkeyenabled) if locate_config_value(:sshkeyenabled)
