@@ -43,14 +43,6 @@ module KnifeCloudstack
     def run
       validate_base_options
 
-      connection = CloudstackClient::Connection.new(
-          locate_config_value(:cloudstack_url),
-          locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key),
-          locate_config_value(:cloudstack_project),
-          locate_config_value(:use_http_ssl)
-      )
-
       if locate_config_value(:fields)
         object_list = []
         locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }

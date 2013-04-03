@@ -53,16 +53,7 @@ module KnifeCloudstack
            :description => "start or stop the instances in your result"
 
     def run
-
-      $stdout.sync = true
-
-      connection = CloudstackClient::Connection.new(
-          locate_config_value(:cloudstack_url),
-          locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key),
-          locate_config_value(:cloudstack_project),
-          locate_config_value(:use_http_ssl)
-      )
+      validate_base_options
 
       if locate_config_value(:fields)
         object_list = []  

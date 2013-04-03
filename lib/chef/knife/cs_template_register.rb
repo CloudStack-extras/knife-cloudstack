@@ -132,14 +132,6 @@ module KnifeCloudstack
 	exit 1
       end
 
-      connection = CloudstackClient::Connection.new(
-        locate_config_value(:cloudstack_url),
-        locate_config_value(:cloudstack_api_key),
-        locate_config_value(:cloudstack_secret_key),
-	locate_config_value(:cloudstack_project),
-	locate_config_value(:use_http_ssl)
-      )
-
       if (locate_config_value(:zone) == -1)
         zoneid = -1
       else

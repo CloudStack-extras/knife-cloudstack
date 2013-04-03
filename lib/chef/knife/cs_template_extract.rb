@@ -60,14 +60,6 @@ module KnifeCloudstack
 	exit 1
       end
 
-      connection = CloudstackClient::Connection.new(
-        locate_config_value(:cloudstack_url),
-        locate_config_value(:cloudstack_api_key),
-        locate_config_value(:cloudstack_secret_key),
-	locate_config_value(:cloudstack_project),
-	locate_config_value(:use_http_ssl)
-      )
-
       print "#{ui.color("Extracting template: #{templatename}", :magenta)}\n"
 
       Chef::Log.debug("Getting zone")
