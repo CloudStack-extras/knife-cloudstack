@@ -102,6 +102,15 @@ Use the -F (or --filter) option to use a different filter. The allowable filter 
 A template can be specified when creating a new server by passing the template name as an argument to the -T
 (or --template) option of the <tt>knife cs server create</tt> command.
 
+=== knife cs template create
+Creates a template based on a volumeID
+
+=== knife cs template extract
+Returns a link where an extractable template can be downloaded
+
+=== knife cs template register
+Creates a template based on a file
+
 === knife cs zone list
 Displays a list of all zones available in the currently configured CloudStack account. A zone can be specified
 when creating a new server by passing the zone name as an argument to the -Z (or --zone) option of the

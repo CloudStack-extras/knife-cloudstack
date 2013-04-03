@@ -1,6 +1,7 @@
 #
 # Author:: Ryan Holmes (<rholmes@edmunds.com>)
 # Author:: KC Braunschweig (<kcbraunschweig@gmail.com>)
+# Author:: Frank Breedijk (<fbreedijk@schubergphilis.com>)
 # Copyright:: Copyright (c) 2011 Edmunds, Inc.
 # License:: Apache License, Version 2.0
 #
@@ -403,7 +404,8 @@ module CloudstackClient
     #Fetch project with the specified name
     def get_project(name)
       params = {
-        'command' => 'listProjects'
+        'command' => 'listProjects',
+	'listall' => true
       }
 
       json = send_request(params)
@@ -688,15 +690,15 @@ module CloudstackClient
 
       params_arr = []
       params.sort.each { |elem|
-        params_arr << elem[0].to_s + '=' + elem[1].to_s
+        params_arr << elem[0].to_s + '=' + CGI.escape(elem[1].to_s).gsub('+', '%20').gsub(' ','%20')
       }
       data = params_arr.join('&')
-      encoded_data = URI.encode(data.downcase).gsub('+', '%20').gsub(',', '%2c')
-      signature = OpenSSL::HMAC.digest('sha1', @secret_key, encoded_data)
+      signature = OpenSSL::HMAC.digest('sha1', @secret_key, data.downcase)
       signature = Base64.encode64(signature).chomp
       signature = CGI.escape(signature)
 
       url = "#{@api_url}?#{data}&signature=#{signature}"
+      Chef::Log.debug("URL: #{url}")
       uri = URI.parse(url)
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = @use_ssl
