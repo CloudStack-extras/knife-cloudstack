@@ -19,7 +19,6 @@
 
 require 'chef/knife'
 require 'chef/knife/cs_base'
-#require 'json'
 
 module KnifeCloudstack
   class CsTemplateRegister < Chef::Knife
@@ -184,11 +183,6 @@ module KnifeCloudstack
       end
 
       print "TemplateId #{json['template'][0]['id']} is being created\n"
-    end
-
-    def locate_config_value(key)
-      key = key.to_sym
-      Chef::Config[:knife][key] || config[key]
     end
 
   end # class
