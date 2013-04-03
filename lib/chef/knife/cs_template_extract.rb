@@ -19,7 +19,6 @@
 
 require 'chef/knife'
 require 'chef/knife/cs_base'
-#require 'json'
 
 module KnifeCloudstack
   class CsTemplateExtract < Chef::Knife
@@ -41,8 +40,6 @@ module KnifeCloudstack
 	   :description => "Name of the zone to extract the template in"
 
     def run
-
-      $stdout.sync = true
 
       Chef::Log.debug("Validate template name")
       if  locate_config_value(:name)
@@ -108,11 +105,6 @@ module KnifeCloudstack
 	ui.error "Template extraction failed.\n"
 	exit 1
       end
-    end
-
-    def locate_config_value(key)
-      key = key.to_sym
-      Chef::Config[:knife][key] || config[key]
     end
 
   end # class
