@@ -97,7 +97,10 @@ module CloudstackClient
         return ssh_rule['ipaddress']
       end
       #check for static NAT
-      ip_addr = list_public_ip_addresses.find {|v| v['virtualmachineid'] == server['id']}
+      ip_list = list_public_ip_addresses()
+      if ip_list
+        ip_addr = ip_list.find {|v| v['virtualmachineid'] == server['id']}
+      end
       if ip_addr
         return ip_addr['ipaddress']
       end
