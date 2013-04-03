@@ -47,12 +47,13 @@ module CloudstackClient
     ASYNC_POLL_INTERVAL = 5.0
     ASYNC_TIMEOUT = 600
 
-    def initialize(api_url, api_key, secret_key, project_name=nil, use_ssl=true)
+    def initialize(api_url, api_key, secret_key, project_name=nil, account=nil, use_ssl=true)
       @api_url = api_url
       @api_key = api_key
       @secret_key = secret_key
       @project_id = nil
       @use_ssl = use_ssl
+      @account = account
       if project_name
         project = get_project(project_name)
         if !project then
@@ -685,6 +686,7 @@ module CloudstackClient
       end
       params['response'] = 'json'
       params['apiKey'] = @api_key
+      params['account'] = @account if not @account.nil?
 
       params_arr = []
       params.sort.each { |elem|
