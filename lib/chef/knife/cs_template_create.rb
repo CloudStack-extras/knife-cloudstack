@@ -129,10 +129,18 @@ module KnifeCloudstack
       }
       params['ispublic'] = locate_config_value(:ispublic) if locate_config_value(:ispublic)
       params['isfeatured'] = locate_config_value(:isfeatured) if locate_config_value(:isfeatured)
-      parmas['passwordenabled'] = locate_config_value(:passwordenabled) if locate_config_value(:passwordenabled)
+      params['passwordenabled'] = locate_config_value(:passwordenabled) if locate_config_value(:passwordenabled)
       params['extractable'] = locate_config_value(:extractable) if locate_config_value(:extractable)
-      json = send_request(params)
-      return json['template']
+      json = connection.send_request(params)
+
+      if ! json then
+        ui.error("Unable to create template")
+	exit 1
+      end
+
+      print "Template #{json['id']} is being created in the background\n";
+
+      return json['id']
     end
 
     def locate_config_value(key)

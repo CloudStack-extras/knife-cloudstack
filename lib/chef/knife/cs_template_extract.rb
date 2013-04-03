@@ -97,12 +97,12 @@ module KnifeCloudstack
         'command' => 'extractTemplate',
 	'id' => template["id"],
 	'mode' => "HTTP_DOWNLOAD",
-	'zone_id' => zone["id"]
+	'zoneid' => zone["id"]
       }
-      json = send_async_request(params)
+      json = connection.send_async_request(params)
 
       if json then
-      	url = extract["template"]["url"]
+      	url = json["template"]["url"]
         print "\n#{url}\n"
       else
 	ui.error "Template extraction failed.\n"

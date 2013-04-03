@@ -142,6 +142,20 @@ module KnifeCloudstack
 	locate_config_value(:use_http_ssl)
       )
 
+      if (locate_config_value(:zone) == -1)
+        zoneid = -1
+      else
+      	Chef::Log.debug("Resolving zone #{locate_config_value(:zone)}\n")
+
+	zone = connection.get_zone(locate_config_value(:zone))
+
+	if ! zone then
+	  ui.error "Unable to resolve zone #{locate_config_value(:zone)}\n"
+	  exit 1
+	end
+	zoneid = zone['id']
+      end
+
       print "#{ui.color("Registring template: #{templatename}", :magenta)}\n"
 
       params = {
@@ -149,10 +163,10 @@ module KnifeCloudstack
 	'name' => templatename,
         'displaytext' => locate_config_value(:displaytext),
         'format' => locate_config_value(:format),
-        'hypervisor ' => locate_config_value(:hypervisor),
+        'hypervisor' => locate_config_value(:hypervisor),
         'ostypeid' => locate_config_value(:ostypeid),
         'url' => locate_config_value(:url),
-        'zone' => locate_config_value(:zone),
+        'zoneid' => zoneid,
         'bits' => locate_config_value(:bits),
       }
       params['extracable'] = locate_config_value(:extractable) if locate_config_value(:extractable)
@@ -162,7 +176,7 @@ module KnifeCloudstack
       params['sshkeyenabled'] = locate_config_value(:sshkeyenabled) if locate_config_value(:sshkeyenabled)
       params['requireshvm'] = locate_config_value(:requireshvm) if locate_config_value(:requireshvm)
 
-      json = send_request(params)
+      json = connection.send_request(params)
 
       if ! json then
         ui.error "Template #{templatename} not registered\n"

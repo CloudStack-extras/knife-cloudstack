@@ -404,7 +404,8 @@ module CloudstackClient
     #Fetch project with the specified name
     def get_project(name)
       params = {
-        'command' => 'listProjects'
+        'command' => 'listProjects',
+	'listall' => true
       }
 
       json = send_request(params)
@@ -697,6 +698,7 @@ module CloudstackClient
       signature = CGI.escape(signature)
 
       url = "#{@api_url}?#{data}&signature=#{signature}"
+      Chef::Log.debug("URL: #{url}")
       uri = URI.parse(url)
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = @use_ssl
