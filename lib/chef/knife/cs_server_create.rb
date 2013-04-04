@@ -82,7 +82,7 @@ module KnifeCloudstack
            :default => []
 
     option :cloudstack_password,
-           :long => "--cs-password",
+           :long => "--cloudstack-password",
            :description => "Enables auto-generated passwords by Cloudstack",
            :boolean => true
 
