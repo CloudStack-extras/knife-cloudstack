@@ -214,7 +214,7 @@ module KnifeCloudstack
         network: #{locate_config_value(:cloudstack_networks)}")
 
       print "\n#{ui.color("Waiting for Server to be created", :magenta)}"
-   
+      params = {} 
       params['hypervisor'] = locate_config_value(:cloudstack_hypervisor) if locate_config_value(:cloudstack_hypervisor)
 
       server = connection.create_server(
