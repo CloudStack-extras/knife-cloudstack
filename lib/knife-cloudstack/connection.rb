@@ -171,7 +171,7 @@ module CloudstackClient
     ##
     # Deploys a new server using the specified parameters.
 
-    def create_server(host_name, service_name, template_name, zone_name=nil, params, network_names=[])
+    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[], params)
 
       if host_name then
         if get_server(host_name) then

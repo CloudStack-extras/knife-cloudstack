@@ -83,7 +83,7 @@ module KnifeCloudstack
 
     option :cloudstack_hypervisor,
            :long => '--cloudstack-hypervisor HYPERVISOR',
-           :description => "The CloudStack hypervisor type for the server",
+           :description => "The CloudStack hypervisor type for the server"
 
     option :cloudstack_password,
            :long => "--cloudstack-password",
@@ -224,8 +224,8 @@ module KnifeCloudstack
           locate_config_value(:cloudstack_service),
           locate_config_value(:cloudstack_template),
           locate_config_value(:cloudstack_zone),
-          params,
-          locate_config_value(:cloudstack_networks)
+          locate_config_value(:cloudstack_networks),
+          params
       )
 
       public_ip = find_or_create_public_ip(server, connection)
