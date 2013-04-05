@@ -81,6 +81,10 @@ module KnifeCloudstack
            :proc => lambda { |n| n.split(',').map {|sn| sn.strip}} ,
            :default => []
 
+    option :cloudstack_hypervisor,
+           :long => '--cloudstack-hypervisor HYPERVISOR',
+           :description => "The CloudStack hypervisor type for the server",
+
     option :cloudstack_password,
            :long => "--cloudstack-password",
            :description => "Enables auto-generated passwords by Cloudstack",
@@ -180,15 +184,6 @@ module KnifeCloudstack
            :long => '--fqdn',
            :description => "FQDN which Kerberos Understands (only for Windows Servers)"
 
-
-    def connection
-      @connection ||= CloudstackClient::Connection.new(
-          locate_config_value(:cloudstack_url),
-          locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key),
-          locate_config_value(:cloudstack_project),
-          locate_config_value(:use_http_ssl)
-      )
     end
 
     def run
@@ -221,12 +216,15 @@ module KnifeCloudstack
         network: #{locate_config_value(:cloudstack_networks)}")
 
       print "\n#{ui.color("Waiting for Server to be created", :magenta)}"
+   
+      params['hypervisor'] = locate_config_value(:cloudstack_hypervisor) if locate_config_value(:cloudstack_hypervisor)
 
       server = connection.create_server(
           hostname,
           locate_config_value(:cloudstack_service),
           locate_config_value(:cloudstack_template),
           locate_config_value(:cloudstack_zone),
+          params,
           locate_config_value(:cloudstack_networks)
       )
 
