@@ -184,8 +184,6 @@ module KnifeCloudstack
            :long => '--fqdn',
            :description => "FQDN which Kerberos Understands (only for Windows Servers)"
 
-    end
-
     def run
       validate_base_options
 
