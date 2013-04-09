@@ -622,6 +622,17 @@ module CloudstackClient
       send_async_request(params)
     end
 
+    def create_firewall_rule(ipaddress_id, protocol, start_port, end_port, cidr_list)
+      params = {
+        'command' => 'createFirewallRule',
+        'ipaddressId' => ipaddress_id,
+        'protocol' => protocol,
+        'startport' =>  start_port,
+        'endport' => end_port,
+        'cidrlist' => cidr_list
+      }
+      send_async_request(params)
+    end
 
     ##
     # Disassociates an ip address from the account.

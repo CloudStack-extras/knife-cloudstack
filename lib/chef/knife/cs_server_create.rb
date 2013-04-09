@@ -175,6 +175,13 @@ module KnifeCloudstack
            :boolean => true,
            :default => false
 
+    option :fw_rules,
+           :short => "-f PORT_RULES",
+           :long => "--fw-rules PORT_RULES",
+           :description => "Comma separated list of firewall rules, e.g. '1024:10000:TCP:192.168.0.0/16,25:25:TCP:10.0.0.0/8'",
+           :proc => lambda { |o| o.split(/[\s,]+/) },
+           :default => []
+
     option :bootstrap_protocol,
            :long => "--bootstrap-protocol protocol",
            :description => "Protocol to bootstrap windows servers. options: winrm/ssh",
@@ -328,6 +335,8 @@ module KnifeCloudstack
           connection.enable_static_nat(ip_address['id'], server['id'])
         end
         create_port_forwarding_rules(ip_address, server['id'], connection)
+
+        create_firewall_rules(ip_address, connection)
         ip_address['ipaddress']
       end
     end
@@ -357,6 +366,21 @@ module KnifeCloudstack
             public port: #{public_port} and private port: #{private_port} and server: #{server_id}")
           connection.create_port_forwarding_rule(ip_address['id'], private_port, protocol, public_port, server_id)
         end
+      end
+    end
+
+    def create_firewall_rules(ip_address, connection)
+      rules = locate_config_value(:fw_rules)
+      return unless rules
+      rules.each do |rule|
+        args = rule.split(':')
+        startport = args[0]
+        endport = args[1] || args[0]
+        protocol = args[2] || "TCP"
+        cidr_list = args[3] || "0.0.0.0/0"
+        Chef::Log.debug("Creating Firewall Rule for
+            #{ip_address['ipaddress']} with protocol: #{protocol}, startport: #{startport}, endport: #{endport}, cidrList: #{cidr_list}")
+        connection.create_firewall_rule(ip_address['id'], protocol, startport, endport, cidr_list)
       end
     end
 
