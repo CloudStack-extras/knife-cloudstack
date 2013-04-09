@@ -156,11 +156,11 @@ module KnifeCloudstack
            :boolean => true,
            :default => false
 
-    option :bootstrap,
-           :long => "--[no-]bootstrap",
+    option :no_bootstrap,
+           :long => "--no-bootstrap",
            :description => "Disable Chef bootstrap",
            :boolean => true,
-           :default => true
+           :default => false
 
     option :port_rules,
            :short => "-p PORT_RULES",
@@ -233,7 +233,7 @@ module KnifeCloudstack
       puts "#{ui.color('Password', :cyan)}: #{server['password']}" if locate_config_value(:cloudstack_password)
       puts "#{ui.color('Public IP', :cyan)}: #{public_ip}"
 
-      return unless config[:bootstrap]
+      return if config[:no_bootstrap]
 
       if @bootstrap_protocol == 'ssh'
         print "\n#{ui.color("Waiting for sshd", :magenta)}"
@@ -284,7 +284,7 @@ module KnifeCloudstack
         ui.error "Cloudstack service offering not specified"
         exit 1
       end
-      if config[:bootstrap]
+      unless config[:no_bootstrap]
         if locate_config_value(:bootstrap_protocol) == 'ssh'
           identity_file = locate_config_value :identity_file
           ssh_user = locate_config_value :ssh_user
