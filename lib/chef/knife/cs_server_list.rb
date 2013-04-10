@@ -153,19 +153,19 @@ module KnifeCloudstack
         ui.color('Value', :bold)
       ]
 
-      object_fields << ui.color("Name", :yellow, :bold)
+      object_fields << ui.color("Name:", :cyan)
       object_fields << s['name'].to_s
-      object_fields << ui.color("Public IP", :yellow, :bold)
+      object_fields << ui.color("Public IP:", :cyan)
       object_fields << (connection.get_server_public_ip(s, rules) || '')
-      object_fields << ui.color("Service", :yellow, :bold)
+      object_fields << ui.color("Service:", :cyan)
       object_fields << s['serviceofferingname'].to_s
-      object_fields << ui.color("Template", :yellow, :bold)
+      object_fields << ui.color("Template:", :cyan)
       object_fields << s['templatename']
-      object_fields << ui.color("Domain", :yellow, :bold)
+      object_fields << ui.color("Domain:", :cyan)
       object_fields << s['domain']
-      object_fields << ui.color("Zone", :yellow, :bold)
+      object_fields << ui.color("Zone:", :cyan)
       object_fields << s['zonename']
-      object_fields << ui.color("State", :yellow, :bold)
+      object_fields << ui.color("State:", :cyan)
       object_fields << s['state']
 
       puts "\n"
@@ -182,13 +182,6 @@ module KnifeCloudstack
         return false
       end
     end
-
-    def msg(label, value)
-      if value && !value.empty?
-        puts "#{ui.color(label, :cyan)}: #{value}"
-      end
-    end
-
 
   end
 end
