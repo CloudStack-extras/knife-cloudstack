@@ -175,6 +175,12 @@ module KnifeCloudstack
            :boolean => true,
            :default => false
 
+    option :ipfwd_rules,
+           :long => "--ipfwd-rules PORT_RULES",
+           :description => "Comma separated list of ip forwarding rules, e.g. '1024:10000:TCP,1024:2048,22'",
+           :proc => lambda { |o| o.split(/[\s,]+/) },
+           :default => []
+
     option :bootstrap_protocol,
            :long => "--bootstrap-protocol protocol",
            :description => "Protocol to bootstrap windows servers. options: winrm/ssh",
@@ -328,21 +334,24 @@ module KnifeCloudstack
           connection.enable_static_nat(ip_address['id'], server['id'])
         end
         create_port_forwarding_rules(ip_address, server['id'], connection)
+        create_ip_forwarding_rules(ip_address, connection)
         ip_address['ipaddress']
       end
     end
 
     def create_port_forwarding_rules(ip_address, server_id, connection)
       rules = locate_config_value(:port_rules)
-      if @bootstrap_protocol == 'ssh'
-        rules += ["#{locate_config_value(:ssh_port)}"] #SSH Port
-      elsif @bootstrap_protocol == 'winrm'
-        rules +=[locate_config_value(:winrm_port)]
-      else
-        puts("\nUnsupported bootstrap protocol : #{@bootstrap_protocol}")
-        exit 1
+      if config[:bootstrap]
+        if @bootstrap_protocol == 'ssh'
+          rules += ["#{locate_config_value(:ssh_port)}"] #SSH Port
+        elsif @bootstrap_protocol == 'winrm'
+          rules +=[locate_config_value(:winrm_port)]
+        else
+          puts("\nUnsupported bootstrap protocol : #{@bootstrap_protocol}")
+          exit 1
+        end
       end
-        return unless rules
+      return unless rules
       rules.each do |rule|
         args = rule.split(':')
         public_port = args[0]
@@ -356,6 +365,22 @@ module KnifeCloudstack
           Chef::Log.debug("Creating Port Forwarding Rule for #{ip_address['id']} with protocol: #{protocol},
             public port: #{public_port} and private port: #{private_port} and server: #{server_id}")
           connection.create_port_forwarding_rule(ip_address['id'], private_port, protocol, public_port, server_id)
+        end
+      end
+    end
+
+    def create_ip_forwarding_rules(ip_address, connection)
+      rules = locate_config_value(:ipfwd_rules)
+      return unless rules
+      rules.each do |rule|
+        args = rule.split(':')
+        startport = args[0]
+        endport = args[1] || args[0]
+        protocol = args[2] || "TCP"
+        if locate_config_value :static_nat
+          Chef::Log.debug("Creating IP Forwarding Rule for
+            #{ip_address['ipaddress']} with protocol: #{protocol}, startport: #{startport}, endport: #{endport}")
+          connection.create_ip_fwd_rule(ip_address['id'], protocol, startport, endport)
         end
       end
     end

@@ -50,8 +50,9 @@ This plugin provides the following Knife subcommands.  Specific command options 
 
 Provisions a new server in CloudStack and then performs a Chef bootstrap (using the SSH protocol).  The goal of the bootstrap is to get Chef installed on the target
 system so it can run Chef Client with a Chef Server. The main assumption is a baseline OS installation exists (provided by the provisioning). It is primarily
-intended for Chef Client systems that talk to a Chef server.  By default the server is bootstrapped using the {ubuntu10.04-gems}[https://github.com/opscode/chef/bl
-ob/master/chef/lib/chef/knife/bootstrap/ubuntu10.04-gems.erb] template.  This can be overridden using the <tt>-d</tt> or <tt>--template-file</tt> command options.
+intended for Chef Client systems that talk to a Chef server.  By default the server is bootstrapped using the 'chef-full' template (default bootstrap option for knife,
+(Ref. http://docs.opscode.com/knife_bootstrap.html). This can be overridden using the <tt>-d</tt> or <tt>--template-file</tt> command options.
+VM provided with <tt>--no-bootstrap</tt> option have no forwarded ports or forwared ip rules (in case <tt>--static-nat</tt> is used).
 
 By default, new servers are allocated a public IP address mapping to the CloudStack private IP address. If you do not want this behavior, pass the <tt>--no-public-ip</tt> option.
 
@@ -68,6 +69,16 @@ Since 'TCP' is the default protocol, the rule can be shortened to <tt>80:7000</t
 single number when the public and private ports are the same. For example, a rule to forward from public port 25 to
 private port 25 can be stated as simply <tt>25</tt>. A list of such rules for a webserver might look like
 <tt>80,443</tt>.
+
+==== IP forwarding rules
+The <tt>--ipfwd-rules</tt> option takes a comma separated list of ip forwarding rules. These rules are created on public ip appdress assigned obtained with <tt>--static-nat</tt> option.
+(Ref. http://cloudstack.apache.org/docs/api/apidocs-4.0.0/root_admin/createIpForwardingRule.html)
+
+Ip forwarding rules have the syntax <tt>START_PORT[:END_PORT[:PROTOCOL]]</tt>. <tt>END_PORT</tt> and <tt>PROTOCOL</tt> are optional.
+The default value of <tt>END_PORT</tt> is <tt>START_PORT</tt> and the default <tt>PROTOCOL</tt> is 'TCP'.
+For example, a rule to forward ports range from 1024 to 10000 would look like <tt>1024:10000:TCP</tt>.
+Since 'TCP' is the default protocol, the rule can be shortened to <tt>1024:10000</tt>. A rule can even be shortened to a
+single number when the start and end ports are the same. For example, a rule to forward port 22 can be stated as simply <tt>22</tt>. A list of such rules for a webserver might look like <tt>80,443</tt>.
 
 === knife cs server delete
 
