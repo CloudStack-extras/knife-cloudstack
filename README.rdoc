@@ -46,6 +46,20 @@ To get this plugin to work in public clouds, it is essential that the virtual ne
 
 This plugin provides the following Knife subcommands.  Specific command options can be found by invoking the subcommand with a <tt>--help</tt> flag
 
+=== knife cs <command> list
+
+<tt>--filter</tt>               Filters your output on the fields that you specify. Filter can be a string 'name' or regexp '/name/i'
+    Example: knife cs server list --filter "instancename:/i-xxx/i, account:accname"
+
+<tt>--fields</tt>               The fields that you want to display in your output. Default outputs will be shown if no fields are defined.
+    Example: knife cs server list --fields "name, instancename, domain"
+
+<tt>--fieldlist</tt>            This will display all information returned by the cloudstack API. These fields can be used within the <tt>--fields</tt> or <tt>--filter</tt> to create custom output.
+The data displayed is based on first result returned in your output. You can get other result by using the <tt>--filter</tt> option.
+
+<tt>--noheader</tt>             this will remove the column header from the output.
+
+
 === knife cs server create
 
 Provisions a new server in CloudStack and then performs a Chef bootstrap (using the SSH protocol).  The goal of the bootstrap is to get Chef installed on the target
@@ -98,15 +112,35 @@ the associated node and client objects from the Chef server.
 Displays a list of all servers in the currently configured CloudStack account.  <b>PLEASE NOTE</b> - this shows all
 servers associated with the cloudstack account including servers that are not registered with a Chef server.
 
+<tt>--listall</tt>              This will list all the servers, depending on the account that you are using.
+
+<tt>--keyword</tt>              Filters your output on the instance name that you specify: 
+    Example: --keyword "i-324", This will display all servers with <tt>'i-324'</tt> inside the instancename.
+
+<tt>--name</tt>                         Filters your output on the name that you specify. 
+    Example: --name "webserver", This will display all servers that contains 'webserver' inside the hostname.
+
+<tt>--action</tt>               This action will be executed on the output of the list command. Actions can be start, stop or destroy.
+
 === knife cs network list
 Displays a list of all networks available in the currently configured CloudStack account. A network can be specified
 when creating a new server by passing the network name as an argument to the -W (or --network) option of the
 <tt>knife cs server create</tt> command.
 
+<tt>--listall</tt>              This will list all the networks, depending on the account that you are using.
+
+<tt>--keyword</tt>              Filters your output on the keyword that you specify. 
+    Example: --keyword "network1", This will display all networks with 'network1' inside the name.
+
 === knife cs service list
 Displays a list of all service offerings available in the currently configured CloudStack account. A service offering
 can be specified when creating a new server by passing the name as an argument to the -S (or --service) option of the
 <tt>knife cs server create</tt> command.
+
+<tt>--keyword</tt>              Filters your output on the service name, just like <tt>--name</tt> here below.
+
+<tt>--name</tt>                 Filters your output on the name that you specify. 
+    Example: --name "medium" or --keyword "medium", This will display all cpu service offerings with 'medium' inside the name.
 
 === knife cs template list
 Displays a list of all templates in the currently configured CloudStack account. Featured templates are displayed by default.
@@ -120,6 +154,8 @@ Use the -F (or --filter) option to use a different filter. The allowable filter 
 
 A template can be specified when creating a new server by passing the template name as an argument to the -T
 (or --template) option of the <tt>knife cs server create</tt> command.
+
+<tt>--listall</tt>              This will list all the templates, depending on the account that you are using.
 
 === knife cs template create
 Creates a template based on a volumeID
@@ -135,55 +171,169 @@ Displays a list of all zones available in the currently configured CloudStack ac
 when creating a new server by passing the zone name as an argument to the -Z (or --zone) option of the
 <tt>knife cs server create</tt> command.
 
+<tt>--keyword</tt>              Filters your output on the keyword that you specify. 
+    Example: --keyword "zone1", This will display all zones with 'zone1' inside the name
+
 === knife cs hosts
 Convenience command that displays the public ip address and fqdn for all servers. Matches /etc/hosts file format.
+
+<tt>--listall</tt>              This will list all the servers, depending on the account that you are using.
+
+<tt>--keyword</tt>              Filters your result based on a keyword.
+
+<tt>--name</tt>                 Filters your output on the name that you specify.
+
+==== knife cs account list
+Displays all accounts that are currently in your cloudstack environment.
+
+<tt>--listall</tt>              This will list all the possible results, depending on the account that you are using.
+
+<tt>--keyword</tt>               Filters your result based on a keyword.
+
+<tt>--name</tt>                  Filters your output on the name that you specify.
+
+==== knife cs cluster list
+Displays all clusters that are currently available in your cloudstack environment.
+
+<tt>--keyword</tt>               Filters your result based on a keyword.
+
+<tt>--name</tt>                  Filters your output on the name that you specify.
+
+==== knife cs config list
+Displays all the configuration settings that are configured inside the cloudstack environment.
+
+<tt>--keyword</tt>               Filters your result based on a keyword.
+
+<tt>--name</tt>                  Filters your output on the name that you specify.
+
+==== knife cs disk list
+Displays all the disks that are available within cloudstack.
+
+<tt>--keyword</tt>               Filters your result based on a keyword.
+
+<tt>--name</tt>                  Filters your output on the name that you specify.
+
+==== knife cs domain list
+Displays all domains within the cloudstack environment.
+
+<tt>--listall</tt>              This will list all the domains, depending on the account that you are using.
+
+==== knife cs firewallrule list
+Displays all firewall rules that are currently active within your cloudstack environment.
+
+<tt>--listall</tt>              This will list all the firewallrules, depending on the account that you are using.
+
+<tt>--keyword</tt>              Filters your result based on a keyword.
+
+==== knife cs host list
+Displays all hosts from the cloudstack environment.
+
+<tt>--name</tt>                 Filters your output on the name that you specify.
+
+==== knife cs iso list
+Displays all iso's that are available within the cloudstack environment.
+
+<tt>--listall</tt>              This will list all the iso's, depending on the account that you are using.
+
+<tt>--keyword</tt>              Filters your result based on a keyword.
+
+<tt>--name</tt>                 Filters your output on the name that you specify.
+
+==== knife cs ostype list
+Displays all the os types that are available within the cloudstack environment.
+
+<tt>--keyword</tt>              Filters your output on the keyword that you specify.
+
+==== knife cs oscategory list
+Displays all os categories that are available 
+<tt>--keyword</tt>              Filters your output on the keyword that you specify.
+
+==== knife cs pod list
+Displays all the pods that are currently available within the cloudstack environment.
+
+<tt>--keyword</tt>              Filters your result based on a keyword.
+
+<tt>--name</tt>                 Filters your output on the name that you specify.
+
+==== knife project list
+Displays all the projects that are within the cloudstack environment.
+
+<tt>--listall</tt>              This will list all the projects, depending on the account that you are using.
+
+<tt>--keyword</tt>              Filters your result based on a keyword.
+
+<tt>--name</tt>                 Filters your output on the name that you specify.
+
+==== knife cs router list
+Displays all the routers that are within the cloudstack environment.
+
+<tt>--listall</tt>              This will list all the routers, depending on the account that you are using.
+
+<tt>--keyword</tt>              Filters your result based on a keyword.
+
+<tt>--name</tt>                 Filters your output on the name that you specify.
+
+==== knife cs user list
+Displays all the users that are available within your account.
+
+<tt>--listall</tt>              This will list all the users, depending on the account that you are using.
+
+<tt>--keyword</tt>              Filters your output on the keyword that you specify.
+
+==== knife cs volume list:
+Displays all the volumes that are currently available within the cloudstack environment.
+
+<tt>--listall</tt>              This will list all the volumes, depending on the account that you are using.
+
+<tt>--keyword</tt>              Filters your output on the keyword that you specify.
+
+<tt>--name</tt>                 Filters your output on the name that you specify.
 
 === knife cs stack create
 Creates a "stack" of servers based on a JSON definition file. Simple orchestration can be performed by
 specifying one or more actions to be executed after a server (or group of servers) is created.
 
 ==== Example Stack Definition File:
-<tt>
-{
-  "name": "hadoop_cluster_a",
-  "description": "A small hadoop cluster with hbase",
-  "version": "1.0",
-  "environment": "production",
-  "servers": [
+
     {
-      "name": "zookeeper-a, zookeeper-b, zookeeper-c",
-      "description": "Zookeeper nodes",
-      "template": "rhel-5.6-base",
-      "service": "small",
-      "port_rules": "2181",
-      "run_list": "role[cluster_a], role[zookeeper_server]",
-      "actions": [
-        { "knife_ssh": ["role:zookeeper_server", "sudo chef-client"] }
-      ]
-    },
-    {
-      "name": "hadoop-master",
-      "description": "Hadoop master node",
-      "template": "rhel-5.6-base",
-      "service": "large",
-      "networks": "app-net, storage-net",
-      "port_rules": "50070, 50030, 60010",
-      "run_list": "role[cluster_a], role[hadoop_master], role[hbase_master]"
-    },
-    {
-      "name": "hadoop-worker-a hadoop-worker-b hadoop-worker-c",
-      "description": "Hadoop worker nodes",
-      "template": "rhel-5.6-base",
-      "service": "medium",
-      "port_rules": "50075, 50060, 60030",
-      "run_list": "role[cluster_a], role[hadoop_worker], role[hbase_regionserver]",
-      "actions": [
-        { "knife_ssh": ["role:hadoop_master", "sudo chef-client"] },
-        { "http_request": "http://${hadoop-master}:50070/index.jsp" }
-      ]
+      "name": "hadoop_cluster_a",
+      "description": "A small hadoop cluster with hbase",
+      "version": "1.0",
+      "environment": "production",
+      "servers": [
+        {
+          "name": "zookeeper-a, zookeeper-b, zookeeper-c",
+          "description": "Zookeeper nodes",
+          "template": "rhel-5.6-base",
+          "service": "small",
+          "port_rules": "2181",
+          "run_list": "role[cluster_a], role[zookeeper_server]",
+          "actions": [
+            { "knife_ssh": ["role:zookeeper_server", "sudo chef-client"] }
+          ]
+        },
+        {
+          "name": "hadoop-master",
+          "description": "Hadoop master node",
+          "template": "rhel-5.6-base",
+          "service": "large",
+          "networks": "app-net, storage-net",
+          "port_rules": "50070, 50030, 60010",
+          "run_list": "role[cluster_a], role[hadoop_master], role[hbase_master]"
+        },
+        {
+          "name": "hadoop-worker-a hadoop-worker-b hadoop-worker-c",
+          "description": "Hadoop worker nodes",
+          "template": "rhel-5.6-base",
+          "service": "medium",
+          "port_rules": "50075, 50060, 60030",
+          "run_list": "role[cluster_a], role[hadoop_worker], role[hbase_regionserver]",
+          "actions": [
+            { "knife_ssh": ["role:hadoop_master", "sudo chef-client"] },
+            { "http_request": "http://${hadoop-master}:50070/index.jsp" }
+          ]
+        }
     }
-}
-</tt>
 
 ==== Stack Attributes
 name:: Stack name. May be used in the future to e.g. look up a stack in a databag.
@@ -227,8 +377,9 @@ Reboots the specified virtual machines(s).
 Author:: Ryan Holmes <rholmes@edmunds.com> 
 Author:: KC Braunschweig <kcbraunschweig@gmail.com>
 Author:: John E. Vincent <lusis.org+github.com@gmail.com>
-
+Author:: Sander Botman <sbotman@schubergphilis.com>
 Copyright:: Copyright (c) 2011 Edmunds, Inc.
+Copyright:: Copyright (c) 2013 Sander Botman.
 License:: Apache License, Version 2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
