@@ -46,19 +46,19 @@ module KnifeCloudstack
         end
 
         object_field = []
-        object_field << ui.color("Name", :yellow, :bold)
+        object_field << ui.color("Name:", :cyan)
         object_field << server['name'].to_s
-        object_field << ui.color("Public IP", :yellow, :bold)
+        object_field << ui.color("Public IP:", :cyan)
         object_field << (connection.get_server_public_ip(server) || '?')
-        object_field << ui.color("Service", :yellow, :bold)
+        object_field << ui.color("Service:", :cyan)
         object_field << server['serviceofferingname'].to_s
-        object_field << ui.color("Template", :yellow, :bold)
+        object_field << ui.color("Template:", :cyan)
         object_field << server['templatename']
-        object_field << ui.color("Domain", :yellow, :bold)
+        object_field << ui.color("Domain:", :cyan)
         object_field << server['domain']
-        object_field << ui.color("Zone", :yellow, :bold)
+        object_field << ui.color("Zone:", :cyan)
         object_field << server['zonename']
-        object_field << ui.color("State", :yellow, :bold)
+        object_field << ui.color("State:", :cyan)
         object_field << server['state']
 
         puts "\n"
