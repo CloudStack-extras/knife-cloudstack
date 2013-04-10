@@ -80,6 +80,14 @@ For example, a rule to forward ports range from 1024 to 10000 would look like <t
 Since 'TCP' is the default protocol, the rule can be shortened to <tt>1024:10000</tt>. A rule can even be shortened to a
 single number when the start and end ports are the same. For example, a rule to forward port 22 can be stated as simply <tt>22</tt>. A list of such rules for a webserver might look like <tt>80,443</tt>.
 
+==== Create Firewall Rule for given ip address
+The <tt>-f, --fw-rules</tt> option takes a comma separated list of firewall rules which are applied to the public ip address assigned to the current server.
+
+Firewall rules have the syntax <tt>START_PORT[:END_PORT[:PROTOCOL[:CIDR_LIST]]]</tt>. <tt>END_PORT</tt>, <tt>PROTOCOL</tt> and <tt>CIDR_LIST</tt> are optional.
+The default value of <tt>END_PORT</tt> is <tt>START_PORT</tt>, the default <tt>PROTOCOL</tt> is 'TCP' and the default <tt>CIDR_LIST</tt> is '0.0.0.0/0'.
+For example, a rule to open firewall for port 80 to everyone would look like <tt>80:80:TCP:0.0.0.0/0</tt>.
+In this case ,it could even be shortened to <tt>80</tt>.
+
 === knife cs server delete
 
 Deletes an existing server in the currently configured CloudStack account.  <b>PLEASE NOTE</b> - this does not delete
