@@ -82,6 +82,8 @@ module KnifeCloudstack
         locate_config_value(:name)
       )
 
+      output_format(connection_result)
+
       rules = connection.list_port_forwarding_rules
 
       connection_result.each do |r|

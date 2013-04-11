@@ -61,6 +61,8 @@ module KnifeCloudstack
         locate_config_value(:keyword)
       )
 
+      output_format(connection_result)
+
       connection_result.each do |r|
        if locate_config_value(:fields)
           locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
