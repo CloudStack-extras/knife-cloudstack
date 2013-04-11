@@ -50,7 +50,7 @@ module KnifeCloudstack
     option :action,
            :short => "-a ACTION",
            :long => "--action ACTION",
-           :description => "start or stop the instances in your result"
+           :description => "start, stop or destroy the instances in your result"
 
     def run
       validate_base_options

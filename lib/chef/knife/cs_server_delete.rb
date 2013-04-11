@@ -49,41 +49,62 @@ module KnifeCloudstack
           next
         end
 
-        object_field = []
-        object_field << ui.color("Name:", :cyan)
-        object_field << server['name'].to_s
-        object_field << ui.color("Public IP:", :cyan)
-        object_field << (connection.get_server_public_ip(server) || '?')
-        object_field << ui.color("Service:", :cyan)
-        object_field << server['serviceofferingname'].to_s
-        object_field << ui.color("Template:", :cyan)
-        object_field << server['templatename']
-        object_field << ui.color("Domain:", :cyan)
-        object_field << server['domain']
-        object_field << ui.color("Zone:", :cyan)
-        object_field << server['zonename']
-        object_field << ui.color("State:", :cyan)
-        object_field << server['state']
+        rules = connection.list_port_forwarding_rules
 
-        puts "\n"
-        puts ui.list(object_field, :uneven_columns_across, 2)
-        puts "\n"
+        show_object_details(server, connection, rules)
 
-        ui.confirm("Do you really want to delete this server")
+        result = confirm_action("Do you really want to delete this server")
+        if result
+          print "#{ui.color("Waiting for deletion", :magenta)}"
+          disassociate_virtual_ip_address server
+          connection.delete_server hostname
+          puts "\n"
+          ui.msg("Deleted server #{hostname}")
 
-        print "#{ui.color("Waiting for deletion", :magenta)}"
-        disassociate_virtual_ip_address server
-        connection.delete_server hostname
-        puts "\n"
-        ui.msg("Deleted server #{hostname}")
+          # delete chef client and node
+          node_name = connection.get_server_fqdn server
+          delete_chef = confirm_action("Do you want to delete the chef node and client '#{node_name}")
+          if delete_chef
+            delete_node node_name
+            delete_client node_name
+          end
 
-        # delete chef client and node
-        node_name = connection.get_server_fqdn server
-        ui.confirm("Do you want to delete the chef node and client '#{node_name}")
-        delete_node node_name
-        delete_client node_name
+        end
       end
+    end
 
+    def show_object_details(s, connection, rules)
+      return if locate_config_value(:yes)
+      
+      object_fields = []
+      object_fields << ui.color("Name:", :cyan)
+      object_fields << s['name'].to_s
+      object_fields << ui.color("Public IP:", :cyan)
+      object_fields << (connection.get_server_public_ip(s, rules) || '')
+      object_fields << ui.color("Service:", :cyan)
+      object_fields << s['serviceofferingname'].to_s
+      object_fields << ui.color("Template:", :cyan)
+      object_fields << s['templatename']
+      object_fields << ui.color("Domain:", :cyan)
+      object_fields << s['domain']
+      object_fields << ui.color("Zone:", :cyan)
+      object_fields << s['zonename']
+      object_fields << ui.color("State:", :cyan)
+      object_fields << s['state']
+
+      puts "\n"
+      puts ui.list(object_fields, :uneven_columns_across, 2)
+      puts "\n"
+    end
+
+    def confirm_action(question)
+      return true if locate_config_value(:yes)
+      result = ui.ask_question(question, :default => "Y" )
+      if result == "Y" || result == "y" then
+        return true
+      else
+        return false
+      end
     end
 
     def disassociate_virtual_ip_address(server)
