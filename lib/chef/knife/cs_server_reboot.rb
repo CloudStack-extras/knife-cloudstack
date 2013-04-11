@@ -45,34 +45,53 @@ module KnifeCloudstack
           next
         end
 
-        object_field = []
-        object_field << ui.color("Name:", :cyan)
-        object_field << server['name'].to_s
-        object_field << ui.color("Public IP:", :cyan)
-        object_field << (connection.get_server_public_ip(server) || '?')
-        object_field << ui.color("Service:", :cyan)
-        object_field << server['serviceofferingname'].to_s
-        object_field << ui.color("Template:", :cyan)
-        object_field << server['templatename']
-        object_field << ui.color("Domain:", :cyan)
-        object_field << server['domain']
-        object_field << ui.color("Zone:", :cyan)
-        object_field << server['zonename']
-        object_field << ui.color("State:", :cyan)
-        object_field << server['state']
+        rules = connection.list_port_forwarding_rules
+ 
+        show_object_details(server, connection, rules)
 
-        puts "\n"
-        puts ui.list(object_field, :uneven_columns_across, 2)
-        puts "\n"
-
-        ui.confirm("Do you really want to reboot this server")
-        print "#{ui.color("Rebooting", :magenta)}"
-
-        connection.reboot_server(hostname)
-        puts "\n"
-        ui.msg("Rebooted server #{hostname}")
+        result = confirm_action("Do you really want to reboot this server")
+ 
+        if result
+          print "#{ui.color("Rebooting", :magenta)}"
+          connection.reboot_server(hostname)
+          puts "\n"
+          ui.msg("Rebooted server #{hostname}")
+        end
       end
+    end
 
+    def show_object_details(s, connection, rules)
+      return if locate_config_value(:yes)
+      
+      object_fields = []
+      object_fields << ui.color("Name:", :cyan)
+      object_fields << s['name'].to_s
+      object_fields << ui.color("Public IP:", :cyan)
+      object_fields << (connection.get_server_public_ip(s, rules) || '')
+      object_fields << ui.color("Service:", :cyan)
+      object_fields << s['serviceofferingname'].to_s
+      object_fields << ui.color("Template:", :cyan)
+      object_fields << s['templatename']
+      object_fields << ui.color("Domain:", :cyan)
+      object_fields << s['domain']
+      object_fields << ui.color("Zone:", :cyan)
+      object_fields << s['zonename']
+      object_fields << ui.color("State:", :cyan)
+      object_fields << s['state']
+
+      puts "\n"
+      puts ui.list(object_fields, :uneven_columns_across, 2)
+      puts "\n"
+    end
+
+    def confirm_action(question)
+      return true if locate_config_value(:yes)
+      result = ui.ask_question(question, :default => "Y" )
+      if result == "Y" || result == "y" then
+        return true
+      else
+        return false
+      end
     end
 
   end
