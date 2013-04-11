@@ -27,6 +27,7 @@ require 'net/http'
 require 'json'
 require 'highline/import'
 
+
 class String
   def to_regexp
     return nil unless self.strip.match(/\A\/(.*)\/(.*)\Z/mx)
@@ -132,7 +133,7 @@ module CloudstackClient
     ## 
     # List all the objects based on the command that is specified.
     
-        def list_object(command, json_result, filter=nil, listall=nil, keyword=nil, name=nil, templatefilter=nil)
+    def list_object(command, json_result, filter=nil, listall=nil, keyword=nil, name=nil, templatefilter=nil)
       params = {
           'command' => command
       }
@@ -720,9 +721,15 @@ module CloudstackClient
       response = http.request(request)
 
       if !response.is_a?(Net::HTTPOK) then
-        puts "Error #{response.code}: #{response.message}"
-        puts JSON.pretty_generate(JSON.parse(response.body))
-        puts "URL: #{url}"
+        case response.code
+        when "432"
+          puts "\n" 
+          puts "Error #{response.code}: Your account does not have the right to execute this command or the command does not exist."
+        else
+          puts "Error #{response.code}: #{response.message}"
+          puts JSON.pretty_generate(JSON.parse(response.body))
+          puts "URL: #{url}"
+        end
         exit 1
       end
 
