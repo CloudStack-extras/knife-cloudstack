@@ -148,11 +148,8 @@ module KnifeCloudstack
   
     def show_object_details(s, connection, rules)
       return if locate_config_value(:yes)
-      object_fields = [
-        ui.color('Key', :bold),
-        ui.color('Value', :bold)
-      ]
 
+      object_fields = []
       object_fields << ui.color("Name:", :cyan)
       object_fields << s['name'].to_s
       object_fields << ui.color("Public IP:", :cyan)
