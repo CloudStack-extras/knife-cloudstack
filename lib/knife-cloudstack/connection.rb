@@ -724,7 +724,7 @@ module CloudstackClient
         case response.code
         when "432"
           puts "\n" 
-          puts "Error #{response.code}: Your account doesn't have the right to execute this command or the command doen not exist."
+          puts "Error #{response.code}: Your account does not have the right to execute this command or the command does not exist."
         else
           puts "Error #{response.code}: #{response.message}"
           puts JSON.pretty_generate(JSON.parse(response.body))
