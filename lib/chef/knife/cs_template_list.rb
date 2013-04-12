@@ -80,6 +80,8 @@ module KnifeCloudstack
         locate_config_value(:templatefilter)
       )
 
+      output_format(connection_result)
+
       index_num = 0
       connection_result.each do |r|
         if locate_config_value(:index)
