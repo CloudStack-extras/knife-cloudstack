@@ -62,6 +62,8 @@ module KnifeCloudstack
         locate_config_value(:listall)
       )
 
+      output_format(connection_result)
+
       connection_result.each do |r|
 
        if locate_config_value(:fields)
