@@ -41,7 +41,6 @@ module KnifeCloudstack
       require 'chef/knife/bootstrap_windows_ssh'
       require 'chef/knife/core/windows_bootstrap_context'
       require 'chef/knife/winrm'
-      require 'json'
       require 'socket'
       require 'net/ssh/multi'
       require 'chef/knife'
@@ -242,10 +241,17 @@ module KnifeCloudstack
 
       public_ip = find_or_create_public_ip(server, connection)
 
-      puts "\n\n"
-      puts "#{ui.color('Name', :cyan)}: #{server['name']}"
-      puts "#{ui.color('Password', :cyan)}: #{server['password']}" if locate_config_value(:cloudstack_password)
-      puts "#{ui.color('Public IP', :cyan)}: #{public_ip}"
+      object_fields = []
+      object_fields << ui.color("Name:", :cyan)
+      object_fields << server['name'].to_s
+      object_fields << ui.color("Name:", :cyan) if locate_config_value(:cloudstack_password)
+      object_fields << server['password'] if locate_config_value(:cloudstack_password)
+      object_fields << ui.color("Public IP:", :cyan)
+      object_fields << public_ip
+
+      puts "\n"
+      puts ui.list(object_fields, :uneven_columns_across, 2)
+      puts "\n"
 
       return unless config[:bootstrap]
 
@@ -264,11 +270,20 @@ module KnifeCloudstack
         }
       end
 
+      object_fields = []
+      object_fields << ui.color("Name:", :cyan)
+      object_fields << server['name'].to_s
+      object_fields << ui.color("Public IP:", :cyan)
+      object_fields << public_ip
+      object_fields << ui.color("Environment:", :cyan)
+      object_fields << (config[:environment] || '_default')
+      object_fields << ui.color("Run List:", :cyan)
+      object_fields << config[:run_list].join(', ')
+
       puts "\n"
-      puts "#{ui.color("Name", :cyan)}: #{server['name']}"
-      puts "#{ui.color("Public IP", :cyan)}: #{public_ip}"
-      puts "#{ui.color("Environment", :cyan)}: #{config[:environment] || '_default'}"
-      puts "#{ui.color("Run List", :cyan)}: #{config[:run_list].join(', ')}"
+      puts ui.list(object_fields, :uneven_columns_across, 2)
+      puts "\n"
+
       bootstrap(server, public_ip).run
     end
 
@@ -458,6 +473,7 @@ module KnifeCloudstack
         s && s.close
       end
     end
+
     def is_platform_windows?
       return RUBY_PLATFORM.scan('w32').size > 0
     end
@@ -471,39 +487,43 @@ module KnifeCloudstack
         bootstrap_for_node(server, public_ip)
       end
     end
+
     def bootstrap_for_windows_node(server, fqdn)
-        if locate_config_value(:bootstrap_protocol) == 'winrm'
-            bootstrap = Chef::Knife::BootstrapWindowsWinrm.new
-            if locate_config_value(:kerberos_realm)
-              #Fetch AD/WINS based fqdn if any for Kerberos-based Auth
-              private_ip_address = connection.get_server_default_nic(server)["ipaddress"]
-              fqdn = locate_config_value(:fqdn) || fetch_server_fqdn(private_ip_address)
-            end
-            bootstrap.name_args = [fqdn]
-            bootstrap.config[:winrm_user] = locate_config_value(:winrm_user) || 'Administrator'
-            locate_config_value(:cloudstack_password) ? bootstrap.config[:winrm_password] = server['password'] : bootstrap.config[:winrm_password] = locate_config_value(:winrm_password)
-            bootstrap.config[:winrm_transport] = locate_config_value(:winrm_transport)
-            bootstrap.config[:winrm_port] = locate_config_value(:winrm_port)
-
-        elsif locate_config_value(:bootstrap_protocol) == 'ssh'
-            bootstrap = Chef::Knife::BootstrapWindowsSsh.new
-            bootstrap.config[:ssh_user] = locate_config_value(:ssh_user)
-            locate_config_value(:cloudstack_password) ? bootstrap.config[:ssh_password] = server['password'] : bootstrap.config[:ssh_password] = locate_config_value(:ssh_password)
-            bootstrap.config[:ssh_port] = locate_config_value(:ssh_port)
-            bootstrap.config[:identity_file] = locate_config_value(:identity_file)
-            bootstrap.config[:no_host_key_verify] = locate_config_value(:no_host_key_verify)
-        else
-            ui.error("Unsupported Bootstrapping Protocol. Supported : winrm, ssh")
-            exit 1
+      if locate_config_value(:bootstrap_protocol) == 'winrm'
+        bootstrap = Chef::Knife::BootstrapWindowsWinrm.new
+        if locate_config_value(:kerberos_realm)
+          #Fetch AD/WINS based fqdn if any for Kerberos-based Auth
+          private_ip_address = connection.get_server_default_nic(server)["ipaddress"]
+          fqdn = locate_config_value(:fqdn) || fetch_server_fqdn(private_ip_address)
         end
-        bootstrap.config[:environment] = locate_config_value(:environment)
-        bootstrap.config[:chef_node_name] = config[:chef_node_name] || server['id']
-        bootstrap.config[:encrypted_data_bag_secret] = config[:encrypted_data_bag_secret]
-        bootstrap.config[:encrypted_data_bag_secret_file] = config[:encrypted_data_bag_secret_file]
-        bootstrap_common_params(bootstrap)
+        bootstrap.name_args = [fqdn]
+        bootstrap.config[:winrm_user] = locate_config_value(:winrm_user) || 'Administrator'
+        locate_config_value(:cloudstack_password) ? bootstrap.config[:winrm_password] = server['password'] : bootstrap.config[:winrm_password] = locate_config_value(:winrm_password)
+        bootstrap.config[:winrm_transport] = locate_config_value(:winrm_transport)
+        bootstrap.config[:winrm_port] = locate_config_value(:winrm_port)
+      elsif locate_config_value(:bootstrap_protocol) == 'ssh'
+        bootstrap = Chef::Knife::BootstrapWindowsSsh.new
+        if locate_config_value(:cloudstack_password)
+          bootstrap.config[:ssh_user] = locate_config_value(:ssh_user) || 'Administrator'
+        else
+          bootstrap.config[:ssh_user] = locate_config_value(:ssh_user)
+        end
+        locate_config_value(:cloudstack_password) ? bootstrap.config[:ssh_password] = server['password'] : bootstrap.config[:ssh_password] = locate_config_value(:ssh_password)
+        bootstrap.config[:ssh_port] = locate_config_value(:ssh_port)
+        bootstrap.config[:identity_file] = locate_config_value(:identity_file)
+        bootstrap.config[:no_host_key_verify] = locate_config_value(:no_host_key_verify)
+      else
+        ui.error("Unsupported Bootstrapping Protocol. Supported : winrm, ssh")
+        exit 1
+      end
+      bootstrap.config[:environment] = locate_config_value(:environment)
+      bootstrap.config[:chef_node_name] = config[:chef_node_name] || server['id']
+      bootstrap.config[:encrypted_data_bag_secret] = config[:encrypted_data_bag_secret]
+      bootstrap.config[:encrypted_data_bag_secret_file] = config[:encrypted_data_bag_secret_file]
+      bootstrap_common_params(bootstrap)
     end
-    def bootstrap_common_params(bootstrap)
 
+    def bootstrap_common_params(bootstrap)
       bootstrap.config[:run_list] = config[:run_list]
       bootstrap.config[:prerelease] = config[:prerelease]
       bootstrap.config[:bootstrap_version] = locate_config_value(:bootstrap_version)
@@ -512,30 +532,25 @@ module KnifeCloudstack
       bootstrap
     end
 
-
     def bootstrap_for_node(server,fqdn)
       bootstrap = Chef::Knife::Bootstrap.new
       bootstrap.name_args = [fqdn]
-      # bootstrap.config[:run_list] = config[:run_list]
-      bootstrap.config[:ssh_user] = locate_config_value(:ssh_user)
+      if locate_config_value(:cloudstack_password)
+        bootstrap.config[:ssh_user] = locate_config_value(:ssh_user) || 'root'
+      else
+        bootstrap.config[:ssh_user] = locate_config_value(:ssh_user)
+      end
       locate_config_value(:cloudstack_password) ? bootstrap.config[:ssh_password] = server['password'] : bootstrap.config[:ssh_password] = locate_config_value(:ssh_password)
       bootstrap.config[:ssh_port] = locate_config_value(:ssh_port) || 22
       bootstrap.config[:identity_file] = locate_config_value(:identity_file)
       bootstrap.config[:chef_node_name] = locate_config_value(:chef_node_name) || server["name"]
-      # bootstrap.config[:prerelease] = locate_config_value(:prerelease)
-      # bootstrap.config[:bootstrap_version] = locate_config_value(:bootstrap_version)
-      # bootstrap.config[:distro] = locate_config_value(:distro)
       bootstrap.config[:use_sudo] = true unless locate_config_value(:ssh_user) == 'root'
-      # bootstrap.config[:template_file] = config[:template_file]
       bootstrap.config[:environment] = locate_config_value(:environment)
+
       # may be needed for vpc_mode
       bootstrap.config[:host_key_verify] = config[:host_key_verify]
       bootstrap_common_params(bootstrap)
     end
 
-    def locate_config_value(key)
-      key = key.to_sym
-      Chef::Config[:knife][key] || config[key]
-    end
   end
 end
