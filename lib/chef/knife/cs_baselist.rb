@@ -48,8 +48,8 @@ class Chef
 
       def output_format(json)
         if locate_config_value(:format) =~ /json/i
-            json_hash = {}
-            json.each { |k| json_hash.merge! k }
+            json_hash = {}; 
+	    json.each { |k| json_hash.merge!( k['id'] => k) }
             puts JSON.pretty_generate(json_hash) 
           exit 0
         end
