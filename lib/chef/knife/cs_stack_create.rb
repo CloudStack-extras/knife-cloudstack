@@ -30,6 +30,7 @@ module KnifeCloudstack
       require 'net/ssh/multi'
       require 'knife-cloudstack/connection'
       require 'chef/knife'
+      Chef::Knife.load_deps
       Chef::Knife::Ssh.load_deps
       Chef::Knife::NodeRunListRemove.load_deps
       KnifeCloudstack::CsServerCreate.load_deps

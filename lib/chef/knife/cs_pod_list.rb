@@ -16,7 +16,6 @@
 # limitations under the License.
 #
 
-require 'chef/knife'
 require 'chef/knife/cs_base'
 require 'chef/knife/cs_baselist'
 
@@ -28,6 +27,7 @@ module KnifeCloudstack
 
     deps do
       require 'knife-cloudstack/connection'
+      Chef::Knife.load_deps
     end
 
     banner "knife cs pod list (options)"

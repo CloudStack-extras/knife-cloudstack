@@ -17,15 +17,16 @@
 # limitations under the License.
 #
 
-require 'chef/knife'
 require 'chef/knife/cs_base'
 
 module KnifeCloudstack
   class CsTemplateCreate < Chef::Knife
+
     include Chef::Knife::KnifeCloudstackBase
 
     deps do
       require 'knife-cloudstack/connection'
+      Chef::Knife.load_deps
     end
 
     banner "knife cs template create NAME (options)"

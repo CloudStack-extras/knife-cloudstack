@@ -24,6 +24,7 @@ module KnifeCloudstack
       require 'chef/mash'
       require 'knife-cloudstack/connection'
       require 'chef/knife'
+      Chef::Knife.load_deps
       KnifeCloudstack::CsServerDelete.load_deps
     end
 
