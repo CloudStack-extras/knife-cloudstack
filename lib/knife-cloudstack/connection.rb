@@ -1,6 +1,7 @@
 #
 # Author:: Ryan Holmes (<rholmes@edmunds.com>)
 # Author:: KC Braunschweig (<kcbraunschweig@gmail.com>)
+# Author:: Sander Botman (<sbotman@schubergphilis.com>)
 # Author:: Frank Breedijk (<fbreedijk@schubergphilis.com>)
 # Copyright:: Copyright (c) 2011 Edmunds, Inc.
 # License:: Apache License, Version 2.0
@@ -26,22 +27,7 @@ require 'cgi'
 require 'net/http'
 require 'json'
 require 'highline/import'
-
-
-class String
-  def to_regexp
-    return nil unless self.strip.match(/\A\/(.*)\/(.*)\Z/mx)
-    regexp , flags = $1 , $2
-    return nil if !regexp || flags =~ /[^xim]/m
-
-    x = /x/.match(flags) && Regexp::EXTENDED
-    i = /i/.match(flags) && Regexp::IGNORECASE
-    m = /m/.match(flags) && Regexp::MULTILINE
-
-    Regexp.new regexp , [x,i,m].inject(0){|a,f| f ? a+f : a }
-  end
-end
-
+require 'knife-cloudstack/string_to_regexp'
 
 module CloudstackClient
   class Connection
@@ -162,9 +148,6 @@ module CloudstackClient
       params = {
           'command' => 'listVirtualMachines'
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
       json = send_request(params)
       json['virtualmachine'] || []
     end
@@ -447,9 +430,6 @@ module CloudstackClient
       params = {
           'command' => 'listNetworks'
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
       json = send_request(params)
 
       networks = json['network']
@@ -473,9 +453,6 @@ module CloudstackClient
           'isDefault' => true,
           'zoneid' => zone
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
       json = send_request(params)
 
       networks = json['network']
