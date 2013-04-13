@@ -18,9 +18,9 @@
 
 require 'chef/knife/cs_base'
 require 'chef/knife/cs_baselist'
-      
+
 module KnifeCloudstack
-  class CsUserList < Chef::Knife
+  class CsIsoList < Chef::Knife
 
     include Chef::Knife::KnifeCloudstackBase
     include Chef::Knife::KnifeCloudstackBaseList
@@ -30,12 +30,16 @@ module KnifeCloudstack
       Chef::Knife.load_deps
     end
 
-    banner "knife cs user list (options)"
+    banner "knife cs iso list (options)"
 
     option :listall,
            :long => "--listall",
-           :description => "List all users",
+           :description => "List all iso's",
            :boolean => true
+
+    option :name,
+           :long => "--name NAME",
+           :description => "Specify iso name to list"
 
     option :keyword,
            :long => "--keyword KEY",
@@ -44,30 +48,28 @@ module KnifeCloudstack
     def run
       validate_base_options
 
+      object_list = []
       if locate_config_value(:fields)
-        object_list = []
         locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
       else
-        object_list = [
-          ui.color('Account', :bold),
-          ui.color('Type', :bold),
-          ui.color('State', :bold),
-          ui.color('Domain', :bold),
-          ui.color('Username', :bold),
-          ui.color('First', :bold),
-          ui.color('Last', :bold)
-        ]
+        object_list << ui.color('Name', :bold)
+        object_list << ui.color('Account', :bold) unless locate_config_value(:cloudstack_project)
+        object_list << ui.color('Domain', :bold)
+        object_list << ui.color('Public', :bold)
+        object_list << ui.color('Size', :bold)
+        object_list << ui.color('OS', :bold)
       end
 
       columns = object_list.count
       object_list = [] if locate_config_value(:noheader)
 
       connection_result = connection.list_object(
-        "listUsers",
-        "user",
+        "listIsos",
+        "iso",
         locate_config_value(:filter),
         locate_config_value(:listall),
-        locate_config_value(:keyword)
+        locate_config_value(:keyword),
+        locate_config_value(:name)
       )
 
       output_format(connection_result)
@@ -76,17 +78,25 @@ module KnifeCloudstack
        if locate_config_value(:fields)
           locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
         else
-          object_list << r['account'].to_s 
-          object_list << r['accounttype'].to_s
-          object_list << r['state'].to_s
+          object_list << r['name'].to_s
+          object_list << (r['account'] ? r['account'].to_s : 'N/A') unless locate_config_value(:cloudstack_project)
           object_list << r['domain'].to_s
-          object_list << r['username'].to_s
-          object_list << r['firstname'].to_s
-          object_list << r['lastname'].to_s
+          object_list << r['ispublic'].to_s
+          object_list << (r['size'] ? human_file_size(r['size']) : 'Unknown')
+          object_list << (r['ostypename'] ? r['ostypename'].to_s : 'N/A')
         end
       end
       puts ui.list(object_list, :uneven_columns_across, columns)
-      list_object_fields(connection_result) if locate_config_value(:fieldlist)
+      connection.show_object_fields(connection_result) if locate_config_value(:fieldlist)
+    end
+
+    def human_file_size n
+      count = 0
+      while  n >= 1024 and count < 4
+        n /= 1024.0
+        count += 1
+      end
+      format("%.0f", n) + %w(B KB MB GB TB)[count]
     end
 
   end
