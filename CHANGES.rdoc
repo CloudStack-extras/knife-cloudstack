@@ -35,15 +35,17 @@
   <tt>hosts</tt>, <tt>iso list</tt>, <tt>network list</tt>, <tt>ostype list</tt>, <tt>oscategory list</tt>, <tt>pod list</tt>, <tt>project list</tt>, <tt>router list</tt>,
   <tt>server list</tt>, <tt>service list</tt>, <tt>user list</tt>, <tt>volume list</tt>, <tt>zone list</tt>.
 
-* Added option: <tt>--name</tt> to: <tt>account list</tt>, <tt>cluster list</tt>, <tt>config list</tt>, <tt>disk list</tt>, <tt>host list<tt>, <tt>hosts</tt>, <tt>iso list</tt>,
+* Added option: <tt>--name</tt> to: <tt>account list</tt>, <tt>cluster list</tt>, <tt>config list</tt>, <tt>disk list</tt>, <tt>host list</tt>, <tt>hosts</tt>, <tt>iso list</tt>,
   <tt>pod list</tt>, <tt>project list</tt>, <tt>router list</tt>, <tt>server list</tt>, <tt>service list</tt>, <tt>volume list</tt>
 
 * Added option: <tt>--action</tt> to: <tt>server list</tt> which <tt>start</tt>, <tt>stop</tt> or <tt>destroy</tt> the machines based on the result.
-* Added option: <tt>--cloudstack-password</tt> to let cloudstack generate the password if your template supports this.
+* Added option: <tt>--cloudstack-password</tt> to let cloudstack generate the password (only works if your template supports this.)
 * Added option: <tt>--ipfwd-rules</tt> and <tt>--fw-rules</tt> to: <tt>server create</tt>
 * Fixed delay-loading.
 * Fixed <tt>-F json</tt> / <tt>--format json</tt> option for every list command.
 * Fixed <tt>--no-bootstrap</tt> option to ignore the chef bootstrap
+* Fixed default bootstrap template to: <tt>chef-full</tt>
+
 
 == 2012-11-29 (0.0.13)
 * Windows support
