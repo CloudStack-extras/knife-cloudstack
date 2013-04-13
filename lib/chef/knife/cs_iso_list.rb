@@ -23,6 +23,7 @@ module KnifeCloudstack
   class CsIsoList < Chef::Knife
 
     include Chef::Knife::KnifeCloudstackBase
+    include Chef::Knife::KnifeCloudstackBaseList
 
     deps do
       require 'knife-cloudstack/connection'
