@@ -184,7 +184,7 @@ module KnifeCloudstack
     option :fw_rules,
            :short => "-f PORT_RULES",
            :long => "--fw-rules PORT_RULES",
-           :description => "Comma separated list of firewall rules, e.g. '1024:10000:TCP:192.168.0.0/16,25:25:TCP:10.0.0.0/8'",
+           :description => "Comma separated list of firewall rules, e.g. 'TCP:192.168.0.0/16:1024:65535,TCP::22,UDP::123,ICMP'",
            :proc => lambda { |o| o.split(/[\s,]+/) },
            :default => []
 
@@ -396,15 +396,30 @@ module KnifeCloudstack
     def create_firewall_rules(ip_address, connection)
       rules = locate_config_value(:fw_rules)
       return unless rules
+      icmptype={
+        '0' => {'code' => [0]},
+        '8' => {'code' => [0]},
+        '3' => {'code' => [0, 1]}
+      }
       rules.each do |rule|
         args = rule.split(':')
-        startport = args[0]
-        endport = args[1] || args[0]
-        protocol = args[2] || "TCP"
-        cidr_list = args[3] || "0.0.0.0/0"
-        Chef::Log.debug("Creating Firewall Rule for
+        protocol = args[0]
+        cidr_list = (args[1].nil? || args[1].length == 0) ? "0.0.0.0/0" : args[1]
+        startport = args[2]
+        endport = args[3] || args[2]
+        if protocol == "ICMP"
+          icmptype.each do |type, value|
+            value['code'].each do |code_id|
+              Chef::Log.debug("Creating Firewall Rule for
+                #{ip_address['ipaddress']} with protocol: #{protocol}, icmptype: #{type}, icmpcode: #{code_id}, cidrList: #{cidr_list}")
+              connection.create_firewall_rule(ip_address['id'], protocol, type, code_id, cidr_list)
+            end
+          end
+        else
+          Chef::Log.debug("Creating Firewall Rule for
             #{ip_address['ipaddress']} with protocol: #{protocol}, startport: #{startport}, endport: #{endport}, cidrList: #{cidr_list}")
-        connection.create_firewall_rule(ip_address['id'], protocol, startport, endport, cidr_list)
+          connection.create_firewall_rule(ip_address['id'], protocol, startport, endport, cidr_list)
+        end
       end
     end
 
