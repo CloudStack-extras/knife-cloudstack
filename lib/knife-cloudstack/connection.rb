@@ -600,15 +600,26 @@ module CloudstackClient
       send_async_request(params)
     end
 
-    def create_firewall_rule(ipaddress_id, protocol, start_port, end_port, cidr_list)
-      params = {
-        'command' => 'createFirewallRule',
-        'ipaddressId' => ipaddress_id,
-        'protocol' => protocol,
-        'startport' =>  start_port,
-        'endport' => end_port,
-        'cidrlist' => cidr_list
-      }
+    def create_firewall_rule(ipaddress_id, protocol, param3, param4, cidr_list)
+      if protocol == "ICMP"
+        params = {
+          'command' => 'createFirewallRule',
+          'ipaddressId' => ipaddress_id,
+          'protocol' => protocol,
+          'icmptype' =>  param3,
+          'icmpcode' => param4,
+          'cidrlist' => cidr_list
+        }
+      else
+        params = {
+          'command' => 'createFirewallRule',
+          'ipaddressId' => ipaddress_id,
+          'protocol' => protocol,
+          'startport' =>  param3,
+          'endport' => param4,
+          'cidrlist' => cidr_list
+        }
+      end
       send_async_request(params)
     end
 
