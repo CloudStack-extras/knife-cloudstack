@@ -97,10 +97,9 @@ single number when the start and end ports are the same. For example, a rule to 
 ==== Create Firewall Rule for given ip address
 The <tt>-f, --fw-rules</tt> option takes a comma separated list of firewall rules which are applied to the public ip address assigned to the current server.
 
-Firewall rules have the syntax <tt>START_PORT[:END_PORT[:PROTOCOL[:CIDR_LIST]]]</tt>. <tt>END_PORT</tt>, <tt>PROTOCOL</tt> and <tt>CIDR_LIST</tt> are optional.
-The default value of <tt>END_PORT</tt> is <tt>START_PORT</tt>, the default <tt>PROTOCOL</tt> is 'TCP' and the default <tt>CIDR_LIST</tt> is '0.0.0.0/0'.
-For example, a rule to open firewall for port 80 to everyone would look like <tt>80:80:TCP:0.0.0.0/0</tt>.
-In this case ,it could even be shortened to <tt>80</tt>.
+Firewall rules have the syntax <tt>PROTOCOL[:CIDR_LIST[:START_PORT[:END_PORT]]]</tt>. <tt>START_PORT</tt> and <tt>END_PORT</tt> must not be specified when <tt>PROTOCOL</tt> is <tt>ICMP</tt>, <tt>CIDR_LIST</tt> is always optional.
+The default value of <tt>END_PORT</tt> is <tt>START_PORT</tt>, the default <tt>CIDR_LIST</tt> is '0.0.0.0/0'.
+For example, a rule to open firewall for port 80 to everyone would look like <tt>TCP::80</tt> and a rule to open ICMP to internal network would look like <tt>ICMP:10.0.0.0/8</tt>.
 
 === knife cs server delete
 
