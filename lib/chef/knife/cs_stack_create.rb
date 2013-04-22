@@ -104,6 +104,9 @@ module KnifeCloudstack
       cmd.config[:ssh_password] = config[:ssh_password]
       cmd.config[:ssh_port] = Chef::Config[:knife][:ssh_port] || config[:ssh_port]
       cmd.config[:identity_file] = config[:identity_file]
+      cmd.config[:bootstrap] = server[:bootstrap] if server.has_key?(:bootstrap)
+      cmd.config[:bootstrap_protocol] = server[:bootstrap_protocol] if server[:bootstrap_protocol]
+      cmd.config[:host_key_verify] = server[:host_key_verify] if server.has_key?(:host_key_verify)
       cmd.config[:cloudstack_template] = server[:template] if server[:template]
       cmd.config[:cloudstack_service] = server[:service] if server[:service]
       cmd.config[:cloudstack_zone] = server[:zone] if server[:zone]
