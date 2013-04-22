@@ -106,7 +106,7 @@ module KnifeCloudstack
       cmd.config[:identity_file] = config[:identity_file]
       cmd.config[:cloudstack_template] = server[:template] if server[:template]
       cmd.config[:cloudstack_service] = server[:service] if server[:service]
-      cmd.config[:cloudstack_zone] = server[:service] if server[:zone]
+      cmd.config[:cloudstack_zone] = server[:zone] if server[:zone]
       cmd.config[:public_ip] = server[:public_ip] if server.has_key?(:public_ip)
       cmd.config[:cloudstack_networks] = server[:networks].split(/[\s,]+/) if server[:networks]
       cmd.config[:run_list] = server[:run_list].split(/[\s,]+/) if server[:run_list]
