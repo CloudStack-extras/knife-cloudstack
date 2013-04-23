@@ -18,7 +18,6 @@
 # limitations under the License.
 #
 
-require 'chef/knife'
 require 'chef/knife/cs_base'
 require 'chef/knife/cs_baselist'
 
@@ -29,7 +28,9 @@ module KnifeCloudstack
     include Chef::Knife::KnifeCloudstackBaseList
 
     deps do
+      require 'chef/knife'
       require 'knife-cloudstack/connection'
+      Chef::Knife.load_deps
     end
 
     banner "knife cs server list (options)"
@@ -50,20 +51,10 @@ module KnifeCloudstack
     option :action,
            :short => "-a ACTION",
            :long => "--action ACTION",
-           :description => "start or stop the instances in your result"
+           :description => "start, stop or destroy the instances in your result"
 
     def run
-
-      $stdout.sync = true
-
-      connection = CloudstackClient::Connection.new(
-          locate_config_value(:cloudstack_url),
-          locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key),
-          locate_config_value(:cloudstack_project),
-          locate_config_value(:cloudstack_account),
-          locate_config_value(:use_http_ssl)
-      )
+      validate_base_options
 
       if locate_config_value(:fields)
         object_list = []  
@@ -91,6 +82,8 @@ module KnifeCloudstack
         locate_config_value(:keyword),
         locate_config_value(:name)
       )
+
+      output_format(connection_result)
 
       rules = connection.list_port_forwarding_rules
 
@@ -158,24 +151,21 @@ module KnifeCloudstack
   
     def show_object_details(s, connection, rules)
       return if locate_config_value(:yes)
-      object_fields = [
-        ui.color('Key', :bold),
-        ui.color('Value', :bold)
-      ]
 
-      object_fields << ui.color("Name", :yellow, :bold)
+      object_fields = []
+      object_fields << ui.color("Name:", :cyan)
       object_fields << s['name'].to_s
-      object_fields << ui.color("Public IP", :yellow, :bold)
+      object_fields << ui.color("Public IP:", :cyan)
       object_fields << (connection.get_server_public_ip(s, rules) || '')
-      object_fields << ui.color("Service", :yellow, :bold)
+      object_fields << ui.color("Service:", :cyan)
       object_fields << s['serviceofferingname'].to_s
-      object_fields << ui.color("Template", :yellow, :bold)
+      object_fields << ui.color("Template:", :cyan)
       object_fields << s['templatename']
-      object_fields << ui.color("Domain", :yellow, :bold)
+      object_fields << ui.color("Domain:", :cyan)
       object_fields << s['domain']
-      object_fields << ui.color("Zone", :yellow, :bold)
+      object_fields << ui.color("Zone:", :cyan)
       object_fields << s['zonename']
-      object_fields << ui.color("State", :yellow, :bold)
+      object_fields << ui.color("State:", :cyan)
       object_fields << s['state']
 
       puts "\n"
@@ -192,13 +182,6 @@ module KnifeCloudstack
         return false
       end
     end
-
-    def msg(label, value)
-      if value && !value.empty?
-        puts "#{ui.color(label, :cyan)}: #{value}"
-      end
-    end
-
 
   end
 end

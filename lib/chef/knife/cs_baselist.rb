@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 
+require 'json'
 require 'chef/knife'
 
 class Chef
@@ -42,6 +43,15 @@ class Chef
                  :long => "--noheader",
                  :description => "Removes header from output",
                  :boolean => true
+        end
+      end
+
+      def output_format(json)
+        if locate_config_value(:format) =~ /json/i
+            json_hash = {}; 
+	    json.each { |k| json_hash.merge!( k['id'] => k) }
+            puts JSON.pretty_generate(json_hash) 
+          exit 0
         end
       end
 
