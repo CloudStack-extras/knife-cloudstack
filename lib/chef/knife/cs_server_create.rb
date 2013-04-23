@@ -55,6 +55,11 @@ module KnifeCloudstack
 
     banner "knife cs server create [SERVER_NAME] (options)"
 
+    option :cloudstack_display_name,
+           :short => "-n DISPLAY_NAME",
+           :long => "--display-name DISPLAY_NAME",
+           :description => "Host display name"
+
     option :cloudstack_service,
            :short => "-S SERVICE",
            :long => "--service SERVICE",
@@ -81,9 +86,17 @@ module KnifeCloudstack
            :proc => lambda { |n| n.split(',').map {|sn| sn.strip}} ,
            :default => []
 
+
     option :cloudstack_hypervisor,
            :long => '--cloudstack-hypervisor HYPERVISOR',
            :description => "The CloudStack hypervisor type for the server"
+
+    option :cloudstack_securitygroups,
+           :short => "-G SECURITYGROUP",
+           :long => "--securitygroups SECURITYGROUP",
+           :description => "Comma separated list of CloudStack security group names",
+           :proc => lambda { |n| n.split(',').map {|sn| sn.strip}} ,
+           :default => []
 
     option :cloudstack_password,
            :long => "--cloudstack-password",
@@ -234,9 +247,12 @@ module KnifeCloudstack
           hostname,
           locate_config_value(:cloudstack_service),
           locate_config_value(:cloudstack_template),
+          locate_config_value(:cloudstack_display_name),
+          locate_config_value(:cloudstack_domain_name),
           locate_config_value(:cloudstack_zone),
           locate_config_value(:cloudstack_networks),
           params
+          locate_config_value(:cloudstack_securitygroups) || []
       )
 
       public_ip = find_or_create_public_ip(server, connection)
