@@ -1,4 +1,54 @@
 = Changes
+
+== 2013-04-14 (0.0.14)
+* Added bash/addinstance.sh script in onder to ease instance creation from cli.
+
+* Added the cs_base.rb to merge all common options.
+* Added the cs_base_list.rb to merge all common options and functions for the list commands.
+* Added the option: <tt>-P</tt> / <tt>--cloudstack-project</tt> to the following commands: <tt>account list</tt>, <tt>firewallrule list</tt>, <tt>hosts</tt>,
+  <tt>iso list</tt>, <tt>network list</tt>, <tt>router list</tt>, <tt>server list</tt>, <tt>template list</tt>, <tt>volume list</tt>
+
+* Added subcommands: <tt>account list</tt>, <tt>cluster list</tt>, <tt>config list</tt>, <tt>disk create</tt>,
+  <tt>disk list</tt>, <tt>domain list</tt>,<tt>firewallrule list</tt>, <tt>host list</tt>,
+  <tt>iso list</tt>, <tt>ostype list</tt>, <tt>oscategory list</tt>, <tt>pod list</tt>, <tt>project list</tt>,
+  <tt>service create</tt>, <tt>template create</tt>, <tt>template extract</tt>, <tt>template register</tt>, <tt>router list</tt>, <tt>user list</tt>, <tt>volume list</tt>
+
+* Updated subcommands: <tt>hosts</tt>, <tt>network list</tt>, <tt>server list</tt>, <tt>service list</tt>,
+  <tt>template list</tt>, <tt>zone list</tt>
+
+* Added option: <tt>--filter</tt> to all list commands. This filters your output on the fields that you specify.
+  Filter can be a string <tt>'name'</tt> or regexp <tt>'/name/i'</tt>. Example: <tt>--filter "instancename:/i-xxx/i,accountname:jenkins"</tt>
+  Additional filters can be added by separating them using a comma ',' 
+    NOTE: --filter is done client side, filtering by --name or --keyword is faster and is done server side.
+
+* Added option: <tt>--fields</tt> to all list commands. Here you specify the fields that you want to display in your output.
+  Default outputs will be shown if no fields are defined. Example: <tt>--fields "name, instancename, domain"</tt>
+
+* Added option: <tt>--noheader</tt> to all list commands.
+  This will remove the header from the output.
+
+* Added option: <tt>--fieldlist</tt> to all list commands. This will display the fields that you can use to filter or
+  use in your output. Example will be given with the first result that you specify in your filter.
+
+* Added option: <tt>--listall</tt> to: <tt>account list</tt>, <tt>domain list</tt>, <tt>firewallrule list</tt>, <tt>hosts</tt>, <tt>iso list</tt>,
+  <tt>network list</tt>, <tt>project list</tt>, <tt>router list</tt>, <tt>server list</tt>, <tt>template list</tt>, <tt>user list</tt>, <tt>volume list</tt>.
+
+* Added option: <tt>--keyword</tt> to: <tt>account list</tt>, <tt>cluster list</tt>, <tt>config list</tt>, <tt>disk list</tt>, <tt>firewallrule list</tt>,
+  <tt>hosts</tt>, <tt>iso list</tt>, <tt>network list</tt>, <tt>ostype list</tt>, <tt>oscategory list</tt>, <tt>pod list</tt>, <tt>project list</tt>, <tt>router list</tt>,
+  <tt>server list</tt>, <tt>service list</tt>, <tt>user list</tt>, <tt>volume list</tt>, <tt>zone list</tt>.
+
+* Added option: <tt>--name</tt> to: <tt>account list</tt>, <tt>cluster list</tt>, <tt>config list</tt>, <tt>disk list</tt>, <tt>host list</tt>, <tt>hosts</tt>, <tt>iso list</tt>,
+  <tt>pod list</tt>, <tt>project list</tt>, <tt>router list</tt>, <tt>server list</tt>, <tt>service list</tt>, <tt>volume list</tt>
+
+* Added option: <tt>--action</tt> to: <tt>server list</tt> which <tt>start</tt>, <tt>stop</tt> or <tt>destroy</tt> the machines based on the result.
+* Added option: <tt>--cloudstack-password</tt> to let cloudstack generate the password (only works if your template supports this.)
+* Added option: <tt>--ipfwd-rules</tt> and <tt>--fw-rules</tt> to: <tt>server create</tt>
+* Fixed delay-loading.
+* Fixed <tt>-F json</tt> / <tt>--format json</tt> option for every list command.
+* Fixed <tt>--no-bootstrap</tt> option to ignore the chef bootstrap
+* Fixed default bootstrap template to: <tt>chef-full</tt>
+
+
 == 2012-11-29 (0.0.13)
 * Windows support
   https://github.com/CloudStack-extras/knife-cloudstack/issues/31

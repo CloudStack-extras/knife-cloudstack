@@ -1,6 +1,8 @@
 #
 # Author:: Ryan Holmes (<rholmes@edmunds.com>)
 # Author:: KC Braunschweig (<kcbraunschweig@gmail.com>)
+# Author:: Sander Botman (<sbotman@schubergphilis.com>)
+# Author:: Frank Breedijk (<fbreedijk@schubergphilis.com>)
 # Copyright:: Copyright (c) 2011 Edmunds, Inc.
 # License:: Apache License, Version 2.0
 #
@@ -25,21 +27,7 @@ require 'cgi'
 require 'net/http'
 require 'json'
 require 'highline/import'
-
-class String
-  def to_regexp
-    return nil unless self.strip.match(/\A\/(.*)\/(.*)\Z/mx)
-    regexp , flags = $1 , $2
-    return nil if !regexp || flags =~ /[^xim]/m
-
-    x = /x/.match(flags) && Regexp::EXTENDED
-    i = /i/.match(flags) && Regexp::IGNORECASE
-    m = /m/.match(flags) && Regexp::MULTILINE
-
-    Regexp.new regexp , [x,i,m].inject(0){|a,f| f ? a+f : a }
-  end
-end
-
+require 'knife-cloudstack/string_to_regexp'
 
 module CloudstackClient
   class Connection
@@ -132,7 +120,7 @@ module CloudstackClient
     ## 
     # List all the objects based on the command that is specified.
     
-        def list_object(command, json_result, filter=nil, listall=nil, keyword=nil, name=nil, templatefilter=nil)
+    def list_object(command, json_result, filter=nil, listall=nil, keyword=nil, name=nil, templatefilter=nil)
       params = {
           'command' => command
       }
@@ -161,9 +149,6 @@ module CloudstackClient
       params = {
           'command' => 'listVirtualMachines'
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
       json = send_request(params)
       json['virtualmachine'] || []
     end
@@ -171,7 +156,7 @@ module CloudstackClient
     ##
     # Deploys a new server using the specified parameters.
 
-    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[])
+    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[], extra_params)
 
       if host_name then
         if get_server(host_name) then
@@ -226,6 +211,8 @@ module CloudstackClient
           'zoneId' => zone['id'],
           'networkids' => network_ids.join(',')
       }
+
+      params.merge!(extra_params) if extra_params
 
       params['name'] = host_name if host_name
 
@@ -404,7 +391,8 @@ module CloudstackClient
     #Fetch project with the specified name
     def get_project(name)
       params = {
-        'command' => 'listProjects'
+        'command' => 'listProjects',
+	'listall' => true
       }
 
       json = send_request(params)
@@ -443,9 +431,6 @@ module CloudstackClient
       params = {
           'command' => 'listNetworks'
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
       json = send_request(params)
 
       networks = json['network']
@@ -469,9 +454,6 @@ module CloudstackClient
           'isDefault' => true,
           'zoneid' => zone
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
       json = send_request(params)
 
       networks = json['network']
@@ -619,6 +601,28 @@ module CloudstackClient
       send_async_request(params)
     end
 
+    def create_firewall_rule(ipaddress_id, protocol, param3, param4, cidr_list)
+      if protocol == "ICMP"
+        params = {
+          'command' => 'createFirewallRule',
+          'ipaddressId' => ipaddress_id,
+          'protocol' => protocol,
+          'icmptype' =>  param3,
+          'icmpcode' => param4,
+          'cidrlist' => cidr_list
+        }
+      else
+        params = {
+          'command' => 'createFirewallRule',
+          'ipaddressId' => ipaddress_id,
+          'protocol' => protocol,
+          'startport' =>  param3,
+          'endport' => param4,
+          'cidrlist' => cidr_list
+        }
+      end
+      send_async_request(params)
+    end
 
     ##
     # Disassociates an ip address from the account.
@@ -690,15 +694,15 @@ module CloudstackClient
 
       params_arr = []
       params.sort.each { |elem|
-        params_arr << elem[0].to_s + '=' + elem[1].to_s
+        params_arr << elem[0].to_s + '=' + CGI.escape(elem[1].to_s).gsub('+', '%20').gsub(' ','%20')
       }
       data = params_arr.join('&')
-      encoded_data = URI.encode(data.downcase).gsub('+', '%20').gsub(',', '%2c')
-      signature = OpenSSL::HMAC.digest('sha1', @secret_key, encoded_data)
+      signature = OpenSSL::HMAC.digest('sha1', @secret_key, data.downcase)
       signature = Base64.encode64(signature).chomp
       signature = CGI.escape(signature)
 
       url = "#{@api_url}?#{data}&signature=#{signature}"
+      Chef::Log.debug("URL: #{url}")
       uri = URI.parse(url)
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = @use_ssl
@@ -707,9 +711,15 @@ module CloudstackClient
       response = http.request(request)
 
       if !response.is_a?(Net::HTTPOK) then
-        puts "Error #{response.code}: #{response.message}"
-        puts JSON.pretty_generate(JSON.parse(response.body))
-        puts "URL: #{url}"
+        case response.code
+        when "432"
+          puts "\n" 
+          puts "Error #{response.code}: Your account does not have the right to execute this command or the command does not exist."
+        else
+          puts "Error #{response.code}: #{response.message}"
+          puts JSON.pretty_generate(JSON.parse(response.body))
+          puts "URL: #{url}"
+        end
         exit 1
       end
 

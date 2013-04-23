@@ -18,7 +18,6 @@
 # limitations under the License.
 #
 
-require 'chef/knife'
 require 'chef/knife/cs_base'
 require 'chef/knife/cs_baselist'
 
@@ -30,6 +29,8 @@ module KnifeCloudstack
 
     deps do
       require 'knife-cloudstack/connection'
+      require 'chef/knife'
+      Chef::Knife.load_deps
     end
 
     banner "knife cs template list (options)"
@@ -51,16 +52,6 @@ module KnifeCloudstack
 
     def run
       validate_base_options
-      $stdout.sync = true
-
-      connection = CloudstackClient::Connection.new(
-          locate_config_value(:cloudstack_url),
-          locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key),
-          locate_config_value(:cloudstack_project),
-          locate_config_value(:cloudstack_account),
-          locate_config_value(:use_http_ssl)
-      )
 
       object_list = []
       object_list << ui.color('Index', :bold) if locate_config_value(:index)
@@ -89,6 +80,8 @@ module KnifeCloudstack
         nil,
         locate_config_value(:templatefilter)
       )
+
+      output_format(connection_result)
 
       index_num = 0
       connection_result.each do |r|

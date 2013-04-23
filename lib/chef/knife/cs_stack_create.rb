@@ -16,12 +16,16 @@
 # limitations under the License.
 #
 
-require 'chef/knife'
+require 'chef/knife/cs_base'
+require 'chef/knife/cs_baselist'
 
 module KnifeCloudstack
   class CsStackCreate < Chef::Knife
 
     attr_accessor :current_stack
+
+    include Chef::Knife::KnifeCloudstackBase
+    include Chef::Knife::KnifeCloudstackBaseList
 
     deps do
       require 'chef/json_compat'
@@ -31,30 +35,13 @@ module KnifeCloudstack
       require 'net/ssh'
       require 'net/ssh/multi'
       require 'knife-cloudstack/connection'
+      Chef::Knife.load_deps
       Chef::Knife::Ssh.load_deps
       Chef::Knife::NodeRunListRemove.load_deps
       KnifeCloudstack::CsServerCreate.load_deps
     end
 
     banner "knife cs stack create JSON_FILE (options)"
-
-    option :cloudstack_url,
-           :short => "-U URL",
-           :long => "--cloudstack-url URL",
-           :description => "The CloudStack endpoint URL",
-           :proc => Proc.new { |url| Chef::Config[:knife][:cloudstack_url] = url }
-
-    option :cloudstack_api_key,
-           :short => "-A KEY",
-           :long => "--cloudstack-api-key KEY",
-           :description => "Your CloudStack API key",
-           :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_api_key] = key }
-
-    option :cloudstack_secret_key,
-           :short => "-K SECRET",
-           :long => "--cloudstack-secret-key SECRET",
-           :description => "Your CloudStack secret key",
-           :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
 
     option :ssh_user,
            :short => "-x USERNAME",
@@ -72,6 +59,8 @@ module KnifeCloudstack
            :description => "The SSH identity file used for authentication"
 
     def run
+      validate_base_options
+
       file_path = File.expand_path(@name_args.first)
       unless File.exist?(file_path) then
         ui.error "Stack file '#{file_path}' not found. Please check the path."
@@ -81,25 +70,14 @@ module KnifeCloudstack
       data = File.read file_path
       stack = Chef::JSONCompat.from_json data
       create_stack stack
-
       #puts "Stack: #{stack.inspect}"
-    end
 
-    def connection
-      if (!@connection) then
-        url = locate_config_value(:cloudstack_url)
-        api_key = locate_config_value(:cloudstack_api_key)
-        secret_key = locate_config_value(:cloudstack_secret_key)
-        @connection = CloudstackClient::Connection.new(url, api_key, secret_key)
-      end
-      @connection
     end
 
     def create_stack(stack)
       @current_stack = Mash.new(stack)
       current_stack[:servers].each do |server|
         if server[:name]
-
           # create server(s)
           names = server[:name].split(/[\s,]+/)
           names.each do |n|
@@ -120,7 +98,6 @@ module KnifeCloudstack
     def create_server(server)
 
       cmd = KnifeCloudstack::CsServerCreate.new([server[:name]])
-
       # configure and run command
       # TODO: validate parameters
       cmd.config[:ssh_user] = config[:ssh_user]
@@ -130,6 +107,7 @@ module KnifeCloudstack
       cmd.config[:cloudstack_template] = server[:template] if server[:template]
       cmd.config[:cloudstack_service] = server[:service] if server[:service]
       cmd.config[:cloudstack_zone] = server[:service] if server[:zone]
+      cmd.config[:public_ip] = server[:public_ip] if server.has_key?(:public_ip)
       cmd.config[:cloudstack_networks] = server[:networks].split(/[\s,]+/) if server[:networks]
       cmd.config[:run_list] = server[:run_list].split(/[\s,]+/) if server[:run_list]
       cmd.config[:port_rules] = server[:port_rules].split(/[\s,]+/) if server[:port_rules]
@@ -139,7 +117,6 @@ module KnifeCloudstack
       end
 
       cmd.run_with_pretty_exceptions
-
     end
 
     def run_actions(actions)
@@ -315,11 +292,5 @@ module KnifeCloudstack
         puts hosts.join("\n")
       end
     end
-
-    def locate_config_value(key)
-      key = key.to_sym
-      Chef::Config[:knife][key] || config[key]
-    end
-
   end
 end

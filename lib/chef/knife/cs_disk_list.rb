@@ -16,7 +16,6 @@
 # limitations under the License.
 #
 
-require 'chef/knife'
 require 'chef/knife/cs_base'
 require 'chef/knife/cs_baselist'
 
@@ -28,6 +27,7 @@ module KnifeCloudstack
 
     deps do
       require 'knife-cloudstack/connection'
+      Chef::Knife.load_deps
     end
 
     banner "knife cs disk list (options)"
@@ -42,15 +42,6 @@ module KnifeCloudstack
 
     def run
       validate_base_options
-
-      connection = CloudstackClient::Connection.new(
-          locate_config_value(:cloudstack_url),
-          locate_config_value(:cloudstack_api_key),
-          locate_config_value(:cloudstack_secret_key),
-          locate_config_value(:cloudstack_project),
-          locate_config_value(:cloudstack_account),
-          locate_config_value(:use_http_ssl)
-      )
 
       if locate_config_value(:fields)
         object_list = []
@@ -76,6 +67,8 @@ module KnifeCloudstack
         locate_config_value(:keyword),
         locate_config_value(:name)
       )
+
+      output_format(connection_result)
 
       connection_result.each do |r|
         if locate_config_value(:fields)
