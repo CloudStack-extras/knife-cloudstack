@@ -132,7 +132,7 @@ module CloudstackClient
     ## 
     # List all the objects based on the command that is specified.
     
-        def list_object(command, json_result, filter=nil, listall=nil, keyword=nil, name=nil, templatefilter=nil)
+    def list_object(command, json_result, filter=nil, listall=nil, keyword=nil, name=nil, templatefilter=nil)
       params = {
           'command' => command
       }
@@ -171,7 +171,8 @@ module CloudstackClient
     ##
     # Deploys a new server using the specified parameters.
 
-    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[])
+    def create_server(host_name, service_name, template_name,
+      display_name=nil, domain_name=nil, zone_name=nil, network_names=[], securitygroup_names=[])
 
       if host_name then
         if get_server(host_name) then
@@ -199,7 +200,18 @@ module CloudstackClient
         exit 1
       end
 
+      domain = domain_name ? get_domain(domain_name) : get_default_domain
+      if !domain then
+        msg = domain_name ? "Domain '#{domain_name}' is invalid" : "No default domain found"
+        puts "Error: #{msg}"
+        exit 1
+      end
+
+      securitygroup_names = [] if securitygroup_names.nil?
+      securitygroups = securitygroup_names.map{|s| get_securitygroup(s)['id'] }
+
       networks = []
+      network_names = [] if network_names == nil
       network_names.each do |name|
         network = get_network(name)
         if !network then
@@ -219,15 +231,24 @@ module CloudstackClient
         network['id']
       }
 
+      # Can't specify network Ids in Basic zone
+      if networks.length == 1 and networks[0]['name'] == 'guestNetworkForBasicZone' then
+          network_ids = nil
+      end
+
       params = {
           'command' => 'deployVirtualMachine',
           'serviceOfferingId' => service['id'],
           'templateId' => template['id'],
           'zoneId' => zone['id'],
-          'networkids' => network_ids.join(',')
+          'networkids' => network_ids ? network_ids.join(',') : nil
       }
 
       params['name'] = host_name if host_name
+      params['displayname'] = display_name if display_name
+      params['account'] = @account if not @account.nil?
+      params['domainId'] = domain['id']
+      params['securitygroupids'] = securitygroups.join(',') if securitygroups.length > 0
 
       json = send_async_request(params)
       json['virtualmachine']
@@ -552,6 +573,53 @@ module CloudstackClient
     end
 
     ##
+    # Finds the domain with the specified name.
+
+    def get_domain(name)
+      params = {
+        'command' => 'listDomains',
+      }
+      json = send_request(params)
+      domains = json['domain']
+
+      domains.each { |z|
+        if z['name'] == name then
+          return z
+        end
+      }
+    end
+
+    ##
+    # Finds the default domain for your account
+
+    def get_default_domain
+      params = {
+        'command' => 'listDomains',
+      }
+      json = send_request(params)
+      domains = json['domain']
+
+      domains.first
+    end
+
+    ##
+    # Finds the security group with the secific name.
+
+    def get_securitygroup(name)
+      params = {
+        'command' => 'listSecurityGroups'
+      }
+      json = send_request(params)
+      securitygroups = json['securitygroup']
+
+      securitygroups.each { |z|
+        if z['name'] == name then
+          return z
+        end
+      }
+    end
+
+    ##
     # Finds the public ip address for a given ip address string.
 
     def get_public_ip_address(ip_address)
@@ -692,7 +760,7 @@ module CloudstackClient
       params.sort.each { |elem|
         params_arr << elem[0].to_s + '=' + elem[1].to_s
       }
-      data = params_arr.join('&')
+      data = params_arr.map{|p| URI.escape(p)}.join('&')
       encoded_data = URI.encode(data.downcase).gsub('+', '%20').gsub(',', '%2c')
       signature = OpenSSL::HMAC.digest('sha1', @secret_key, encoded_data)
       signature = Base64.encode64(signature).chomp
