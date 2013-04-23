@@ -184,18 +184,24 @@ module CloudstackClient
         exit 1
       end
 
-      domain = domain_name ? get_domain(domain_name) : get_default_domain
-      if !domain then
-        msg = domain_name ? "Domain '#{domain_name}' is invalid" : "No default domain found"
-        puts "Error: #{msg}"
-        exit 1
+      if not @account.nil?
+        if extra_params.include?('domainname')
+          domain = get_domain(extra_params['domainname'])
+          extra_params.delete 'domainname'
+        else
+          domain = get_default_domain
+        end
+        extra_params['domainId'] = domain['id']
       end
 
-      securitygroup_names = [] if securitygroup_names.nil?
-      securitygroups = securitygroup_names.map{|s| get_securitygroup(s)['id'] }
+      if extra_params.include?('securitygroups')
+        securitygroups = extra_params['securitygroups'].map{|s| get_securitygroup(s)['id'] }
+
+        extra_params.delete 'securitygroups'
+        extra_params['securitygroupids'] = securitygroups.join(',') if securitygroups.length > 0
+      end
 
       networks = []
-      network_names = [] if network_names == nil
       network_names.each do |name|
         network = get_network(name)
         if !network then
@@ -216,7 +222,7 @@ module CloudstackClient
       }
 
       # Can't specify network Ids in Basic zone
-      if networks.length == 1 and networks[0]['name'] == 'guestNetworkForBasicZone' then
+      if networks.length > 0 and networks[0]['name'] == 'guestNetworkForBasicZone' then
           network_ids = nil
       end
 
@@ -231,10 +237,7 @@ module CloudstackClient
       params.merge!(extra_params) if extra_params
 
       params['name'] = host_name if host_name
-      params['displayname'] = display_name if display_name
       params['account'] = @account if not @account.nil?
-      params['domainId'] = domain['id']
-      params['securitygroupids'] = securitygroups.join(',') if securitygroups.length > 0
 
       json = send_async_request(params)
       json['virtualmachine']
@@ -763,14 +766,8 @@ module CloudstackClient
       params.sort.each { |elem|
         params_arr << elem[0].to_s + '=' + CGI.escape(elem[1].to_s).gsub('+', '%20').gsub(' ','%20')
       }
-<<<<<<< HEAD
       data = params_arr.join('&')
       signature = OpenSSL::HMAC.digest('sha1', @secret_key, data.downcase)
-=======
-      data = params_arr.map{|p| URI.escape(p)}.join('&')
-      encoded_data = URI.encode(data.downcase).gsub('+', '%20').gsub(',', '%2c')
-      signature = OpenSSL::HMAC.digest('sha1', @secret_key, encoded_data)
->>>>>>> supports below things when create server
       signature = Base64.encode64(signature).chomp
       signature = CGI.escape(signature)
 
