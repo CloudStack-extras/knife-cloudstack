@@ -55,6 +55,11 @@ module KnifeCloudstack
 
     banner "knife cs server create [SERVER_NAME] (options)"
 
+    option :cloudstack_display_name,
+           :short => "-n DISPLAY_NAME",
+           :long => "--display-name DISPLAY_NAME",
+           :description => "Host display name"
+
     option :cloudstack_service,
            :short => "-S SERVICE",
            :long => "--service SERVICE",
@@ -84,6 +89,13 @@ module KnifeCloudstack
     option :cloudstack_hypervisor,
            :long => '--cloudstack-hypervisor HYPERVISOR',
            :description => "The CloudStack hypervisor type for the server"
+
+    option :cloudstack_securitygroups,
+           :short => "-G SECURITYGROUP",
+           :long => "--securitygroups SECURITYGROUP",
+           :description => "Comma separated list of CloudStack security group names",
+           :proc => lambda { |n| n.split(',').map {|sn| sn.strip}} ,
+           :default => []
 
     option :cloudstack_password,
            :long => "--cloudstack-password",
@@ -228,7 +240,9 @@ module KnifeCloudstack
 
       print "\n#{ui.color("Waiting for Server to be created", :magenta)}"
       params = {} 
+      params['displayname'] = locate_config_value(:cloudstack_display_name) if locate_config_value(:cloudstack_display_name)
       params['hypervisor'] = locate_config_value(:cloudstack_hypervisor) if locate_config_value(:cloudstack_hypervisor)
+      params['securitygroups'] = locate_config_value(:cloudstack_securitygroups) if locate_config_value(:cloudstack_securitygroups)
 
       server = connection.create_server(
           hostname,
