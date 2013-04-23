@@ -202,6 +202,7 @@ module CloudstackClient
       end
 
       networks = []
+      network_names = [] if network_names == nil
       network_names.each do |name|
         network = get_network(name)
         if !network then
