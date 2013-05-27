@@ -244,7 +244,7 @@ module KnifeCloudstack
       object_fields = []
       object_fields << ui.color("Name:", :cyan)
       object_fields << server['name'].to_s
-      object_fields << ui.color("Name:", :cyan) if locate_config_value(:cloudstack_password)
+      object_fields << ui.color("Password:", :cyan) if locate_config_value(:cloudstack_password)
       object_fields << server['password'] if locate_config_value(:cloudstack_password)
       object_fields << ui.color("Public IP:", :cyan)
       object_fields << public_ip
