@@ -182,35 +182,49 @@ module CloudstackClient
         puts "Error: #{msg}"
         exit 1
       end
-
-      networks = []
-      network_names.each do |name|
-        network = get_network(name)
-        if !network then
-          puts "Error: Network '#{name}' not found"
+      
+      if zone['networktype'] != 'Basic' then
+      # If this is a Basic zone no networkids are needed in the params
+      
+        networks = []
+        network_names.each do |name|
+          network = get_network(name)
+          if !network then
+            puts "Error: Network '#{name}' not found"
+            exit 1
+          end
+          networks << get_network(name)
+        end
+        if networks.empty? then
+          networks << get_default_network(zone['id'])
+        end
+        if networks.empty? then
+          puts "No default network found"
           exit 1
         end
-        networks << get_network(name)
-      end
-      if networks.empty? then
-        networks << get_default_network(zone['id'])
-      end
-      if networks.empty? then
-        puts "No default network found"
-        exit 1
-      end
-      network_ids = networks.map { |network|
-        network['id']
-      }
+        network_ids = networks.map { |network|
+          network['id']
+        }
 
-      params = {
-          'command' => 'deployVirtualMachine',
-          'serviceOfferingId' => service['id'],
-          'templateId' => template['id'],
-          'zoneId' => zone['id'],
-          'networkids' => network_ids.join(',')
-      }
-
+        params = {
+            'command' => 'deployVirtualMachine',
+            'serviceOfferingId' => service['id'],
+            'templateId' => template['id'],
+            'zoneId' => zone['id'],
+            'networkids' => network_ids.join(',')
+        }
+      
+      elsif
+      
+        params = {
+            'command' => 'deployVirtualMachine',
+            'serviceOfferingId' => service['id'],
+            'templateId' => template['id'],
+            'zoneId' => zone['id']
+        }
+        
+      end
+      
       params.merge!(extra_params) if extra_params
 
       params['name'] = host_name if host_name
