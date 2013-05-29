@@ -360,6 +360,8 @@ module CloudstackClient
       templates.each { |t|
         if t['name'] == name then
           return t
+        elsif t['id'] == name then
+          return t
         end
       }
 
