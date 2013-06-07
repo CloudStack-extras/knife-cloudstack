@@ -192,6 +192,11 @@ module KnifeCloudstack
            :long => "--bootstrap-protocol protocol",
            :description => "Protocol to bootstrap windows servers. options: winrm/ssh",
            :default => "ssh"
+    
+    option :ssh_keypair,
+            :long => "--ssh-keypair keypair",
+            :description => "SSH keypair to use to connect to the instance",
+            :default => "default"
 
     option :fqdn,
            :long => '--fqdn',
@@ -224,11 +229,13 @@ module KnifeCloudstack
         template : #{locate_config_value(:cloudstack_template)}
         zone : #{locate_config_value(:cloudstack_zone)}
         project: #{locate_config_value(:cloudstack_project)}
-        network: #{locate_config_value(:cloudstack_networks)}")
+        network: #{locate_config_value(:cloudstack_networks)}
+        keypair: #{locate_config_value(:ssh_keypair)}")
 
       print "\n#{ui.color("Waiting for Server to be created", :magenta)}"
       params = {} 
       params['hypervisor'] = locate_config_value(:cloudstack_hypervisor) if locate_config_value(:cloudstack_hypervisor)
+      params['keypair'] = locate_config_value(:ssh_keypair) if locate_config_value(:ssh_keypair)
 
       server = connection.create_server(
           hostname,
