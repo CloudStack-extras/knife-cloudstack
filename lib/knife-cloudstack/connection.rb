@@ -350,6 +350,15 @@ module CloudstackClient
       json = send_request(params)
       json['serviceoffering'] || []
     end
+    
+    def list_security_groups
+      params = {
+          'command' => 'listSecurityGroups'
+      }
+      json = send_request(params)
+      json['securitygroups'] || []
+    end
+    
 
     ##
     # Finds the template with the specified name.
