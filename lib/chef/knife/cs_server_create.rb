@@ -196,7 +196,12 @@ module KnifeCloudstack
     option :ssh_keypair,
             :long => "--ssh-keypair keypair",
             :description => "SSH keypair to use to connect to the instance",
-            :default => "default"
+            :required => false
+            
+    option :security_group,
+            :long => "--security-group securitygroup",
+            :description => "Security Group to use on the instance",
+            :required => false        
 
     option :fqdn,
            :long => '--fqdn',
@@ -230,12 +235,14 @@ module KnifeCloudstack
         zone : #{locate_config_value(:cloudstack_zone)}
         project: #{locate_config_value(:cloudstack_project)}
         network: #{locate_config_value(:cloudstack_networks)}
-        keypair: #{locate_config_value(:ssh_keypair)}")
+        keypair: #{locate_config_value(:ssh_keypair)}
+        securitygroup: #{locate_config_value(:security_group)}")
 
       print "\n#{ui.color("Waiting for Server to be created", :magenta)}"
       params = {} 
       params['hypervisor'] = locate_config_value(:cloudstack_hypervisor) if locate_config_value(:cloudstack_hypervisor)
       params['keypair'] = locate_config_value(:ssh_keypair) if locate_config_value(:ssh_keypair)
+      params['securitygroupnames'] = locate_config_value(:security_group) if locate_config_value(:security_group)      
 
       server = connection.create_server(
           hostname,
