@@ -155,7 +155,7 @@ module CloudstackClient
     ##
     # Deploys a new server using the specified parameters.
 
-    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[], extra_params)
+    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[], disk_name=nil, extra_params)
 
       if host_name then
         if get_server(host_name) then
@@ -175,6 +175,23 @@ module CloudstackClient
         puts "Error: Template '#{template_name}' is invalid"
         exit 1
       end
+
+      if (!!disk_name) then
+             if ( disk_name =~ /(\D+):(\d+)/) then
+                       disk_size = $2
+                       disk_name = $1
+             end
+             disk = get_disk(disk_name)
+             if !disk then
+               puts "Error: Disk '#{disk_name}' is invalid"
+               exit 1
+             end
+             if !disk_size.empty? && !disk['iscustomized'] then
+               puts "Error: You may not provide size for disk '#{disk_name}'"
+               exit 1
+             end
+       end
+
 
       zone = zone_name ? get_zone(zone_name) : get_default_zone
       if !zone then
@@ -228,6 +245,9 @@ module CloudstackClient
       params.merge!(extra_params) if extra_params
 
       params['name'] = host_name if host_name
+
+      params['diskOfferingId'] = disk['id'] if !!disk && !disk.empty?
+      params['size'] = disk_size if !!disk_size && !disk_size.empty?
 
       json = send_async_request(params)
       json['virtualmachine']
@@ -359,6 +379,22 @@ module CloudstackClient
       json['securitygroups'] || []
     end
     
+
+    def get_disk(name)
+      params = {
+          'command' => 'listDiskOfferings',
+          'name' => name
+      }
+      json = send_request(params)
+      disk = json['diskoffering']
+
+      if !disk || disk.empty? then
+        return nil
+      end
+
+      disk.first
+    end
+
 
     ##
     # Finds the template with the specified name.
