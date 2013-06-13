@@ -81,6 +81,11 @@ module KnifeCloudstack
            :proc => lambda { |n| n.split(',').map {|sn| sn.strip}} ,
            :default => []
 
+    option :cloudstack_disk,
+	   :short => "-D DISK",
+	   :long => "--disk DISK",
+	   :description => "The name of CloudStack disk oferring"
+
     option :cloudstack_hypervisor,
            :long => '--cloudstack-hypervisor HYPERVISOR',
            :description => "The CloudStack hypervisor type for the server"
@@ -224,6 +229,7 @@ module KnifeCloudstack
         template : #{locate_config_value(:cloudstack_template)}
         zone : #{locate_config_value(:cloudstack_zone)}
         project: #{locate_config_value(:cloudstack_project)}
+        disk: #{locate_config_value(:cloudstack_disk)}
         network: #{locate_config_value(:cloudstack_networks)}")
 
       print "\n#{ui.color("Waiting for Server to be created", :magenta)}"
@@ -236,6 +242,7 @@ module KnifeCloudstack
           locate_config_value(:cloudstack_template),
           locate_config_value(:cloudstack_zone),
           locate_config_value(:cloudstack_networks),
+          locate_config_value(:cloudstack_disk),
           params
       )
 
