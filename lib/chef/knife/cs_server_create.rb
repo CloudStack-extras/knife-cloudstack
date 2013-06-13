@@ -551,6 +551,7 @@ module KnifeCloudstack
       bootstrap.config[:bootstrap_version] = locate_config_value(:bootstrap_version)
       bootstrap.config[:distro] = locate_config_value(:distro)
       bootstrap.config[:template_file] = locate_config_value(:template_file)
+      bootstrap.config[:first_boot_attributes] = locate_config_value(:first_boot_attributes)
       bootstrap
     end
 
