@@ -174,6 +174,12 @@ module KnifeCloudstack
            :proc => lambda { |o| o.split(/[\s,]+/) },
            :default => []
 
+    option :keypair,
+           :long => "--keypair NAME",
+           :description => "name of the keypair that should be used to create the vm",
+           #:proc => Proc.new { |k| }
+           :default => false
+
     option :static_nat,
            :long => '--static-nat',
            :description => 'Support Static NAT',
@@ -235,6 +241,8 @@ module KnifeCloudstack
       print "\n#{ui.color("Waiting for Server to be created", :magenta)}"
       params = {} 
       params['hypervisor'] = locate_config_value(:cloudstack_hypervisor) if locate_config_value(:cloudstack_hypervisor)
+
+      params['keypair'] = locate_config_value (:keypair) if locate_config_value(:keypair)
 
       server = connection.create_server(
           hostname,
