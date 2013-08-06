@@ -48,6 +48,7 @@ module KnifeCloudstack
         locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
       else
         object_list = [
+          ui.color('Id', :bold),
           ui.color('Name', :bold),
           ui.color('Domain', :bold),
           ui.color('Size', :bold),
@@ -74,6 +75,7 @@ module KnifeCloudstack
         if locate_config_value(:fields)
           locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
         else
+	  object_list << r['id'].to_s  
           object_list << r['name'].to_s
           object_list << r['domain'].to_s
           object_list << r['disksize'].to_s + 'GB'
