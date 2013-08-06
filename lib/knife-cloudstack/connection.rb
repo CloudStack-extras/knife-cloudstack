@@ -105,9 +105,20 @@ module CloudstackClient
       network = networks.select { |net|
         net['id'] == id
       }.first
-      return nil unless network
 
-      "#{server['name']}.#{network['networkdomain']}"
+      if network
+        "#{server['name']}.#{network['networkdomain']}"
+      else
+        domain = get_router_networkdomain(server['domainid'])
+        "#{server['name']}.#{domain}"
+      end
+    end
+
+    def get_router_networkdomain(domainid)
+      routers = list_routers || []
+      routers.each do |router|
+        return router['networkdomain'] if router['domainid'] == domainid
+      end
     end
 
     def get_server_default_nic(server)
@@ -139,6 +150,17 @@ module CloudstackClient
       result = json["#{json_result}"] || []
       result = data_filter(result, filter) if filter
       result
+    end
+
+    ##
+    # Lists all the routers available to your account.
+
+    def list_routers
+      params = {
+          "command" => 'listRouters'
+      }
+      json = send_request(params)
+      json['router'] || []
     end
 
     ##
