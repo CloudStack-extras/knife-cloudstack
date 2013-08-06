@@ -55,16 +55,14 @@ module KnifeCloudstack
 
       if ! json then
         ui.error("Unable to create SSH Keypair")
-	exit 1
+        exit 1
       end
 
       object_fields = []
-      object_fields << ui.color("Name:", :cyan)
-      object_fields << json['keypair']['name'].to_s
-      object_fields << ui.color("Fingerprint:", :cyan)
-      object_fields << json['keypair']['fingerprint'].to_s
-      object_fields << ui.color("PrivateKey:", :cyan)
-      object_fields << json['keypair']['privateKey'].to_s
+      json['keypair'].each do |key, value|
+        object_fields << ui.color(key.to_s.capitalize+':', :cyan)
+        object_fields << value.to_s
+      end
 
       puts "\n"
       puts ui.list(object_fields, :uneven_columns_across, 2)
