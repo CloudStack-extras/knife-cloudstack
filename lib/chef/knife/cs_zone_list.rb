@@ -55,7 +55,6 @@ module KnifeCloudstack
         locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
       else
         [
- 	  ui.color('Id', :bold),
  	  ui.color('Name', :bold),
           ui.color('Network Type', :bold),
           ui.color('Security Groups', :bold)
@@ -85,7 +84,6 @@ module KnifeCloudstack
         if locate_config_value(:fields)
           locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
         else
-          object_list << r['id'].to_s
           object_list << r['name'].to_s
           object_list << r['networktype'].to_s
           object_list << r['securitygroupsenabled'].to_s
