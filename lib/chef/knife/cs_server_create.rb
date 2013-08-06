@@ -82,9 +82,9 @@ module KnifeCloudstack
            :default => []
 
     option :cloudstack_disk,
-	   :short => "-D DISK",
-	   :long => "--disk DISK",
-	   :description => "The name of CloudStack disk oferring"
+           :short => "-D DISK",
+           :long => "--disk DISK",
+           :description => "The name of CloudStack disk oferring"
 
     option :cloudstack_hypervisor,
            :long => '--cloudstack-hypervisor HYPERVISOR',
@@ -207,6 +207,13 @@ module KnifeCloudstack
            :long => '--fqdn',
            :description => "FQDN which Kerberos Understands (only for Windows Servers)"
 
+    option :set_display_name,
+           :long => '--set-display-name',
+           :description => "Set the same server display name as Chef node name.",
+           :boolean => true,
+           :default => false
+
+
     def run
       validate_base_options
 
@@ -241,7 +248,8 @@ module KnifeCloudstack
       params = {} 
       params['hypervisor'] = locate_config_value(:cloudstack_hypervisor) if locate_config_value(:cloudstack_hypervisor)
 
-      params['keypair'] = locate_config_value (:keypair) if locate_config_value(:keypair)
+      params['keypair'] = locate_config_value :keypair  if locate_config_value :keypair
+      params['displayname'] = if locate_config_value :set_display_name and locate_config_value :chef_node_name then locate_config_value :chef_node_name else hostname end
 
       server = connection.create_server(
           hostname,
