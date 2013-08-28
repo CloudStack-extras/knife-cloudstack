@@ -1,6 +1,8 @@
 = Changes
 
 == 2013-10-15 (0.0.15)
+* Added subcommand: <tt>cs forwardrule create</tt> (Sander Botman, 28 Aug 2013)
+* Added subcommand: <tt>cs firewallrule create</tt> (Sander Botman, 28 Aug 2013)
 * Added the option: <tt>--set-display-name</tt> to <tt>server create</tt> (Florin Stan, 5 Aug 2013)
 * Added the option: <tt>--keypair</tt> to <tt>server create</tt> (Florin Stan, 31 Jul 2013)
 * Added subcommand: <tt>cs volume create</tt> (Jeremy Baumont, 17 Jul 2013)
