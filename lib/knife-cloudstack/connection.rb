@@ -27,7 +27,25 @@ require 'cgi'
 require 'net/http'
 require 'json'
 require 'highline/import'
-require 'knife-cloudstack/string_to_regexp'
+require 'chef/rest/rest_request'
+
+class String
+  def to_regexp
+    return nil unless self.strip.match(/\A\/(.*)\/(.*)\Z/mx)
+    regexp , flags = $1 , $2
+    return nil if !regexp || flags =~ /[^xim]/m
+
+    x = /x/.match(flags) && Regexp::EXTENDED
+    i = /i/.match(flags) && Regexp::IGNORECASE
+    m = /m/.match(flags) && Regexp::MULTILINE
+
+    Regexp.new regexp , [x,i,m].inject(0){|a,f| f ? a+f : a }
+  end
+
+  def is_uuid?
+    self.strip =~ /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/ ? true : false
+  end
+end
 
 module CloudstackClient
   class Connection
@@ -35,12 +53,11 @@ module CloudstackClient
     ASYNC_POLL_INTERVAL = 5.0
     ASYNC_TIMEOUT = 600
 
-    def initialize(api_url, api_key, secret_key, project_name=nil, use_ssl=true)
+    def initialize(api_url, api_key, secret_key, project_name=nil)
       @api_url = api_url
       @api_key = api_key
       @secret_key = secret_key
       @project_id = nil
-      @use_ssl = use_ssl
       if project_name
         project = get_project(project_name)
         if !project then
@@ -89,7 +106,7 @@ module CloudstackClient
       if ip_addr
         return ip_addr['ipaddress']
       end
-      nic['ipaddress'] || []
+      nic['ipaddress'] || [] 
     end
 
     ##
@@ -105,20 +122,9 @@ module CloudstackClient
       network = networks.select { |net|
         net['id'] == id
       }.first
+      return nil unless network
 
-      if network
-        "#{server['name']}.#{network['networkdomain']}"
-      else
-        domain = get_router_networkdomain(server['domainid'])
-        "#{server['name']}.#{domain}"
-      end
-    end
-
-    def get_router_networkdomain(domainid)
-      routers = list_routers || []
-      routers.each do |router|
-        return router['networkdomain'] if router['domainid'] == domainid
-      end
+      "#{server['name']}.#{network['networkdomain']}"
     end
 
     def get_server_default_nic(server)
@@ -130,19 +136,11 @@ module CloudstackClient
     ## 
     # List all the objects based on the command that is specified.
     
-    def list_object(command, json_result, filter=nil, listall=nil, keyword=nil, name=nil, templatefilter=nil)
-      params = {
-          'command' => command
-      }
+    def list_object(command, json_result, filter=nil, listall=nil, keyword=nil, name=nil, params={})
+      params['command'] = command
       params['listall'] = true if listall || name || keyword unless listall == false
       params['keyword'] = keyword if keyword
       params['name'] = name if name
-
-      if templatefilter
-        template = 'featured'
-        template = templatefilter.downcase if ["featured","self","self-executable","executable","community"].include?(templatefilter.downcase)
-        params['templateFilter'] = template
-      end
 
       json = send_request(params)
       Chef::Log.debug("JSON (list_object) result: #{json}")
@@ -150,17 +148,6 @@ module CloudstackClient
       result = json["#{json_result}"] || []
       result = data_filter(result, filter) if filter
       result
-    end
-
-    ##
-    # Lists all the routers available to your account.
-
-    def list_routers
-      params = {
-          "command" => 'listRouters'
-      }
-      json = send_request(params)
-      json['router'] || []
     end
 
     ##
@@ -177,7 +164,7 @@ module CloudstackClient
     ##
     # Deploys a new server using the specified parameters.
 
-    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[], disk_name=nil, extra_params)
+    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[], extra_params)
 
       if host_name then
         if get_server(host_name) then
@@ -192,28 +179,11 @@ module CloudstackClient
         exit 1
       end
 
-      template = get_template(template_name)
+      template = get_template(template_name, zone_name)
       if !template then
         puts "Error: Template '#{template_name}' is invalid"
         exit 1
       end
-
-      if (!!disk_name) then
-             if ( disk_name =~ /(\D+):(\d+)/) then
-                       disk_size = $2
-                       disk_name = $1
-             end
-             disk = get_disk(disk_name)
-             if !disk then
-               puts "Error: Disk '#{disk_name}' is invalid"
-               exit 1
-             end
-             if !disk_size.empty? && !disk['iscustomized'] then
-               puts "Error: You may not provide size for disk '#{disk_name}'"
-               exit 1
-             end
-       end
-
 
       zone = zone_name ? get_zone(zone_name) : get_default_zone
       if !zone then
@@ -224,16 +194,20 @@ module CloudstackClient
       
       if zone['networktype'] != 'Basic' then
       # If this is a Basic zone no networkids are needed in the params
-      
+     
         networks = []
-        network_names.each do |name|
-          network = get_network(name)
-          if !network then
-            puts "Error: Network '#{name}' not found"
-            exit 1
+        if network_names.nil? then
+          networks << get_default_network(zone['id']) 
+        else
+          network_names.each do |name|
+            network = get_network(name)
+            if !network then
+              puts "Error: Network '#{name}' not found"
+            end
+            networks << get_network(name)
           end
-          networks << get_network(name)
         end
+
         if networks.empty? then
           networks << get_default_network(zone['id'])
         end
@@ -267,9 +241,6 @@ module CloudstackClient
       params.merge!(extra_params) if extra_params
 
       params['name'] = host_name if host_name
-
-      params['diskOfferingId'] = disk['id'] if !!disk && !disk.empty?
-      params['size'] = disk_size if !!disk_size && !disk_size.empty?
 
       json = send_async_request(params)
       json['virtualmachine']
@@ -372,13 +343,14 @@ module CloudstackClient
 
       services = json['serviceoffering']
       return nil unless services
-
+     
       services.each { |s|
-        if s['name'] == name then
-          return s
+        if name.is_uuid? then
+          return s if s['id'] == name 
+        else
+          return s if s['name'] == name
         end
       }
-
       nil
     end
 
@@ -402,50 +374,36 @@ module CloudstackClient
     end
     
 
-    def get_disk(name)
-      params = {
-          'command' => 'listDiskOfferings',
-          'name' => name
-      }
-      json = send_request(params)
-      disk = json['diskoffering']
-
-      if !disk || disk.empty? then
-        return nil
-      end
-
-      disk.first
-    end
-
-
     ##
     # Finds the template with the specified name.
 
-    def get_template(name)
+    def get_template(name, zone_name=nil)
 
       # TODO: use name parameter
       # listTemplates in CloudStack 2.2 doesn't seem to work
       # when the name parameter is specified. When this is fixed,
       # the name parameter should be added to the request.
+
+      zone = zone_name ? get_zone(zone_name) : get_default_zone 
+      
       params = {
           'command' => 'listTemplates',
-          'templateFilter' => 'executable'
+          'templateFilter' => 'executable',
       }
+      params['zoneid'] = zone['id'] if zone
+
       json = send_request(params)
 
       templates = json['template']
-      if !templates then
-        return nil
-      end
+      return nil unless templates
 
       templates.each { |t|
-        if t['name'] == name then
-          return t
-        elsif t['id'] == name then
-          return t
+        if name.is_uuid? then
+          return t if t['id'] == name 
+        else
+          return t if t['name'] == name
         end
       }
-
       nil
     end
 
@@ -480,12 +438,14 @@ module CloudstackClient
       json = send_request(params)
       projects = json['project']
       return nil unless projects
+  
       projects.each { |n|
-        if n['name'] == name then
-          return n
+        if name.is_uuid? then
+          return n if n['id'] == name 
+        else
+          return n if n['name'] == name
         end
-      }
-
+      } 
       nil
     end
 
@@ -519,11 +479,12 @@ module CloudstackClient
       return nil unless networks
 
       networks.each { |n|
-        if n['name'] == name then
-          return n
+        if name.is_uuid? then
+          return n if n['id'] == name 
+        else
+          return n if n['name'] == name
         end
       }
-
       nil
     end
 
@@ -579,11 +540,12 @@ module CloudstackClient
       return nil unless networks
 
       networks.each { |z|
-        if z['name'] == name then
-          return z
+        if name.is_uuid? then
+          return z if z['id'] == name 
+        else 
+          return z if z['name'] == name
         end
       }
-
       nil
     end
 
@@ -599,7 +561,8 @@ module CloudstackClient
 
       zones = json['zone']
       return nil unless zones
-
+      # zones.sort! # sort zones so we always return the same zone
+      # !this gives error in our production environment so need to retest this
       zones.first
     end
 
@@ -643,13 +606,13 @@ module CloudstackClient
           'zoneId' => zone_id
       }
       #Choose the first network from the list
-      if networks.size > 0
-        params['networkId'] = get_network(networks.first)['id']
-      else
+      if networks.nil? || networks.empty?
         default_network = get_default_network(zone_id)
         params['networkId'] = default_network['id']
+      else
+        params['networkId'] = get_network(networks.first)['id']
       end
-      print "params: #{params}"
+      Chef::Log.debug("associate ip params: #{params}")
       json = send_async_request(params)
       json['ipaddress']
     end
@@ -781,21 +744,24 @@ module CloudstackClient
       signature = OpenSSL::HMAC.digest('sha1', @secret_key, data.downcase)
       signature = Base64.encode64(signature).chomp
       signature = CGI.escape(signature)
+  
+      if @api_url.nil? || @api_url.empty?
+        puts "Error: Please specify a valid API URL."
+        exit 1
+      end
 
       url = "#{@api_url}?#{data}&signature=#{signature}"
       Chef::Log.debug("URL: #{url}")
       uri = URI.parse(url)
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = @use_ssl
-      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      request = Net::HTTP::Get.new(uri.request_uri)
-      response = http.request(request)
+      req_body = Net::HTTP::Get.new(uri.request_uri)
+      request = Chef::REST::RESTRequest.new("GET", uri, req_body, headers={}) 
+      response = request.call
 
       if !response.is_a?(Net::HTTPOK) then
         case response.code
         when "432"
           puts "\n" 
-          puts "Error #{response.code}: Your account does not have the right to execute this command or the command does not exist."
+          puts "Error #{response.code}: Your account does not have the right to execute this command is locked or the command does not exist."
         else
           puts "Error #{response.code}: #{response.message}"
           puts JSON.pretty_generate(JSON.parse(response.body))
@@ -830,6 +796,7 @@ module CloudstackClient
         print "."
 
         if status == 1 then
+          print "\n"
           return json['jobresult']
         elsif status == 2 then
           print "\n"

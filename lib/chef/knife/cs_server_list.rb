@@ -98,7 +98,7 @@ module KnifeCloudstack
           locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
         else
           object_list << r['name']
-          object_list << (connection.get_server_public_ip(r, rules) || '')
+          r['nic'].empty? ? object_list << "N/A" : object_list << (connection.get_server_public_ip(r, rules) || '')
           object_list << r['serviceofferingname']
           object_list << r['templatename']
           object_list << r['state']

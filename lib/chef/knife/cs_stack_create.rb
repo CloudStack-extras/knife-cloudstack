@@ -53,28 +53,10 @@ module KnifeCloudstack
            :long => "--ssh-password PASSWORD",
            :description => "The ssh password"
 
-    option :ssh_port,
-           :long => "--ssh-port PORT",
-           :description => "The ssh port",
-           :default => "22"
-
     option :identity_file,
            :short => "-i IDENTITY_FILE",
            :long => "--identity-file IDENTITY_FILE",
            :description => "The SSH identity file used for authentication"
-
-    option :template_file,
-           :long => "--template-file TEMPLATE",
-           :description => "Full path to location of template to use",
-           :proc => Proc.new { |t| Chef::Config[:knife][:template_file] = t },
-           :default => false
-
-    option :distro,
-           :short => "-d DISTRO",
-           :long => "--distro DISTRO",
-           :description => "Bootstrap a distro using a template",
-           :proc => Proc.new { |d| Chef::Config[:knife][:distro] = d },
-           :default => "chef-full"
 
     def run
       validate_base_options
@@ -88,8 +70,6 @@ module KnifeCloudstack
       data = File.read file_path
       stack = Chef::JSONCompat.from_json data
       create_stack stack
-      #puts "Stack: #{stack.inspect}"
-
     end
 
     def create_stack(stack)
@@ -118,23 +98,22 @@ module KnifeCloudstack
       cmd = KnifeCloudstack::CsServerCreate.new([server[:name]])
       # configure and run command
       # TODO: validate parameters
-      cmd.config[:ssh_user] = server[:ssh_user] || config[:ssh_user]
-      cmd.config[:ssh_password] = server[:ssh_password] || config[:ssh_password]
-      cmd.config[:ssh_port] = Chef::Config[:knife][:ssh_port] || server[:ssh_port] || config[:ssh_port]
+      cmd.config[:ssh_user] = config[:ssh_user]
+      cmd.config[:ssh_password] = config[:ssh_password]
+      cmd.config[:ssh_port] = config[:ssh_port] || "22" # Chef::Config[:knife][:ssh_port]
       cmd.config[:identity_file] = config[:identity_file]
-      cmd.config[:bootstrap] = server[:bootstrap] if server.has_key?(:bootstrap)
-      cmd.config[:bootstrap_protocol] = server[:bootstrap_protocol] if server[:bootstrap_protocol]
-      cmd.config[:host_key_verify] = server[:host_key_verify] if server.has_key?(:host_key_verify)
-      cmd.config[:template_file] = server[:template_file] || config[:template_file]
-      cmd.config[:distro] = server[:distro] || config[:distro]
       cmd.config[:cloudstack_template] = server[:template] if server[:template]
       cmd.config[:cloudstack_service] = server[:service] if server[:service]
       cmd.config[:cloudstack_zone] = server[:zone] if server[:zone]
       cmd.config[:public_ip] = server[:public_ip] if server.has_key?(:public_ip)
+      cmd.config[:bootstrap] = server[:bootstrap] if server.has_key?(:bootstrap) 
+      cmd.config[:bootstrap_protocol] = server[:bootstrap_protocol] || "ssh"  
+      cmd.config[:distro] = server[:distro] || "chef-full"  
+      cmd.config[:template_file] = server[:template_file] if server.has_key?(:template_file)  
+      cmd.config[:no_host_key_verify] = server[:no_host_key_verify] if server.has_key?(:no_host_key_verify)  
       cmd.config[:cloudstack_networks] = server[:networks].split(/[\s,]+/) if server[:networks]
       cmd.config[:run_list] = server[:run_list].split(/[\s,]+/) if server[:run_list]
       cmd.config[:port_rules] = server[:port_rules].split(/[\s,]+/) if server[:port_rules]
-      cmd.config[:first_boot_attributes] = server[:first_boot_attributes] if server[:first_boot_attributes]
       if current_stack[:environment]
         cmd.config[:environment] = current_stack[:environment]
         Chef::Config[:environment] = current_stack[:environment]
@@ -172,7 +151,7 @@ module KnifeCloudstack
         query = "(#{query})" + " AND chef_environment:#{get_environment}"
       end
 
-      Chef::Chef::Log.debug("Searching for nodes: #{query}")
+      Chef::Log.debug("Searching for nodes: #{query}")
 
       q = Chef::Search::Query.new
       nodes = Array(q.search(:node, query))

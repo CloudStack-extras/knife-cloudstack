@@ -278,14 +278,14 @@ module KnifeCloudstack
       return unless config[:bootstrap]
 
       if @bootstrap_protocol == 'ssh'
-        print "\n#{ui.color("Waiting for sshd", :magenta)}"
+        print "\n#{ui.color("Waiting for sshd on: #{public_ip}", :magenta)}"
 
         print(".") until is_ssh_open?(public_ip) {
           sleep BOOTSTRAP_DELAY
           puts "\n"
         }
-      else
-        print "\n#{ui.color("Waiting for winrm to be active", :magenta)}"
+      elsif
+        print "\n#{ui.color("Waiting for winrm to be active on: #{public_ip}", :magenta)}"
         print(".") until tcp_test_winrm(public_ip,locate_config_value(:winrm_port)) {
           sleep WINRM_BOOTSTRAP_DELAY
           puts("\n")
@@ -553,7 +553,6 @@ module KnifeCloudstack
         ui.error("Unsupported Bootstrapping Protocol. Supported : winrm, ssh")
         exit 1
       end
-      bootstrap.config[:environment] = locate_config_value(:environment)
       bootstrap.config[:chef_node_name] = config[:chef_node_name] || server['id']
       bootstrap.config[:encrypted_data_bag_secret] = config[:encrypted_data_bag_secret]
       bootstrap.config[:encrypted_data_bag_secret_file] = config[:encrypted_data_bag_secret_file]
@@ -567,6 +566,7 @@ module KnifeCloudstack
       bootstrap.config[:distro] = locate_config_value(:distro)
       bootstrap.config[:template_file] = locate_config_value(:template_file)
       bootstrap.config[:first_boot_attributes] = locate_config_value(:first_boot_attributes)
+      bootstrap.config[:environment] = locate_config_value(:environment)
       bootstrap
     end
 
@@ -583,7 +583,6 @@ module KnifeCloudstack
       bootstrap.config[:identity_file] = locate_config_value(:identity_file)
       bootstrap.config[:chef_node_name] = locate_config_value(:chef_node_name) || server["name"]
       bootstrap.config[:use_sudo] = true unless locate_config_value(:ssh_user) == 'root'
-      bootstrap.config[:environment] = locate_config_value(:environment)
 
       # may be needed for vpc_mode
       bootstrap.config[:host_key_verify] = config[:host_key_verify]
