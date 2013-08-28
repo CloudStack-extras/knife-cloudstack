@@ -386,6 +386,7 @@ module KnifeCloudstack
     end
 
     def create_port_forwarding_rules(ip_address, server_id, connection)
+      Chef::Log.debug("Creating IP Forwarding Rule")
       rules = locate_config_value(:port_rules)
       if config[:bootstrap]
         if @bootstrap_protocol == 'ssh'
@@ -416,6 +417,7 @@ module KnifeCloudstack
     end
 
     def create_ip_forwarding_rules(ip_address, connection)
+      Chef::Log.debug("Creating IP Forwarding Rule")
       rules = locate_config_value(:ipfwd_rules)
       return unless rules
       rules.each do |rule|
@@ -432,6 +434,7 @@ module KnifeCloudstack
     end
 
     def create_firewall_rules(ip_address, connection)
+      Chef::Log.debug("Creating Firewall Rule")
       rules = locate_config_value(:fw_rules)
       return unless rules
       icmptype={
