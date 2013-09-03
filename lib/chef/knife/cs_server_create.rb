@@ -1,6 +1,7 @@
 #
 # Author:: Ryan Holmes (<rholmes@edmunds.com>)
 # Author:: Sander Botman (<sbotman@schubergphilis.com>)
+# Author:: Sander van Harmelen (<svanharmelen@schubergphilis.com>)
 # Copyright:: Copyright (c) 2011 Edmunds, Inc.
 # Copyright:: Copyright (c) 2013 Sander Botman.
 # License:: Apache License, Version 2.0
@@ -84,7 +85,8 @@ module KnifeCloudstack
     option :cloudstack_disk,
            :short => "-D DISK",
            :long => "--disk DISK",
-           :description => "The name of CloudStack disk oferring"
+           :description => "The CloudStack disk offering name",
+           :proc => Proc.new { |d| Chef::Config[:knife][:cloudstack_disk] = d }
 
     option :cloudstack_hypervisor,
            :long => '--cloudstack-hypervisor HYPERVISOR',
@@ -225,6 +227,11 @@ module KnifeCloudstack
       end
       validate_options
 
+      # This little peace of code sets the Chef node-name to the VM name when a node-name is not specifically given
+      unless locate_config_value :chef_node_name
+        Chef::Config[:knife][:chef_node_name] = @name_args.first
+      end
+
       if @windows_image and locate_config_value(:kerberos_realm)
         Chef::Log.debug("Load additional gems for AD/Kerberos Authentication")
         if @windows_platform
@@ -239,13 +246,13 @@ module KnifeCloudstack
       Chef::Log.info("Creating instance with
         service : #{locate_config_value(:cloudstack_service)}
         template : #{locate_config_value(:cloudstack_template)}
+        disk : #{locate_config_value(:cloudstack_disk)}
         zone : #{locate_config_value(:cloudstack_zone)}
         project: #{locate_config_value(:cloudstack_project)}
-        disk: #{locate_config_value(:cloudstack_disk)}
         network: #{locate_config_value(:cloudstack_networks)}")
 
       print "\n#{ui.color("Waiting for Server to be created", :magenta)}"
-      params = {} 
+      params = {}
       params['hypervisor'] = locate_config_value(:cloudstack_hypervisor) if locate_config_value(:cloudstack_hypervisor)
 
       params['keypair'] = locate_config_value :keypair  if locate_config_value :keypair
@@ -255,9 +262,9 @@ module KnifeCloudstack
           hostname,
           locate_config_value(:cloudstack_service),
           locate_config_value(:cloudstack_template),
+          locate_config_value(:cloudstack_disk),
           locate_config_value(:cloudstack_zone),
           locate_config_value(:cloudstack_networks),
-          locate_config_value(:cloudstack_disk),
           params
       )
 
