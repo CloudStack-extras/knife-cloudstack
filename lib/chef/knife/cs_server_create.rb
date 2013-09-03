@@ -227,6 +227,11 @@ module KnifeCloudstack
       end
       validate_options
 
+      # This little peace of code sets the Chef node-name to the VM name when a node-name is not specifically given
+      unless locate_config_value :chef_node_name
+        Chef::Config[:knife][:chef_node_name] = @name_args.first
+      end
+
       if @windows_image and locate_config_value(:kerberos_realm)
         Chef::Log.debug("Load additional gems for AD/Kerberos Authentication")
         if @windows_platform
@@ -363,11 +368,6 @@ module KnifeCloudstack
           @bootstrap_protocol = 'winrm'
         end
       end
-    end
-
-    # This little peace of code sets the Chef node-name to the VM name when a node-name is not specifically given
-    unless locate_config_value :chef_node_name
-      Chef::Config[:knife][:chef_node_name] = @name_args.first
     end
 
     def find_or_create_public_ip(server, connection)
