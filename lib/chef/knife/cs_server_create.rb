@@ -365,6 +365,11 @@ module KnifeCloudstack
       end
     end
 
+    # This little peace of code sets the Chef node-name to the VM name when a node-name is not specifically given
+    unless locate_config_value :chef_node_name
+      Chef::Config[:knife][:chef_node_name] = @name_args.first
+    end
+
     def find_or_create_public_ip(server, connection)
       nic = connection.get_server_default_nic(server) || {}
       #puts "#{ui.color("Not allocating public IP for server", :red)}" unless config[:public_ip]
