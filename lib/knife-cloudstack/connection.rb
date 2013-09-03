@@ -3,6 +3,7 @@
 # Author:: KC Braunschweig (<kcbraunschweig@gmail.com>)
 # Author:: Sander Botman (<sbotman@schubergphilis.com>)
 # Author:: Frank Breedijk (<fbreedijk@schubergphilis.com>)
+# Author:: Sander van Harmelen (<svanharmelen@schubergphilis.com>)
 # Copyright:: Copyright (c) 2011 Edmunds, Inc.
 # License:: Apache License, Version 2.0
 #
@@ -106,7 +107,7 @@ module CloudstackClient
       if ip_addr
         return ip_addr['ipaddress']
       end
-      nic['ipaddress'] || [] 
+      nic['ipaddress'] || []
     end
 
     ##
@@ -133,9 +134,9 @@ module CloudstackClient
       end
     end
 
-    ## 
+    ##
     # List all the objects based on the command that is specified.
-    
+
     def list_object(command, json_result, filter=nil, listall=nil, keyword=nil, name=nil, params={})
       params['command'] = command
       params['listall'] = true if listall || name || keyword unless listall == false
@@ -164,7 +165,7 @@ module CloudstackClient
     ##
     # Deploys a new server using the specified parameters.
 
-    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[], extra_params)
+    def create_server(host_name, service_name, template_name, disk_name=nil, zone_name=nil, network_names=[], extra_params)
 
       if host_name then
         if get_server(host_name) then
@@ -185,19 +186,27 @@ module CloudstackClient
         exit 1
       end
 
+      if disk_name then
+        disk = get_disk_offering(disk_name)
+        if !disk then
+          puts "Error: Disk offering '#{disk_name}' is invalid"
+          exit 1
+        end
+      end
+
       zone = zone_name ? get_zone(zone_name) : get_default_zone
       if !zone then
         msg = zone_name ? "Zone '#{zone_name}' is invalid" : "No default zone found"
         puts "Error: #{msg}"
         exit 1
       end
-      
+
       if zone['networktype'] != 'Basic' then
       # If this is a Basic zone no networkids are needed in the params
-     
+
         networks = []
         if network_names.nil? then
-          networks << get_default_network(zone['id']) 
+          networks << get_default_network(zone['id'])
         else
           network_names.each do |name|
             network = get_network(name)
@@ -226,21 +235,22 @@ module CloudstackClient
             'zoneId' => zone['id'],
             'networkids' => network_ids.join(',')
         }
-      
+
       elsif
-      
+
         params = {
             'command' => 'deployVirtualMachine',
             'serviceOfferingId' => service['id'],
             'templateId' => template['id'],
             'zoneId' => zone['id']
         }
-        
+
       end
-      
+
       params.merge!(extra_params) if extra_params
 
       params['name'] = host_name if host_name
+      params['diskOfferingId'] = disk['id'] if disk
 
       json = send_async_request(params)
       json['virtualmachine']
@@ -343,10 +353,10 @@ module CloudstackClient
 
       services = json['serviceoffering']
       return nil unless services
-     
+
       services.each { |s|
         if name.is_uuid? then
-          return s if s['id'] == name 
+          return s if s['id'] == name
         else
           return s if s['name'] == name
         end
@@ -364,7 +374,7 @@ module CloudstackClient
       json = send_request(params)
       json['serviceoffering'] || []
     end
-    
+
     def list_security_groups
       params = {
           'command' => 'listSecurityGroups'
@@ -372,7 +382,7 @@ module CloudstackClient
       json = send_request(params)
       json['securitygroups'] || []
     end
-    
+
 
     ##
     # Finds the template with the specified name.
@@ -384,8 +394,8 @@ module CloudstackClient
       # when the name parameter is specified. When this is fixed,
       # the name parameter should be added to the request.
 
-      zone = zone_name ? get_zone(zone_name) : get_default_zone 
-      
+      zone = zone_name ? get_zone(zone_name) : get_default_zone
+
       params = {
           'command' => 'listTemplates',
           'templateFilter' => 'executable',
@@ -399,10 +409,28 @@ module CloudstackClient
 
       templates.each { |t|
         if name.is_uuid? then
-          return t if t['id'] == name 
+          return t if t['id'] == name
         else
           return t if t['name'] == name
         end
+      }
+      nil
+    end
+
+    ##
+    # Finds the disk offering with the specified name.
+
+    def get_disk_offering(name)
+      params = {
+          'command' => 'listDiskOfferings',
+      }
+      json = send_request(params)
+      disks = json['diskoffering']
+
+      return nil if !disks
+
+      disks.each { |d|
+        return d if d['name'] == name
       }
       nil
     end
@@ -438,14 +466,14 @@ module CloudstackClient
       json = send_request(params)
       projects = json['project']
       return nil unless projects
-  
+
       projects.each { |n|
         if name.is_uuid? then
-          return n if n['id'] == name 
+          return n if n['id'] == name
         else
           return n if n['name'] == name
         end
-      } 
+      }
       nil
     end
 
@@ -480,7 +508,7 @@ module CloudstackClient
 
       networks.each { |n|
         if name.is_uuid? then
-          return n if n['id'] == name 
+          return n if n['id'] == name
         else
           return n if n['name'] == name
         end
@@ -541,8 +569,8 @@ module CloudstackClient
 
       networks.each { |z|
         if name.is_uuid? then
-          return z if z['id'] == name 
-        else 
+          return z if z['id'] == name
+        else
           return z if z['name'] == name
         end
       }
@@ -744,7 +772,7 @@ module CloudstackClient
       signature = OpenSSL::HMAC.digest('sha1', @secret_key, data.downcase)
       signature = Base64.encode64(signature).chomp
       signature = CGI.escape(signature)
-  
+
       if @api_url.nil? || @api_url.empty?
         puts "Error: Please specify a valid API URL."
         exit 1
@@ -754,13 +782,13 @@ module CloudstackClient
       Chef::Log.debug("URL: #{url}")
       uri = URI.parse(url)
       req_body = Net::HTTP::Get.new(uri.request_uri)
-      request = Chef::REST::RESTRequest.new("GET", uri, req_body, headers={}) 
+      request = Chef::REST::RESTRequest.new("GET", uri, req_body, headers={})
       response = request.call
 
       if !response.is_a?(Net::HTTPOK) then
         case response.code
         when "432"
-          puts "\n" 
+          puts "\n"
           puts "Error #{response.code}: Your account does not have the right to execute this command is locked or the command does not exist."
         else
           puts "Error #{response.code}: #{response.message}"
