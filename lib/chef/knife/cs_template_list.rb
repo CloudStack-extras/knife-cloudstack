@@ -78,7 +78,7 @@ module KnifeCloudstack
         locate_config_value(:listall),
         nil,
         nil,
-        locate_config_value(:templatefilter)
+        params = { 'templatefilter' => locate_config_value(:templatefilter) }
       )
 
       output_format(connection_result)
