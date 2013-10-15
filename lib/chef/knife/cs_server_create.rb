@@ -322,7 +322,7 @@ module KnifeCloudstack
     end
 
     def is_image_windows?
-        template = connection.get_template(locate_config_value(:cloudstack_template))
+        template = connection.get_template(locate_config_value(:cloudstack_template),locate_config_value(:cloudstack_zone))
         if !template
           ui.error("Template: #{template} does not exist")
           exit 1
