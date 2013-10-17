@@ -291,12 +291,16 @@ module KnifeCloudstack
           sleep BOOTSTRAP_DELAY
           puts "\n"
         }
-      elsif
+      elsif @bootstrap_protocol == 'winrm'
         print "\n#{ui.color("Waiting for winrm to be active on: #{public_ip}", :magenta)}"
         print(".") until tcp_test_winrm(public_ip,locate_config_value(:winrm_port)) {
           sleep WINRM_BOOTSTRAP_DELAY
           puts("\n")
         }
+      else
+        puts "Cannot determine the bootstrap protocol."
+        puts "Please specify eighter ssh or winrm as boorstrap protocol."
+        exit 1
       end
 
       object_fields = []
