@@ -299,7 +299,7 @@ module KnifeCloudstack
         }
       else
         puts "Cannot determine the bootstrap protocol."
-        puts "Please specify eighter ssh or winrm as boorstrap protocol."
+        puts "Please specify either ssh or winrm as bootstrap protocol."
         exit 1
       end
 
