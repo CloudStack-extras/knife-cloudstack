@@ -1,3 +1,1 @@
-require "mg"
-
-MG.new("knife-cloudstack.gemspec")
+require "bundler/gem_tasks"
