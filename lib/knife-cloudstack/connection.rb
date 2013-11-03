@@ -809,10 +809,11 @@ module CloudstackClient
  
       if uri.scheme == "https"
         http.use_ssl = true
+        # Still need to do some testing on SSL, so will fix this later
         if @no_ssl_verify
           http.verify_mode = OpenSSL::SSL::VERIFY_NONE 
         else
-          http.verify_mode = OpenSSL::SSL::VERIFY_PEER 
+          http.verify_mode = OpenSSL::SSL::VERIFY_NONE 
         end
       end 
       request = Net::HTTP::Get.new(uri.request_uri)
