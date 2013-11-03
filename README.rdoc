@@ -341,6 +341,7 @@ specifying one or more actions to be executed after a server (or group of server
             { "http_request": "http://${hadoop-master}:50070/index.jsp" }
           ]
         }
+      ]
     }
 
 ==== Stack Attributes
