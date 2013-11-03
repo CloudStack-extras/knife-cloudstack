@@ -26,7 +26,7 @@ module KnifeCloudstack
       Chef::Knife.load_deps
     end
 
-    banner "knife cs keypair delete (options)"
+    banner "knife cs keypair delete KEY_NAME (options)"
 
     option :name,
            :long => "--name NAME",
