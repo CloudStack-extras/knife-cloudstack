@@ -1,6 +1,9 @@
 = Changes
 
-== 2013-10-15 (0.0.15)
+== 2013-11-04 (0.0.15)
+* Added subcommand: <tt>cs publicip list</tt> (Sander Botman, 03 Nov 2013)
+* Bugfix: removed the chef dependency because this is changed in chef 11.8.0 (Sander Botman, 03 Nov 2013)
+* Bugfix: added the option --cloudstack-no-ssl-verify in order to ignore ssl verification (Sander Botman, 03 Nov 2013)
 * Added subcommand: <tt>cs forwardrule create</tt> (Sander Botman, 28 Aug 2013)
 * Added subcommand: <tt>cs firewallrule create</tt> (Sander Botman, 28 Aug 2013)
 * Added the option: <tt>--set-display-name</tt> to <tt>server create</tt> (Florin Stan, 5 Aug 2013)
@@ -10,7 +13,6 @@
 * Added subcommands: <tt>cs keypair list</tt>, <tt>cs keypair create</tt>, <tt>cs keypair delete</tt> and adding basic zone check. (Sebastian Goasguen (runseb) 29 May 2013)
 * Bugfix: changed output name to password (Warren Bain, 26 May 2013)
 * Bugfix: various bugfixes and fixing bootstrap context (bacoboy, 22 Apr 2013)
-
 
 == 2013-04-14 (0.0.14)
 * Added bash/addinstance.sh script in onder to ease instance creation from cli.

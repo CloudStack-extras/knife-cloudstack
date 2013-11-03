@@ -36,7 +36,8 @@ Additionally the following options may be set in your <tt>knife.rb</tt>:
 * knife[:cloudstack_service]
 * knife[:cloudstack_template]
 * knife[:cloudstack_zone]
-* knife[:distro]
+* knife[:cloudstack_no_ssl_verify]
+* knife[:distro] 
 * knife[:template_file]
 
 == Public Clouds (Tata InstaCompute, Ninefold etc):
@@ -257,7 +258,7 @@ Displays all the pods that are currently available within the cloudstack environ
 
 <tt>--name</tt>                 Filters your output on the name that you specify.
 
-==== knife project list
+==== knife cs project list
 Displays all the projects that are within the cloudstack environment.
 
 <tt>--listall</tt>              This will list all the projects, depending on the account that you are using.
@@ -265,6 +266,11 @@ Displays all the projects that are within the cloudstack environment.
 <tt>--keyword</tt>              Filters your result based on a keyword.
 
 <tt>--name</tt>                 Filters your output on the name that you specify.
+
+==== knife cs publicip list
+Displays all public ip's that are used within the cloudstack environment.
+
+<tt>--listall</tt>              This will list all the public ip's, depending on the account that you are using.
 
 ==== knife cs router list
 Displays all the routers that are within the cloudstack environment.
