@@ -55,6 +55,11 @@ class Chef
                  :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
                  :default => nil
 
+          option :cloudstack_no_ssl_verify,
+                 :long => '--cloudstack-no-ssl-verify',
+                 :description => "Disable certificate verify on SSL",
+                 :boolean => true
+
           def validate_base_options
             unless locate_config_value :cloudstack_url
               ui.error "Cloudstack URL not specified"
@@ -75,7 +80,8 @@ class Chef
               locate_config_value(:cloudstack_url),
               locate_config_value(:cloudstack_api_key),
               locate_config_value(:cloudstack_secret_key),
-              locate_config_value(:cloudstack_project)
+              locate_config_value(:cloudstack_project),
+              locate_config_value(:cloudstack_no_ssl_verify)
             )
           end
 

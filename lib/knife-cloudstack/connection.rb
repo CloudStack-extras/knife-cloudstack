@@ -28,7 +28,6 @@ require 'cgi'
 require 'net/http'
 require 'json'
 require 'highline/import'
-require 'chef/rest/rest_request'
 
 class String
   def to_regexp
@@ -54,22 +53,25 @@ module CloudstackClient
     ASYNC_POLL_INTERVAL = 5.0
     ASYNC_TIMEOUT = 600
 
-    def initialize(api_url, api_key, secret_key, project_name=nil)
+    def initialize(api_url, api_key, secret_key, project_name=nil, no_ssl_verify=false)
       @api_url = api_url
       @api_key = api_key
       @secret_key = secret_key
-      @project_id = nil
-      if project_name
-        project = get_project(project_name)
-        if !project then
-          puts "Project #{project_name} does not exist"
-          exit 1
-        end
-        @project_id = project['id']
-      end
-
+      @no_ssl_verify = no_ssl_verify
+      @project_id = get_project_id(project_name) if project_name || nil
     end
 
+    ##
+    # Get project id
+    def get_project_id(name)
+      project = get_project(name)
+      if !project then
+        puts "Project #{project_name} does not exist"
+        exit 1
+      end
+      project['id']
+    end
+  
     ##
     # Finds the server with the specified name.
 
@@ -94,16 +96,23 @@ module CloudstackClient
     ##
     # Finds the public ip for a server
 
-    def get_server_public_ip(server, cached_rules=nil)
+    def get_server_public_ip(server, cached_rules=nil, cached_nat=nil)
       return nil unless server
       # find the public ip
       nic = get_server_default_nic(server)
+
       ssh_rule = get_ssh_port_forwarding_rule(server, cached_rules)
-      if ssh_rule
-        return ssh_rule['ipaddress']
-      end
+      return ssh_rule['ipaddress'] if ssh_rule
+
+      winrm_rule = get_winrm_port_forwarding_rule(server, cached_rules)
+      return winrm_rule['ipaddress'] if winrm_rule 
+
       #check for static NAT
-      ip_addr = list_public_ip_addresses.find {|v| v['virtualmachineid'] == server['id']}
+      if cached_nat
+        ip_addr = cached_nat.find {|v| v['virtualmachineid'] == server['id']}
+      else
+        ip_addr = list_public_ip_addresses.find {|v| v['virtualmachineid'] == server['id']}
+      end
       if ip_addr
         return ip_addr['ipaddress']
       end
@@ -619,8 +628,9 @@ module CloudstackClient
       json['publicipaddress'].first
     end
 
-    def list_public_ip_addresses()
-      params = { 'command' => 'listPublicIpAddresses'}
+    def list_public_ip_addresses(listall=false)
+      params = { 'command' => 'listPublicIpAddresses' } 
+      params['listall'] = listall
 
       json = send_request(params)
       return json['publicipaddress'] || []
@@ -714,11 +724,10 @@ module CloudstackClient
     ##
     # Lists all port forwarding rules.
 
-    def list_port_forwarding_rules(ip_address_id=nil)
-      params = {
-          'command' => 'listPortForwardingRules'
-      }
+    def list_port_forwarding_rules(ip_address_id=nil, listall=false)
+      params = { 'command' => 'listPortForwardingRules' }
       params['ipAddressId'] = ip_address_id if ip_address_id
+      params['listall'] = listall
       json = send_request(params)
       json['portforwardingrule']
     end
@@ -732,6 +741,20 @@ module CloudstackClient
         r['virtualmachineid'] == server['id'] &&
             r['privateport'] == '22'&&
             r['publicport'] == '22'
+      }.first
+    end
+ 
+    ## 
+    # Gets the WINRM port forwarding rule for the specified server.
+
+    def get_winrm_port_forwarding_rule(server, cached_rules=nil)
+      rules = cached_rules || list_port_forwarding_rules || []
+      rules.find_all { |r|
+        r['virtualmachineid'] == server['id'] &&
+           (r['privateport'] == '5985' &&
+            r['publicport'] == '5985') ||
+           (r['privateport'] == '5986' &&
+            r['publicport'] == '5986')
       }.first
     end
 
@@ -781,9 +804,23 @@ module CloudstackClient
       url = "#{@api_url}?#{data}&signature=#{signature}"
       Chef::Log.debug("URL: #{url}")
       uri = URI.parse(url)
-      req_body = Net::HTTP::Get.new(uri.request_uri)
-      request = Chef::REST::RESTRequest.new("GET", uri, req_body, headers={})
-      response = request.call
+
+      http = Net::HTTP.new(uri.host, uri.port)
+ 
+      if uri.scheme == "https"
+        http.use_ssl = true
+        if @no_ssl_verify
+          http.verify_mode = OpenSSL::SSL::VERIFY_NONE 
+        else
+          http.verify_mode = OpenSSL::SSL::VERIFY_PEER 
+        end
+      end 
+      request = Net::HTTP::Get.new(uri.request_uri)
+      response = http.request(request)
+
+      # req_body = Net::HTTP::Get.new(uri.request_uri)
+      # request = Chef::REST::RESTRequest.new("GET", uri, req_body, headers={})
+      # response = request.call
 
       if !response.is_a?(Net::HTTPOK) then
         case response.code

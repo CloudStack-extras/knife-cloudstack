@@ -85,7 +85,9 @@ module KnifeCloudstack
 
       output_format(connection_result)
 
-      rules = connection.list_port_forwarding_rules
+      rules = connection.list_port_forwarding_rules(nil, true)
+      public_list = connection.list_public_ip_addresses(true)
+
 
       connection_result.each do |r|
         name = r['name']
@@ -98,7 +100,7 @@ module KnifeCloudstack
           locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
         else
           object_list << r['name']
-          r['nic'].empty? ? object_list << "N/A" : object_list << (connection.get_server_public_ip(r, rules) || '')
+          r['nic'].empty? ? object_list << "N/A" : object_list << (connection.get_server_public_ip(r, rules, public_list) || '')
           object_list << r['serviceofferingname']
           object_list << r['templatename']
           object_list << r['state']
