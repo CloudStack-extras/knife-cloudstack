@@ -32,19 +32,6 @@ module KnifeCloudstack
 
     banner "knife cs keypair list (options)"
 
-    option :name,
-           :long => "--name NAME",
-           :description => "Specify security group to list"
-
-    option :keyword,
-           :long => "--keyword NAME",
-           :description => "Specify part of servicename to list"
-
-    option :index,
-           :long => "--index",
-           :description => "Add index numbers to the output",
-           :boolean => true
-
     def run
       validate_base_options
 	

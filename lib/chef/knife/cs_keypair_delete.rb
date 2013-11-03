@@ -30,21 +30,17 @@ module KnifeCloudstack
 
     option :name,
            :long => "--name NAME",
-           :description => "Specify the ssh keypair name",
-           :required => true
+           :description => "Specify the ssh keypair name"
 
     def run
       validate_base_options
 
       Chef::Log.debug("Validate keypair name")
-      if  locate_config_value(:name)
-        keypairname = locate_config_value(:name)
-      else
-          ui.error "Invalid keypairname. Please specify a name for the keypair"
+      keypairname = locate_config_value(:name) || @name_args.first
+      unless /^[a-zA-Z0-9][a-zA-Z0-9\-\_]*$/.match(keypairname) then
+          ui.error "Invalid keypairname. Please specify a short name for the keypair"
           exit 1
       end
-
-      print "#{ui.color("Deleting the SSH Keypair: #{keypairname}", :magenta)}\n"
 
       params = {
         'command' => 'deleteSSHKeyPair',
@@ -53,22 +49,11 @@ module KnifeCloudstack
 
       json = connection.send_request(params)
 
-      if ! json then
+      unless json['success'] == 'true' then
         ui.error("Unable to delete SSH Keypair")
 	exit 1
       end
-
-      object_fields = []
-      object_fields << ui.color("Info:", :cyan)
-      object_fields << json['displaytext'].to_s
-      object_fields << ui.color("Success:", :cyan)
-      object_fields << json['success'].to_s
-
-      puts "\n"
-      puts ui.list(object_fields, :uneven_columns_across, 2)
-      puts "\n"
-      
-      return
+      print "#{ui.color("Deleted the SSH Keypair: #{keypairname}", :magenta)}\n"
     end
 
   end # class
