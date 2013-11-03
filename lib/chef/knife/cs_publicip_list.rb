@@ -34,16 +34,8 @@ module KnifeCloudstack
 
     option :listall,
            :long => "--listall",
-           :description => "List all routers",
+           :description => "List all public ip addresses",
            :boolean => true
-
-    option :name,
-           :long => "--name NAME",
-           :description => "Specify router name to list"
-
-    option :keyword,
-           :long => "--keyword KEY",
-           :description => "List by keyword"
 
     def run
       validate_base_options
