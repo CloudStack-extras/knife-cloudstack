@@ -2,7 +2,7 @@
 
 == 2013-11-04 (0.0.15)
 * Added subcommand: <tt>cs publicip list</tt> (Sander Botman, 03 Nov 2013)
-* Bugfix: removed the chef dependency because this is changed in chef 11.8.0 (Sander Botman, 03 Nov 2013)
+* Bugfix: removed the chef rest dependency because this is changed in chef 11.8.0 (Sander Botman, 03 Nov 2013)
 * Bugfix: added the option --cloudstack-no-ssl-verify in order to ignore ssl verification (Sander Botman, 03 Nov 2013)
 * Added subcommand: <tt>cs forwardrule create</tt> (Sander Botman, 28 Aug 2013)
 * Added subcommand: <tt>cs firewallrule create</tt> (Sander Botman, 28 Aug 2013)
