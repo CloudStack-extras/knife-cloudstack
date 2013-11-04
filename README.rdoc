@@ -36,6 +36,7 @@ Additionally the following options may be set in your <tt>knife.rb</tt>:
 * knife[:cloudstack_service]
 * knife[:cloudstack_template]
 * knife[:cloudstack_zone]
+* knife[:cloudstack_proxy]
 * knife[:cloudstack_no_ssl_verify]
 * knife[:distro] 
 * knife[:template_file]

@@ -53,12 +53,13 @@ module CloudstackClient
     ASYNC_POLL_INTERVAL = 5.0
     ASYNC_TIMEOUT = 600
 
-    def initialize(api_url, api_key, secret_key, project_name=nil, no_ssl_verify=false)
+    def initialize(api_url, api_key, secret_key, project_name=nil, no_ssl_verify=false, api_proxy=nil)
       @api_url = api_url
       @api_key = api_key
       @secret_key = secret_key
       @no_ssl_verify = no_ssl_verify
       @project_id = get_project_id(project_name) if project_name || nil
+      @api_proxy = api_proxy
     end
 
     ##
@@ -774,6 +775,25 @@ module CloudstackClient
       json['portforwardingrule']
     end
 
+    def http_client_builder
+      http_proxy = proxy_uri
+      if http_proxy.nil?
+        Net::HTTP
+      else
+        Chef::Log.debug("Using #{http_proxy.host}:#{http_proxy.port} for proxy")
+        user = http_proxy.user if http_proxy.user
+        pass = http_proxy.password if http_proxy.password
+        Net::HTTP.Proxy(http_proxy.host, http_proxy.port, user, pass)
+      end
+    end
+
+    def proxy_uri
+      return nil if @api_proxy.nil?
+      result = URI.parse(@api_proxy)
+      return result unless result.host.nil? || result.host.empty?
+      nil
+    end
+
     ##
     # Sends a synchronous request to the CloudStack API and returns the response as a Hash.
     #
@@ -805,7 +825,7 @@ module CloudstackClient
       Chef::Log.debug("URL: #{url}")
       uri = URI.parse(url)
 
-      http = Net::HTTP.new(uri.host, uri.port)
+      http = http_client_builder.new(uri.host, uri.port)
  
       if uri.scheme == "https"
         http.use_ssl = true
@@ -818,10 +838,6 @@ module CloudstackClient
       end 
       request = Net::HTTP::Get.new(uri.request_uri)
       response = http.request(request)
-
-      # req_body = Net::HTTP::Get.new(uri.request_uri)
-      # request = Chef::REST::RESTRequest.new("GET", uri, req_body, headers={})
-      # response = request.call
 
       if !response.is_a?(Net::HTTPOK) then
         case response.code
