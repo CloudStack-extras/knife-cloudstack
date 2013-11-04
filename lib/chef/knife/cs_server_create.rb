@@ -178,7 +178,7 @@ module KnifeCloudstack
 
     option :keypair,
            :long => "--keypair NAME",
-           :description => "name of the keypair that should be used to create the vm",
+           :description => "Name of the keypair that should be used to create the vm",
            :default => false
 
     option :static_nat,
