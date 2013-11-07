@@ -272,11 +272,7 @@ module KnifeCloudstack
       zone = zone_name ? connection.get_zone(zone_name) : connection.get_default_zone
 
       config[:public_ip] = false if zone['networktype'] == 'Basic'
-      #  nic = connection.get_server_default_nic(server) || {}
-      #  public_ip = nic['ipaddress']
-      #else
-        public_ip = find_or_create_public_ip(server, connection)
-      #end
+      public_ip = find_or_create_public_ip(server, connection)
 
       object_fields = []
       object_fields << ui.color("Name:", :cyan)
