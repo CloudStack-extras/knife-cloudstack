@@ -246,7 +246,7 @@ module CloudstackClient
             'networkids' => network_ids.join(',')
         }
 
-      elsif
+      else
 
         params = {
             'command' => 'deployVirtualMachine',

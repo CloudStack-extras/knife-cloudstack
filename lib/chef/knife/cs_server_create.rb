@@ -268,7 +268,15 @@ module KnifeCloudstack
           params
       )
 
-      public_ip = find_or_create_public_ip(server, connection)
+      zone_name = locate_config_value(:cloudstack_zone)
+      zone = zone_name ? connection.get_zone(zone_name) : connection.get_default_zone
+
+      config[:public_ip] = false if zone['networktype'] == 'Basic'
+      #  nic = connection.get_server_default_nic(server) || {}
+      #  public_ip = nic['ipaddress']
+      #else
+        public_ip = find_or_create_public_ip(server, connection)
+      #end
 
       object_fields = []
       object_fields << ui.color("Name:", :cyan)
@@ -376,7 +384,6 @@ module KnifeCloudstack
 
     def find_or_create_public_ip(server, connection)
       nic = connection.get_server_default_nic(server) || {}
-      #puts "#{ui.color("Not allocating public IP for server", :red)}" unless config[:public_ip]
       if (config[:public_ip] == false)
         nic['ipaddress']
       else
