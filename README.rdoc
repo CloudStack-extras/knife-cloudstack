@@ -405,3 +405,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
+== Trademark Attribution
+
+knife is a trademark of Opscode
+
+CloudStack is a trademark or registered trademark of The Apache Software Foundation
+
+The use of these marks is nominative in describing the function and integration of
+this software and does not imply endorsement by Opscode, the Apache Software Foundation, 
+or Apache CloudStack.
