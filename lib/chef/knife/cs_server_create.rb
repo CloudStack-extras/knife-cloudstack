@@ -265,6 +265,7 @@ module KnifeCloudstack
           locate_config_value(:cloudstack_disk),
           locate_config_value(:cloudstack_zone),
           locate_config_value(:cloudstack_networks),
+          locate_config_value(:public_ip),
           params
       )
 
