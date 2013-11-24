@@ -193,6 +193,11 @@ module KnifeCloudstack
            :proc => lambda { |o| o.split(/[\s,]+/) },
            :default => []
 
+    option :aag,
+          :long => "--anti-affinity-groups GROUP_NAME",
+          :description => "Comma separated list of anti-affinity group names",
+          :default => false
+
     option :fw_rules,
            :short => "-f PORT_RULES",
            :long => "--fw-rules PORT_RULES",
@@ -256,6 +261,7 @@ module KnifeCloudstack
       params['hypervisor'] = locate_config_value(:cloudstack_hypervisor) if locate_config_value(:cloudstack_hypervisor)
 
       params['keypair'] = locate_config_value :keypair  if locate_config_value :keypair
+      params['affinitygroupnames'] = locate_config_value :aag if locate_config_value :aag
       params['displayname'] = if locate_config_value :set_display_name and locate_config_value :chef_node_name then locate_config_value :chef_node_name else hostname end
 
       server = connection.create_server(
