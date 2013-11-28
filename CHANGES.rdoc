@@ -1,5 +1,13 @@
 = Changes
 
+== 2013-12-01 (0.0.16)
+* Bugfix: Option to specify iso as template when deploying instance <tt>cs server create</tt> (Sander Botman, 28 Nov 2013)
+* Restructure all list commands (Sander Botman, 28 Nov 2013)
+* Added subcommand: <tt>cs aag list</tt> (John E. Vincent, 23 Nov 2013)
+* Added support for anti-affinity groups in <tt>cs server create</tt> (John E. Vincent, 23 Nov 2013)
+* Added Trademark (David Nalley, 08 Nov 2013)
+* Bugfix: fixing server creation inside basic networks (Sander Botman, 07 Nov 2013)
+
 == 2013-11-04 (0.0.15)
 * Bugfix: fixed the proxy with the option: --cloudstack-proxy http://username:password@yourproxy:8080 or use config file. (Sander Botman, 04 Nov 2013)
 * Added subcommand: <tt>cs publicip list</tt> (Sander Botman, 03 Nov 2013)
