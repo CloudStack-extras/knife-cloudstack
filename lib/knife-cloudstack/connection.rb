@@ -186,8 +186,10 @@ module CloudstackClient
       end
 
       template = get_template(template_name, zone_name)
+      template = get_iso(template_name, zone_name) unless template
+
       if !template then
-        puts "Error: Template '#{template_name}' is invalid"
+        puts "Error: Template / ISO name: '#{template_name}' is invalid"
         exit 1
       end
 
@@ -421,6 +423,34 @@ module CloudstackClient
       }
       nil
     end
+
+    ##
+    # Finds the iso with the specified name.
+
+    def get_iso(name, zone_name=nil)
+      zone = zone_name ? get_zone(zone_name) : get_default_zone
+
+      params = {
+          'command' => 'listIsos',
+          'isoFilter' => 'executable',
+      }
+      params['zoneid'] = zone['id'] if zone
+
+      json = send_request(params)
+      iso = json['iso']
+      return nil unless iso
+
+      iso.each { |i|
+        if name.is_uuid? then
+          return i if i['id'] == name
+        else
+          return i if i['name'] == name
+        end
+      }
+      nil
+    end
+
+
 
     ##
     # Finds the disk offering with the specified name.
