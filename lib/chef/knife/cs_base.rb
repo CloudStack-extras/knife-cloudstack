@@ -16,8 +16,6 @@
 # limitations under the License.
 #
 
-require 'chef/knife'
-
 class Chef
   class Knife
     module KnifeCloudstackBase
@@ -26,8 +24,7 @@ class Chef
         includer.class_eval do
 
           deps do
-            require 'readline'
-            require 'chef/json_compat'
+            require 'knife-cloudstack/connection'
           end
 
           option :cloudstack_url,
@@ -92,7 +89,7 @@ class Chef
 
           def locate_config_value(key)
             key = key.to_sym
-            config[key] || Chef::Config[:knife][key]
+            config[key] || Chef::Config[:knife][key] || nil
           end 
 
         end

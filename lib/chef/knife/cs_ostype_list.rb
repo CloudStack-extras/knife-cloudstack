@@ -16,20 +16,14 @@
 # limitations under the License.
 #
 
-require 'chef/knife/cs_base'
+require 'chef/knife'
 require 'chef/knife/cs_baselist'
 
 module KnifeCloudstack
   class CsOstypeList < Chef::Knife
 
-    include Chef::Knife::KnifeCloudstackBase
     include Chef::Knife::KnifeCloudstackBaseList
-
-    deps do
-      require 'knife-cloudstack/connection'
-      Chef::Knife.load_deps
-    end
-
+    
     banner "knife cs ostype list (options)"
 
     option :keyword,
@@ -39,41 +33,19 @@ module KnifeCloudstack
     def run
       validate_base_options
 
-      if locate_config_value(:fields)
-        object_list = []
-        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
-      else
-        object_list = [
-          ui.color('ID', :bold),
-          ui.color('Description', :bold),
-          ui.color('OS Categorie ID', :bold)
-        ]
-      end
+      columns = [
+        'Description     :description',
+        'ID              :id',
+        'OS Categorie ID :oscategoryid'
+      ]
 
-      columns = object_list.count
-      object_list = [] if locate_config_value(:noheader)
-
-      connection_result = connection.list_object(
-        "listOsTypes",
-        "ostype",
-        locate_config_value(:filter),
-        false,
-        locate_config_value(:keyword)
-      )
-
-      output_format(connection_result)
-
-      connection_result.each do |r|
-       if locate_config_value(:fields)
-          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
-        else
-          object_list << r['id'].to_s
-          object_list << r['description'].to_s
-          object_list << r['oscategoryid'].to_s
-        end
-      end
-      puts ui.list(object_list, :uneven_columns_across, columns)
-      list_object_fields(connection_result) if locate_config_value(:fieldlist)
+      params = { 'command' => "listOsTypes" }
+      params['filter']  = locate_config_value(:filter)  if locate_config_value(:filter)
+      params['listall'] = locate_config_value(:listall) if locate_config_value(:listall)
+      params['keyword'] = locate_config_value(:keyword) if locate_config_value(:keyword)
+      
+      result = connection.list_object(params, "ostype")
+      list_object(columns, result)
     end
 
   end

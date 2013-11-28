@@ -16,19 +16,13 @@
 # limitations under the License.
 #
 
-require 'chef/knife/cs_base'
+require 'chef/knife'
 require 'chef/knife/cs_baselist'
 
 module KnifeCloudstack
   class CsAccountList < Chef::Knife
 
-    include Chef::Knife::KnifeCloudstackBase
     include Chef::Knife::KnifeCloudstackBaseList
-
-    deps do
-      require 'knife-cloudstack/connection'
-      Chef::Knife::Bootstrap.load_deps
-    end
 
     banner "knife cs account list (options)"
 
@@ -48,82 +42,45 @@ module KnifeCloudstack
     def run
       validate_base_options
 
-      if locate_config_value(:fields)
-        object_list = []
-        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
-      else
-        if locate_config_value(:cloudstack_project) 
-          object_list = [
-            ui.color('Account', :bold),
-            ui.color('Domain', :bold),
-            ui.color('Type', :bold),
-            ui.color('Role', :bold),
-            ui.color('Users', :bold)
-          ]
-        else
-          object_list = [
-            ui.color('Name', :bold),
-            ui.color('Domain', :bold),
-            ui.color('State', :bold),
-            ui.color('Type', :bold),
-            ui.color('Users', :bold)
-          ]
-        end
-      end
-
-      columns = object_list.count
-      object_list = [] if locate_config_value(:noheader)
-
       if locate_config_value(:cloudstack_project)
-        api_command = "listProjectAccounts"
-        api_result = "projectaccount"
+        columns = [
+          'Account :account',
+          'Domain  :domain',
+          'Type    :accounttype',
+          'Role    :role',
+          'Users   :user'
+        ]
+        params = { 'command' => "listProjectAccounts" }
       else
-        api_command = "listAccounts"
-        api_result = "account"
+        columns = [
+          'Name     :name',
+          'Domain   :domain',
+          'State    :state',
+          'Type     :accounttype',
+          'Users    :user'
+        ]
+        params = { 'command' => "listAccounts" }
       end
 
-      connection_result = connection.list_object(
-        api_command,
-        api_result,
-        locate_config_value(:filter),
-        locate_config_value(:listall),
-        locate_config_value(:keyword),
-        locate_config_value(:name)
-      )
-
-      output_format(connection_result)
-
-      connection_result.each do |r|
-       if locate_config_value(:fields)
-          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
-        else
-          if locate_config_value(:cloudstack_project)
-            object_list << r['account'].to_s
-            object_list << r['domain'].to_s
-            case r['accounttype']
-              when 0 then object_list << "User"
-              when 1 then object_list << "Admin"
-              when 2 then object_list << "Domain Admin"
-              else object_list << "unknown"
-            end
-            object_list << r['role'].to_s
-            object_list << r['user'].count.to_s
-          else
-            object_list << r['name'].to_s
-            object_list << r['domain'].to_s
-            object_list << r['state'].to_s
-            case r['accounttype']
-              when 0 then object_list << "User"
-              when 1 then object_list << "Admin"
-              when 2 then object_list << "Domain Admin"
-              else object_list << "unknown"
-            end
-            object_list << r['user'].count.to_s
-          end
-        end
+      params['filter']  = locate_config_value(:filter)  if locate_config_value(:filter)
+      params['listall'] = locate_config_value(:listall) if locate_config_value(:listall)
+      params['keyword'] = locate_config_value(:keyword) if locate_config_value(:keyword)
+      params['name']    = locate_config_value(:name)    if locate_config_value(:name)
+      
+      if locate_config_value(:cloudstack_project)
+        result = connection.list_object(params, "projectaccount") 
+      else
+        result = connection.list_object(params, "account")
       end
-      puts ui.list(object_list, :uneven_columns_across, columns)
-      list_object_fields(connection_result) if locate_config_value(:fieldlist)
+
+      result.each do |r|
+        r['accounttype'] = 'User' if r['accounttype'] == 0
+        r['accounttype'] = 'Admin' if r['accounttype'] == 1
+        r['accounttype'] = 'Domain Admin' if r['accounttype'] == 2
+        r['user'] = r['user'].count if r['user']
+      end
+
+      list_object(columns, result)
     end
 
   end

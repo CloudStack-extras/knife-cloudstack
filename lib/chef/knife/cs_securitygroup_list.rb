@@ -1,4 +1,4 @@
-#
+# 
 # Author:: Ryan Holmes (<rholmes@edmunds.com>)
 # Author:: Sander Botman (<sbotman@schubergphilis.com>)
 # Author:: Sebastien Goasguen (<runseb@gmail.com>)
@@ -19,21 +19,14 @@
 # limitations under the License.
 #
 
-require 'chef/knife/cs_base'
+require 'chef/knife'
 require 'chef/knife/cs_baselist'
 
 module KnifeCloudstack
   class CsSecuritygroupList < Chef::Knife
 
-    include Chef::Knife::KnifeCloudstackBase
     include Chef::Knife::KnifeCloudstackBaseList
-
-    deps do
-      require 'chef/knife'
-      require 'knife-cloudstack/connection'
-      Chef::Knife.load_deps
-    end
-
+    
     banner "knife cs securitygroup list (options)"
 
     option :name,
@@ -44,90 +37,22 @@ module KnifeCloudstack
            :long => "--keyword NAME",
            :description => "Specify part of servicename to list"
 
-    option :index,
-           :long => "--index",
-           :description => "Add index numbers to the output",
-           :boolean => true
-
     def run
       validate_base_options
-	
-      object_list = []
-      object_list << ui.color('Index', :bold) if locate_config_value(:index)
 
-      if locate_config_value(:fields)
-        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
-      elsif locate_config_value(:keyword)
-        [
-          ui.color('Name', :bold),
-          ui.color('Description', :bold),
-          ui.color('Account', :bold),
-          ui.color('IngressRules', :bold)
-        ].each { |field| object_list << field }
-      else
-        [
-          ui.color('Name', :bold),
-          ui.color('Description', :bold),
-          ui.color('Account', :bold)
-        ].each { |field| object_list << field }
-      end
+      columns = [
+        'Name        :name',
+        'Description :description',
+        'Account     :account'
+      ]
 
-      columns = object_list.count
-      object_list = [] if locate_config_value(:noheader)
-
-      connection_result = connection.list_object(
-        "listSecurityGroups",
-        "securitygroup",
-        locate_config_value(:filter),
-        false,
-        locate_config_value(:keyword),
-        locate_config_value(:name)
-      )
-
-      output_format(connection_result)
-            
-      if locate_config_value(:keyword)
-        index_num = 0
-        connection_result['ingressrule'].each do |r|
-          if r.nil?
-          else
-            if locate_config_value(:index)
-              index_num += 1
-              object_list << index_num.to_s
-            end
-
-            if locate_config_value(:fields)
-              locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
-            else
-              object_list << connection_result['name'].to_s
-              object_list << connection_result['description'].to_s
-              object_list << connection_result['account'].to_s
-              object_list << r.to_s         
-            end
-          end  
-        end
+      params = { 'command' => "listSecurityGroups" }
+      params['filter']  = locate_config_value(:filter)  if locate_config_value(:filter)
+      params['keyword'] = locate_config_value(:keyword) if locate_config_value(:keyword)
+      params['name']    = locate_config_value(:name)    if locate_config_value(:name)
       
-      else
-          index_num = 0
-          connection_result.each do |r|
-            if locate_config_value(:index)
-              index_num += 1
-              object_list << index_num.to_s
-            end
-
-            if locate_config_value(:fields)
-              locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
-            else
-              object_list << r['name'].to_s
-              object_list << r['description'].to_s
-              object_list << r['account'].to_s
-            end
-          end
-      
-      end
-      
-      puts ui.list(object_list, :uneven_columns_across, columns)
-      list_object_fields(connection_result) if locate_config_value(:fieldlist)
+      result = connection.list_object(params, "securitygroup")
+      list_object(columns, result)
     end
 
   end

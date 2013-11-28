@@ -18,20 +18,13 @@
 # limitations under the License.
 #
 
-require 'chef/knife/cs_base'
+require 'chef/knife'
 require 'chef/knife/cs_baselist'
 
 module KnifeCloudstack
   class CsServerList < Chef::Knife
 
-    include Chef::Knife::KnifeCloudstackBase
     include Chef::Knife::KnifeCloudstackBaseList
-
-    deps do
-      require 'chef/knife'
-      require 'knife-cloudstack/connection'
-      Chef::Knife.load_deps
-    end
 
     banner "knife cs server list (options)"
 
@@ -55,63 +48,37 @@ module KnifeCloudstack
 
     def run
       validate_base_options
+ 
+      columns = [
+        'Name       :name',
+        'Public IP  :ipaddress',
+        'Service    :serviceofferingname',
+        'Template   :templatename',
+        'State      :state',
+        'Instance   :instancename',
+        'Hypervisor :hostname'
+      ]
 
-      if locate_config_value(:fields)
-        object_list = []  
-        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
-      else
-        object_list = [
-          ui.color('Name', :bold),
-          ui.color('Public IP', :bold),
-          ui.color('Service', :bold),
-          ui.color('Template', :bold),
-          ui.color('State', :bold),
-          ui.color('Instance', :bold),
-          ui.color('Hypervisor', :bold)
-        ]
-      end
+      params = { 'command' => "listVirtualMachines" }
+      params['filter']  = locate_config_value(:filter)  if locate_config_value(:filter)
+      params['listall'] = locate_config_value(:listall) if locate_config_value(:listall)
+      params['keyword'] = locate_config_value(:keyword) if locate_config_value(:keyword)
+      params['name']    = locate_config_value(:name)    if locate_config_value(:name)
+      
+      ##
+      # Get the public IP address if possible.
 
-      columns = object_list.count
-      object_list = [] if locate_config_value(:noheader)
-
-      connection_result = connection.list_object(
-        "listVirtualMachines",
-        "virtualmachine",
-        locate_config_value(:filter),
-        locate_config_value(:listall),
-        locate_config_value(:keyword),
-        locate_config_value(:name)
-      )
-
-      output_format(connection_result)
-
-      rules = connection.list_port_forwarding_rules(nil, true)
+      rules       = connection.list_port_forwarding_rules(nil, true)
       public_list = connection.list_public_ip_addresses(true)
-
-
-      connection_result.each do |r|
-        name = r['name']
-        display_name = r['displayname']
-        if display_name && !display_name.empty? && display_name != name
-          name << " (#{display_name})"
-        end
-
-        if locate_config_value(:fields)
-          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
-        else
-          object_list << r['name']
-          r['nic'].empty? ? object_list << "N/A" : object_list << (connection.get_server_public_ip(r, rules, public_list) || '')
-          object_list << r['serviceofferingname']
-          object_list << r['templatename']
-          object_list << r['state']
-          object_list << (r['instancename'] || 'N/A')
-          object_list << (r['hostname'] || 'N/A')
-        end
+      result      = connection.list_object(params, "virtualmachine")
+      result.each do |n| 
+        public_ip  = connection.get_server_public_ip(n, rules, public_list)
+        private_ip = n['nic'].select { |k| k['isdefault'] }       
+        public_ip ? n['ipaddress'] = public_ip : n['ipaddress'] = private_ip['ipaddress'] || "N/A" 
       end
-
-      puts ui.list(object_list, :uneven_columns_across, columns)
-      list_object_fields(connection_result) if locate_config_value(:fieldlist)
-
+         
+      list_object(columns, result)
+      
       ## 
       # Executing actions against the list results that are returned.
 

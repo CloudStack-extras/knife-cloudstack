@@ -16,19 +16,13 @@
 # limitations under the License.
 #
 
-require 'chef/knife/cs_base'
+require 'chef/knife'
 require 'chef/knife/cs_baselist'
 
 module KnifeCloudstack
   class CsFirewallruleList < Chef::Knife
 
-    include Chef::Knife::KnifeCloudstackBase
     include Chef::Knife::KnifeCloudstackBaseList
-
-    deps do
-      require 'knife-cloudstack/connection'
-      Chef::Knife.load_deps
-    end
 
     banner "knife cs firewallrule list (options)"
 
@@ -44,51 +38,24 @@ module KnifeCloudstack
     def run
       validate_base_options
 
-      if locate_config_value(:fields)
-        object_list = []
-        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
-      else
-        object_list = [
-          ui.color('ID', :bold),
-          ui.color('Protocol', :bold),
-          ui.color('Start Port', :bold),
-          ui.color('End Port', :bold),
-          ui.color('IP AddressID', :bold),
-          ui.color('IP Address', :bold),
-          ui.color('State', :bold),
-          ui.color('CIDR List', :bold)
-        ]
-      end
+      columns = [
+        'ID           :id',
+        'Protocol     :protocol',
+        'Start Port   :startport',
+        'End Port     :endport',
+        'IP AddressID :ipaddressid',
+        'IP Address   :ipaddress',
+        'State        :state',
+        'CIDR List    :cidrlist'
+      ]
 
-      columns = object_list.count
-      object_list = [] if locate_config_value(:noheader)
-
-      connection_result = connection.list_object(
-        "listFirewallRules",
-        "firewallrule",
-        locate_config_value(:filter),
-        locate_config_value(:listall),
-        locate_config_value(:keyword)
-      )
-
-      output_format(connection_result)
-
-      connection_result.each do |r|
-       if locate_config_value(:fields)
-          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
-        else
-          object_list << r['id'].to_s
-          object_list << r['protocol'].to_s
-          object_list << r['startport'].to_s
-          object_list << r['endport'].to_s
-          object_list << r['ipaddressid'].to_s
-          object_list << r['ipaddress'].to_s
-          object_list << r['state'].to_s
-          object_list << r['cidrlist'].to_s
-        end
-      end
-      puts ui.list(object_list, :uneven_columns_across, columns)
-      list_object_fields(connection_result) if locate_config_value(:fieldlist)
+      params = { 'command' => "listFirewallRules" }
+      params['filter']  = locate_config_value(:filter)  if locate_config_value(:filter)
+      params['listall'] = locate_config_value(:listall) if locate_config_value(:listall)
+      params['keyword'] = locate_config_value(:keyword) if locate_config_value(:keyword)
+      
+      result = connection.list_object(params, "firewallrule")
+      list_object(columns, result)
     end
 
   end
