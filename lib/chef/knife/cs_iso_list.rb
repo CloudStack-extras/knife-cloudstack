@@ -39,6 +39,11 @@ module KnifeCloudstack
            :long => "--keyword KEY",
            :description => "List by keyword"
 
+    option :isofilter,
+           :long => "--isofilter FILTER",
+           :description => "Default: 'featured'. Options: 'self','selfexecutable','sharedexecutable','executable','community'",
+           :default => "featured"
+
     def run
       validate_base_options
 
@@ -56,7 +61,13 @@ module KnifeCloudstack
       params['keyword'] = locate_config_value(:keyword) if locate_config_value(:keyword)
       params['listall'] = locate_config_value(:listall) if locate_config_value(:listall)
       params['name']    = locate_config_value(:name)    if locate_config_value(:name)
-      
+
+      if ['all','featured','self','selfexecutable','sharedexecutable','executable','community'].include?(locate_config_value(:templatefilter))
+        params['isofilter'] = locate_config_value(:isofilter)
+      else
+        params['isofilter'] = 'featured'
+      end
+ 
       result = connection.list_object(params, "iso")
       result.each do |r|
         r['size'] = human_file_size(r['size']) if r['size']

@@ -40,7 +40,7 @@ module KnifeCloudstack
 
     option :templatefilter,
            :long => "--templatefilter FILTER",
-           :description => "Default: 'featured'. Options: 'self','self-executable','executable','community'",
+           :description => "Default: 'featured'. Options: 'self','selfexecutable','sharedexecutable','executable','community'",
            :default => "featured"
 
     def run
@@ -60,7 +60,7 @@ module KnifeCloudstack
       params['keyword'] = locate_config_value(:keyword) if locate_config_value(:keyword)
       params['name']    = locate_config_value(:name)    if locate_config_value(:name)
 
-      if ['featured','self','self-executable','executable','community'].include?(locate_config_value(:templatefilter)) 
+      if ['all','featured','self','selfexecutable','sharedexecutable','executable','community'].include?(locate_config_value(:templatefilter)) 
         params['templatefilter'] = locate_config_value(:templatefilter)
       else
         params['templatefilter'] = 'featured'
