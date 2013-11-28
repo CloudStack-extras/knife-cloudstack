@@ -16,19 +16,13 @@
 # limitations under the License.
 #
 
-require 'chef/knife/cs_base'
+require 'chef/knife'
 require 'chef/knife/cs_baselist'
 
 module KnifeCloudstack
   class CsIsoList < Chef::Knife
 
-    include Chef::Knife::KnifeCloudstackBase
     include Chef::Knife::KnifeCloudstackBaseList
-
-    deps do
-      require 'knife-cloudstack/connection'
-      Chef::Knife.load_deps
-    end
 
     banner "knife cs iso list (options)"
 
@@ -48,46 +42,27 @@ module KnifeCloudstack
     def run
       validate_base_options
 
-      object_list = []
-      if locate_config_value(:fields)
-        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
-      else
-        object_list << ui.color('Name', :bold)
-        object_list << ui.color('Account', :bold) unless locate_config_value(:cloudstack_project)
-        object_list << ui.color('Domain', :bold)
-        object_list << ui.color('Public', :bold)
-        object_list << ui.color('Size', :bold)
-        object_list << ui.color('OS', :bold)
+      columns = [
+        'Name    :name',
+        'Account :account',
+        'Domain  :domain',
+        'Public  :ispublic',
+        'Size    :size',
+        'OS      :ostypename'
+      ]
+
+      params = { 'command' => "listIsos" }
+      params['filter']  = locate_config_value(:filter)  if locate_config_value(:filter)
+      params['keyword'] = locate_config_value(:keyword) if locate_config_value(:keyword)
+      params['listall'] = locate_config_value(:listall) if locate_config_value(:listall)
+      params['name']    = locate_config_value(:name)    if locate_config_value(:name)
+      
+      result = connection.list_object(params, "iso")
+      result.each do |r|
+        r['size'] = human_file_size(r['size']) if r['size']
       end
 
-      columns = object_list.count
-      object_list = [] if locate_config_value(:noheader)
-
-      connection_result = connection.list_object(
-        "listIsos",
-        "iso",
-        locate_config_value(:filter),
-        locate_config_value(:listall),
-        locate_config_value(:keyword),
-        locate_config_value(:name)
-      )
-
-      output_format(connection_result)
-
-      connection_result.each do |r|
-       if locate_config_value(:fields)
-          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
-        else
-          object_list << r['name'].to_s
-          object_list << (r['account'] ? r['account'].to_s : 'N/A') unless locate_config_value(:cloudstack_project)
-          object_list << r['domain'].to_s
-          object_list << r['ispublic'].to_s
-          object_list << (r['size'] ? human_file_size(r['size']) : 'Unknown')
-          object_list << (r['ostypename'] ? r['ostypename'].to_s : 'N/A')
-        end
-      end
-      puts ui.list(object_list, :uneven_columns_across, columns)
-      connection.show_object_fields(connection_result) if locate_config_value(:fieldlist)
+      list_object(columns, result)
     end
 
     def human_file_size n

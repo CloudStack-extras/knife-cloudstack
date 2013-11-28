@@ -17,7 +17,7 @@
 #
 
 require 'json'
-require 'chef/knife'
+require 'chef/knife/cs_base'
 
 class Chef
   class Knife
@@ -25,6 +25,7 @@ class Chef
 
       def self.included(includer)
         includer.class_eval do
+          include Chef::Knife::KnifeCloudstackBase
 
           option :filter,
                  :long => "--filter 'FIELD:NAME'",
@@ -47,10 +48,10 @@ class Chef
       end
 
       def output_format(json)
-        if locate_config_value(:format) =~ /json/i
-            json_hash = {}; 
-	    json.each { |k| json_hash.merge!( k['id'] => k) }
-            puts JSON.pretty_generate(json_hash) 
+        if locate_config_value(:format) =~ /^j/i
+          json_hash = {}; 
+          json.each { |k| json_hash.merge!( k['id'] => k) }
+          puts JSON.pretty_generate(json_hash) 
           exit 0
         end
       end
@@ -66,7 +67,9 @@ class Chef
         object.first.sort.each do |k,v|
           object_fields << ui.color(k, :yellow, :bold)
           object_fields << v.class.to_s
-          if v.kind_of?(Array)
+          if v.kind_of?(Hash)
+            object_fields << '<Hash>'
+          elsif v.kind_of?(Array)
             object_fields << '<Array>'
           else
             object_fields << ("#{v}").strip.to_s
@@ -75,7 +78,34 @@ class Chef
         puts "\n"
         puts ui.list(object_fields, :uneven_columns_across, 3)
       end
-    
+
+      def list_object(columns, object)
+
+        output_format(object)
+        object_list = []
+        if locate_config_value(:fields)
+          locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
+        else 
+          columns.each do |column|
+            n = (column.split(':').first).strip 
+            object_list << (ui.color("#{n}", :bold) || 'N/A')
+          end
+        end
+
+        n_columns = object_list.count
+        object_list = [] if locate_config_value(:noheader)
+   
+        object.each do |r|
+          if locate_config_value(:fields)
+            locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
+          else
+            columns.each { |column| object_list << (r["#{column.split(':').last.strip}"].to_s || 'N/A') }
+          end
+        end
+        puts ui.list(object_list, :uneven_columns_across, n_columns)
+        list_object_fields(object) if locate_config_value(:fieldlist)
+      end
+
     end
   end
 end

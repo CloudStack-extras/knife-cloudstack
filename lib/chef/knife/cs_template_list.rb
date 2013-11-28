@@ -18,20 +18,13 @@
 # limitations under the License.
 #
 
-require 'chef/knife/cs_base'
+require 'chef/knife'
 require 'chef/knife/cs_baselist'
 
 module KnifeCloudstack
   class CsTemplateList < Chef::Knife
 
-    include Chef::Knife::KnifeCloudstackBase
     include Chef::Knife::KnifeCloudstackBaseList
-
-    deps do
-      require 'knife-cloudstack/connection'
-      require 'chef/knife'
-      Chef::Knife.load_deps
-    end
 
     banner "knife cs template list (options)"
 
@@ -53,55 +46,33 @@ module KnifeCloudstack
     def run
       validate_base_options
 
-      object_list = []
-      object_list << ui.color('Index', :bold) if locate_config_value(:index)
+      columns = [
+        'Name    :name',
+        'Size    :size',
+        'Zone    :zonename',
+        'Public  :ispublic',
+        'Created :created'
+      ]
 
-      if locate_config_value(:fields)
-        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
+      params = { 'command' => "listTemplates" }
+      params['filter']  = locate_config_value(:filter)  if locate_config_value(:filter)
+      params['listall'] = locate_config_value(:listall) if locate_config_value(:listall)
+      params['keyword'] = locate_config_value(:keyword) if locate_config_value(:keyword)
+      params['name']    = locate_config_value(:name)    if locate_config_value(:name)
+
+      if ['featured','self','self-executable','executable','community'].include?(locate_config_value(:templatefilter)) 
+        params['templatefilter'] = locate_config_value(:templatefilter)
       else
-       [ 
-          ui.color('Name', :bold),
-          ui.color('Size', :bold),
-          ui.color('Zone', :bold),
-          ui.color('Public', :bold),
-          ui.color('Created', :bold)
-        ].each { |field| object_list << field }
+        params['templatefilter'] = 'featured'
+      end 
+
+      result = connection.list_object(params, "template")
+
+      result.each do |r|
+        r['size'] = human_file_size(r['size']) if r['size']
       end
 
-      columns = object_list.count
-      object_list = [] if locate_config_value(:noheader)
-
-      connection_result = connection.list_object(
-        "listTemplates",
-        "template",
-        locate_config_value(:filter),
-        locate_config_value(:listall),
-        nil,
-        nil,
-        params = { 'templatefilter' => locate_config_value(:templatefilter) }
-      )
-
-      output_format(connection_result)
-
-      index_num = 0
-      connection_result.each do |r|
-        if locate_config_value(:index)
-          index_num += 1 
-          object_list << index_num.to_s
-        end
-
-        if locate_config_value(:fields)
-          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
-        else
-          object_list << r['name'].to_s
-          object_list << (r['size'] ? human_file_size(r['size']) : 'Unknown')
-          object_list << r['zonename'].to_s
-          object_list << r['ispublic'].to_s
-          object_list << r['created']
-        end
-      end
-      puts ui.list(object_list, :uneven_columns_across, columns)
-      list_object_fields(connection_result) if locate_config_value(:fieldlist)
+      list_object(columns, result)
     end
 
     def human_file_size n

@@ -16,19 +16,13 @@
 # limitations under the License.
 #
 
-require 'chef/knife/cs_base'
+require 'chef/knife'
 require 'chef/knife/cs_baselist'
 
 module KnifeCloudstack
   class CsHostList < Chef::Knife
 
-    include Chef::Knife::KnifeCloudstackBase
     include Chef::Knife::KnifeCloudstackBaseList
-
-    deps do
-      require 'knife-cloudstack/connection'
-      Chef::Knife.load_deps
-    end
 
     banner "knife cs host list (options)"
 
@@ -43,52 +37,24 @@ module KnifeCloudstack
     def run
       validate_base_options
 
-      if locate_config_value(:fields)
-        object_list = []
-        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
-      else
-        object_list = [
-          ui.color('Name', :bold),
-          ui.color('Address', :bold),
-          ui.color('State', :bold),
-          ui.color('Type', :bold),
-          ui.color('Cluster', :bold),
-          ui.color('Pod', :bold),
-          ui.color('Zone', :bold),
-          ui.color('Resource', :bold)
-        ]
-      end
+      columns = [
+        'Name     :name',
+        'Address  :ipaddress',
+        'State    :state',
+        'Type     :type',
+        'Cluster  :clustername',
+        'Pod      :podname',
+        'Zone     :zonename',
+        'Resource :resourcestate'
+      ]
 
-      columns = object_list.count
-      object_list = [] if locate_config_value(:noheader)
-
-      connection_result = connection.list_object(
-        "listHosts",
-        "host",
-        locate_config_value(:filter),
-        false,
-        locate_config_value(:keyword),
-        locate_config_value(:name)
-      )
-
-      output_format(connection_result)
-
-      connection_result.each do |r|
-        if locate_config_value(:fields)
-          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
-        else
-          object_list << r['name'].to_s
-          object_list << r['ipaddress'].to_s
-          object_list << r['state'].to_s
-          object_list << r['type'].to_s
-          object_list << r['clustername'].to_s
-          object_list << r['podname'].to_s
-          object_list << r['zonename'].to_s
-          object_list << r['resourcestate'].to_s
-        end
-      end
-      puts ui.list(object_list, :uneven_columns_across, columns)
-      list_object_fields(connection_result) if locate_config_value(:fieldlist)
+      params = { 'command' => "listHosts" }
+      params['filter']  = locate_config_value(:filter)  if locate_config_value(:filter)
+      params['keyword'] = locate_config_value(:keyword) if locate_config_value(:keyword)
+      params['name']    = locate_config_value(:name)    if locate_config_value(:name)
+      
+      result = connection.list_object(params, "host")
+      list_object(columns, result)
     end
 
   end

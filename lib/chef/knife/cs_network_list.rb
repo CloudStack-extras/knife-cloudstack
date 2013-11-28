@@ -17,20 +17,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-require 'chef/knife/cs_base'
+
+require 'chef/knife'
 require 'chef/knife/cs_baselist'
 
 module KnifeCloudstack
   class CsNetworkList < Chef::Knife
 
-    include Chef::Knife::KnifeCloudstackBase
     include Chef::Knife::KnifeCloudstackBaseList
-
-    deps do
-      require 'knife-cloudstack/connection'
-      require 'chef/knife'
-      Chef::Knife.load_deps
-    end
 
     banner "knife cs network list (options)"
 
@@ -46,49 +40,24 @@ module KnifeCloudstack
     def run
       validate_base_options
 
-      object_list = []
-      if locate_config_value(:fields)
-        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
-      else
-        object_list << ui.color('Name', :bold)
-        object_list << ui.color('Type', :bold)
-        object_list << ui.color('Default', :bold)
-        object_list << ui.color('Shared', :bold)
-        object_list << ui.color('Gateway', :bold)
-        object_list << ui.color('Netmask', :bold)
-        object_list << ui.color('Account', :bold) unless locate_config_value(:cloudstack_project)
-        object_list << ui.color('Domain', :bold)
-      end
+      columns = [
+        'Name    :name',
+        'Type    :type',
+        'Default :default',
+        'Shared  :shared',
+        'Gateway :gateway',
+        'Netmask :netmask',
+        'Account :account',
+        'Domain  :domain'
+      ]
 
-      columns = object_list.count
-      object_list = [] if locate_config_value(:noheader)
-
-      connection_result = connection.list_object(
-        "listNetworks",
-        "network",
-        locate_config_value(:filter),
-        locate_config_value(:listall),
-        locate_config_value(:keyword)
-      )
-
-      output_format(connection_result)
-
-      connection_result.each do |r|
-        if locate_config_value(:fields)
-          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
-        else
-          object_list << r['name'].to_s
-          object_list << r['type'].to_s
-          object_list << (r['isdefault'] ? r['isdefault'].to_s : 'false')
-          object_list << (r['isshared'] ? r['isshared'].to_s : 'false')
-          object_list << (r['gateway'] || '')
-          object_list << (r['netmask'] || '')
-          object_list << (r['account'] || '') unless locate_config_value(:cloudstack_project)
-          object_list << (r['domain'] || '')
-        end
-      end
-      puts ui.list(object_list, :uneven_columns_across, columns)
-      list_object_fields(connection_result) if locate_config_value(:fieldlist)
+      params = { 'command' => "listNetworks" }
+      params['filter']  = locate_config_value(:filter)  if locate_config_value(:filter)
+      params['listall'] = locate_config_value(:listall) if locate_config_value(:listall)
+      params['keyword'] = locate_config_value(:keyword) if locate_config_value(:keyword)
+      
+      result = connection.list_object(params, "network")
+      list_object(columns, result)
     end
   end
 end

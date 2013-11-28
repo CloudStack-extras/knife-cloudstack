@@ -147,17 +147,12 @@ module CloudstackClient
     ##
     # List all the objects based on the command that is specified.
 
-    def list_object(command, json_result, filter=nil, listall=nil, keyword=nil, name=nil, params={})
-      params['command'] = command
-      params['listall'] = true if listall || name || keyword unless listall == false
-      params['keyword'] = keyword if keyword
-      params['name'] = name if name
-
+    def list_object(params, json_result)
       json = send_request(params)
       Chef::Log.debug("JSON (list_object) result: #{json}")
 
       result = json["#{json_result}"] || []
-      result = data_filter(result, filter) if filter
+      result = data_filter(result, params['filter']) if params['filter']
       result
     end
 

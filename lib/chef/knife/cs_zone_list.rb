@@ -18,20 +18,13 @@
 # limitations under the License.
 #
 
-require 'chef/knife/cs_base'
+require 'chef/knife'
 require 'chef/knife/cs_baselist'
 
 module KnifeCloudstack
   class CsZoneList < Chef::Knife
 
-    include Chef::Knife::KnifeCloudstackBase
     include Chef::Knife::KnifeCloudstackBaseList
-
-    deps do
-      require 'knife-cloudstack/connection'
-      require 'chef/knife'
-      Chef::Knife.load_deps
-    end
 
     banner "knife cs zone list (options)"
 
@@ -39,58 +32,21 @@ module KnifeCloudstack
            :long => "--keyword KEY",
            :description => "List by keyword"
 
-    option :index,
-           :long => "--index",
-           :description => "Add index numbers to the output",
-           :boolean => true
-
     def run
       validate_base_options
 
-      object_list = []
-      object_list << ui.color('Index', :bold) if locate_config_value(:index)
+      columns = [
+        'Name            :name',
+        'Network Type    :networktype',
+        'Security Groups :securitygroupsenabled'
+      ]
 
-      if locate_config_value(:fields)
-        object_list = []
-        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
-      else
-        [
- 	  ui.color('Name', :bold),
-          ui.color('Network Type', :bold),
-          ui.color('Security Groups', :bold)
-        ].each { |field| object_list << field }
-      end
-
-      columns = object_list.count
-      object_list = [] if locate_config_value(:noheader)
-
-      connection_result = connection.list_object(
-        "listZones",
-        "zone", 
-        locate_config_value(:filter),
-	false,
-        locate_config_value(:keyword)
-      )
-
-      output_format(connection_result)
-
-      index_num = 0
-      connection_result.each do |r|
-        if locate_config_value(:index)
-          index_num += 1
-          object_list << index_num.to_s
-        end
-
-        if locate_config_value(:fields)
-          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
-        else
-          object_list << r['name'].to_s
-          object_list << r['networktype'].to_s
-          object_list << r['securitygroupsenabled'].to_s
-        end
-      end
-      puts ui.list(object_list, :uneven_columns_across, columns)
-      list_object_fields(connection_result) if locate_config_value(:fieldlist)
+      params = { 'command' => "listZones" }
+      params['filter']  = locate_config_value(:filter)  if locate_config_value(:filter)
+      params['keyword'] = locate_config_value(:keyword) if locate_config_value(:keyword)
+      
+      result = connection.list_object(params, "zone")
+      list_object(columns, result)
     end
 
   end

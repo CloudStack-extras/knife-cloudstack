@@ -16,19 +16,13 @@
 # limitations under the License.
 #
 
-require 'chef/knife/cs_base'
+require 'chef/knife'
 require 'chef/knife/cs_baselist'
 
 module KnifeCloudstack
   class CsConfigList < Chef::Knife
 
-    include Chef::Knife::KnifeCloudstackBase
     include Chef::Knife::KnifeCloudstackBaseList
-
-    deps do
-      require 'knife-cloudstack/connection'
-      Chef::Knife.load_deps
-    end
 
     banner "knife cs config list (options)"
 
@@ -43,42 +37,19 @@ module KnifeCloudstack
     def run
       validate_base_options
 
-      if locate_config_value(:fields)
-        object_list = []
-        locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
-      else
-        object_list = [
-          ui.color('Category', :bold),
-          ui.color('Name', :bold),
-          ui.color('Value', :bold)
-        ]
-      end
+      columns = [
+        'Category :category',
+        'Name     :name',
+        'Value    :value'
+      ]
 
-      columns = object_list.count
-      object_list = [] if locate_config_value(:noheader)
-
-      connection_result = connection.list_object(
-        "listConfigurations",
-        "configuration",
-        locate_config_value(:filter),
-        false,
-        locate_config_value(:keyword),
-        locate_config_value(:name)
-      )
-
-      output_format(connection_result)
-
-      connection_result.each do |r|
-       if locate_config_value(:fields)
-          locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
-        else
-          object_list << r['category'].to_s
-          object_list << r['name'].to_s
-          object_list << r['value'].to_s
-        end
-      end
-      puts ui.list(object_list, :uneven_columns_across, columns)
-      list_object_fields(connection_result) if locate_config_value(:fieldlist)
+      params = { 'command' => "listConfigurations" }
+      params['filter']  = locate_config_value(:filter)  if locate_config_value(:filter)
+      params['keyword'] = locate_config_value(:keyword) if locate_config_value(:keyword)
+      params['name']    = locate_config_value(:name)    if locate_config_value(:name)
+      
+      result = connection.list_object(params, "configuration")
+      list_object(columns, result)
     end
 
   end
