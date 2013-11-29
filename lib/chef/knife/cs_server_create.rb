@@ -403,7 +403,7 @@ module KnifeCloudstack
 
     def create_port_forwarding_rules(ip_address, server_id, connection)
       Chef::Log.debug("Creating IP Forwarding Rule")
-      rules = locate_config_value(:port_rules)
+      rules = locate_config_value(:port_rules) || []
       if config[:bootstrap]
         if @bootstrap_protocol == 'ssh'
           rules += ["#{locate_config_value(:ssh_port)}"] #SSH Port
@@ -414,7 +414,7 @@ module KnifeCloudstack
           exit 1
         end
       end
-      return unless rules
+      return if rules.empty?
       rules.each do |rule|
         args = rule.split(':')
         public_port = args[0]
