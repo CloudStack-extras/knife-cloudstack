@@ -1,6 +1,8 @@
 = Changes
 
 == 2013-12-01 (0.0.16)
+* Bugfix: Keypair support on stack create (Ben Langfeld, 29 Nov 2013)
+* Bugfix: Bootstrap even without port_rules options (Ben Langfeld, 29 Nov 2013)
 * Bugfix: Option to specify iso as template when deploying instance <tt>cs server create</tt> (Sander Botman, 28 Nov 2013)
 * Restructure all list commands (Sander Botman, 28 Nov 2013)
 * Added subcommand: <tt>cs aag list</tt> (John E. Vincent, 23 Nov 2013)
