@@ -102,7 +102,7 @@ module KnifeCloudstack
       cmd.config[:ssh_password] = config[:ssh_password]
       cmd.config[:ssh_port] = config[:ssh_port] || "22" # Chef::Config[:knife][:ssh_port]
       cmd.config[:identity_file] = config[:identity_file]
-      cmd.config[:keypair] = config[:keypair]
+      cmd.config[:keypair] = server[:keypair]
       cmd.config[:cloudstack_template] = server[:template] if server[:template]
       cmd.config[:cloudstack_service] = server[:service] if server[:service]
       cmd.config[:cloudstack_zone] = server[:zone] if server[:zone]
