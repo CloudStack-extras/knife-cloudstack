@@ -1,5 +1,7 @@
 = knife-cloudstack
 
+{<img src="https://gemnasium.com/dpnl87/knife-cloudstack.png" alt="Dependency Status" />}[https://gemnasium.com/dpnl87/knife-cloudstack]
+
 == DESCRIPTION:
 
 This is the Edmunds Knife plugin for CloudStack. This plugin gives Knife the ability to create, bootstrap and manage
