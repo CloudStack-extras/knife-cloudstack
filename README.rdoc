@@ -1,6 +1,6 @@
 = knife-cloudstack
 
-{<img src="https://gemnasium.com/dpnl87/knife-cloudstack.png" alt="Dependency Status" />}[https://gemnasium.com/dpnl87/knife-cloudstack]
+{<img src="https://gemnasium.com/CloudStack-extras/knife-cloudstack.png" alt="Dependency Status" />}[https://gemnasium.com/CloudStack-extras/knife-cloudstack]
 
 == DESCRIPTION:
 
