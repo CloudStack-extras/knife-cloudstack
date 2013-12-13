@@ -612,6 +612,32 @@ module CloudstackClient
       nil
     end
 
+    def add_nic_to_vm(network_id, server_id, ipaddr=nil)
+      params = {
+        'command' => 'addNicToVirtualMachine',
+        'networkid' => network_id,
+        'virtualmachineid' => server_id,
+      }
+
+      unless ipaddr.nil?
+        params['ipaddress'] = ipaddr
+      end
+
+      json = send_async_request(params)
+      json['virtualmachine']
+    end
+
+    def remove_nic_from_vm(nic_id, server_id)
+      params = {
+        'command' => 'removeNicFromVirtualMachine',
+        'nicid' => nic_id,
+        'virtualmachineid' => server_id,
+      }
+
+      json = send_async_request(params)
+      json['virtualmachine']
+    end
+
     ##
     # Finds the default zone for your account.
 
