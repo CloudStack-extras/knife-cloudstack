@@ -1,5 +1,6 @@
 = knife-cloudstack
 
+{<img src="https://codeclimate.com/github/CloudStack-extras/knife-cloudstack.png" />}[https://codeclimate.com/github/CloudStack-extras/knife-cloudstack]
 {<img src="https://gemnasium.com/CloudStack-extras/knife-cloudstack.png" alt="Dependency Status" />}[https://gemnasium.com/CloudStack-extras/knife-cloudstack]
 
 == DESCRIPTION:
