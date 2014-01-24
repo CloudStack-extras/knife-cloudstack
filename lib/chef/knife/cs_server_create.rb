@@ -103,6 +103,10 @@ module KnifeCloudstack
            :boolean => true,
            :default => true
 
+    option :ik_private_ip,
+           :long => "--private-ip PRIVATE_IPV4_ADDRESS",
+           :description => "Pass a certain private ipv4 address to cloudstack when deploying (only supported on isolated networks)"
+
     option :chef_node_name,
            :short => "-N NAME",
            :long => "--node-name NAME",
@@ -257,6 +261,7 @@ module KnifeCloudstack
 
       params['keypair'] = locate_config_value :keypair  if locate_config_value :keypair
       params['displayname'] = if locate_config_value :set_display_name and locate_config_value :chef_node_name then locate_config_value :chef_node_name else hostname end
+      params['ipaddress'] = locate_config_value(:ik_private_ip) if locate_config_value(:ik_private_ip) 
 
       server = connection.create_server(
           hostname,
