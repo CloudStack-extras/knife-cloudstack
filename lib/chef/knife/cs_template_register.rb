@@ -67,9 +67,9 @@ module KnifeCloudstack
 	   :description => "32 or 64 bits support, defaults to 64",
 	   :default => 64
 
-    option :extractable,
-           :long => "--[no-]extractable",
-	   :description => "Is the template extracable. Default: NO",
+    option :isextractable,
+           :long => "--[no-]isextractable",
+	   :description => "Is the template extractable. Default: NO",
 	   :boolean => true,
 	   :default => false
 
@@ -159,7 +159,7 @@ module KnifeCloudstack
         'zoneid' => zoneid,
         'bits' => locate_config_value(:bits),
       }
-      params['extracable'] = locate_config_value(:extractable) if locate_config_value(:extractable)
+      params['isextracable'] = locate_config_value(:isextractable) if locate_config_value(:isextractable)
       params['ispublic'] = locate_config_value(:public) if locate_config_value(:public)
       params['isfeatured'] = locate_config_value(:featured) if locate_config_value(:featured)
       params['passwordenabled'] = locate_config_value(:passwordenabled) if locate_config_value(:passwordenabled)
