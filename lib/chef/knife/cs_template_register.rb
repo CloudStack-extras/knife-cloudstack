@@ -159,7 +159,7 @@ module KnifeCloudstack
         'zoneid' => zoneid,
         'bits' => locate_config_value(:bits),
       }
-      params['isextracable'] = locate_config_value(:isextractable) if locate_config_value(:isextractable)
+      params['isextractable'] = locate_config_value(:isextractable) if locate_config_value(:isextractable)
       params['ispublic'] = locate_config_value(:public) if locate_config_value(:public)
       params['isfeatured'] = locate_config_value(:featured) if locate_config_value(:featured)
       params['passwordenabled'] = locate_config_value(:passwordenabled) if locate_config_value(:passwordenabled)
