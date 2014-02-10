@@ -128,6 +128,14 @@ module KnifeCloudstack
            :long => "--identity-file IDENTITY_FILE",
            :description => "The SSH identity file used for authentication"
 
+    option :secret_file,
+           :long => "--secret-file SECRET_FILE",
+           :description => "The path to the file that contains the encryption key."
+
+    option :secret,
+           :long => "--secret SECRET",
+           :description => "The encryption key that is used for values contained within a data bag item."
+
     option :prerelease,
            :long => "--prerelease",
            :description => "Install the pre-release chef gems"
@@ -600,6 +608,8 @@ module KnifeCloudstack
       locate_config_value(:cloudstack_password) ? bootstrap.config[:ssh_password] = server['password'] : bootstrap.config[:ssh_password] = locate_config_value(:ssh_password)
       bootstrap.config[:ssh_port] = locate_config_value(:ssh_port) || 22
       bootstrap.config[:identity_file] = locate_config_value(:identity_file)
+      bootstrap.config[:secret_file] = locate_config_value(:secret_file)
+      bootstrap.config[:secret] = locate_config_value(:secret)
       bootstrap.config[:chef_node_name] = locate_config_value(:chef_node_name) || server["name"]
       bootstrap.config[:use_sudo] = true unless locate_config_value(:ssh_user) == 'root'
 
