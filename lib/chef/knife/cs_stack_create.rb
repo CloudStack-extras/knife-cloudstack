@@ -107,6 +107,7 @@ module KnifeCloudstack
       cmd.config[:cloudstack_service] = server[:service] if server[:service]
       cmd.config[:cloudstack_zone] = server[:zone] if server[:zone]
       server.has_key?(:public_ip) ? cmd.config[:public_ip] = server[:public_ip] : cmd.config[:no_public_ip] = true
+      cmd.config[:ik_private_ip] = server[:private_ip] if server[:private_ip]
       cmd.config[:bootstrap] = server[:bootstrap] if server.has_key?(:bootstrap) 
       cmd.config[:bootstrap_protocol] = server[:bootstrap_protocol] || "ssh"  
       cmd.config[:distro] = server[:distro] || "chef-full"  

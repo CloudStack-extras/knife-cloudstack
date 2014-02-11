@@ -75,6 +75,12 @@ VM provided with <tt>--no-bootstrap</tt> option have no forwarded ports or forwa
 
 By default, new servers are allocated a public IP address mapping to the CloudStack private IP address. If you do not want this behavior, pass the <tt>--no-public-ip</tt> option.
 
+Forcing cloustack to reserve and use a certain private ipv4 address when deploying an instance inside an advanced zone is possible by passing <option>--private-ip</option> followed by the intended ipv4 address. Ip Address must be contained within the network mask of the isolated network, of course.
+
+ Example: knife cs server create testvm --private-ip 192.168.1.1 --networks mynetwork
+
+Here mynetwork must have a network mask for example like 192.168.1.0/24.
+
 ==== Port forwarding rules for virtual networks
 The <tt>--port-rules</tt> option takes a comma separated list of port forwarding rules. These rules are created on the
 virtual public ip address of the server. Note that this option only applies to servers using a virtual network; it is
