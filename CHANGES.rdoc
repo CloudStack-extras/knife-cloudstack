@@ -1,12 +1,16 @@
 = Changes
 
-== 2013-12-01 (0.0.16)
+== 2014-02-12 (0.0.16)
+* Added support for secret and secret_file in <tt>cs server create</tt> (Jeremy Baumont, 10 Feb 2014)
+* Bugfix: correction in isextractable on <tt>cs template register</tt> (Etharin, 30 Jan 2014
+* Added support for private-ip in <tt>cs server create</tt> (Joaquim Dos Santos, 26 Jan 2014)
 * Bugfix: Keypair support on stack create (Ben Langfeld, 29 Nov 2013)
 * Bugfix: Bootstrap even without port_rules options (Ben Langfeld, 29 Nov 2013)
 * Bugfix: Option to specify iso as template when deploying instance <tt>cs server create</tt> (Sander Botman, 28 Nov 2013)
 * Restructure all list commands (Sander Botman, 28 Nov 2013)
 * Added subcommand: <tt>cs aag list</tt> (John E. Vincent, 23 Nov 2013)
 * Added support for anti-affinity groups in <tt>cs server create</tt> (John E. Vincent, 23 Nov 2013)
+* Added subcommand: <tt>cs server add nic</tt> (John E. Vincent, 13 Nov 2014)
 * Added Trademark (David Nalley, 08 Nov 2013)
 * Bugfix: fixing server creation inside basic networks (Sander Botman, 07 Nov 2013)
 
