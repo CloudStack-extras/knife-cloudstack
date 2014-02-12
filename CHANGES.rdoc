@@ -1,6 +1,7 @@
 = Changes
 
 == 2014-02-12 (0.0.16)
+* Added support for --no-public-ip for <tt>cs server list</tt> (Sander Botman, 12 Feb 2014)
 * Added support for secret and secret_file in <tt>cs server create</tt> (Jeremy Baumont, 10 Feb 2014)
 * Bugfix: correction in isextractable on <tt>cs template register</tt> (Etharin, 30 Jan 2014
 * Added support for private-ip in <tt>cs server create</tt> (Joaquim Dos Santos, 26 Jan 2014)
