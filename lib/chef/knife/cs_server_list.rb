@@ -77,14 +77,12 @@ module KnifeCloudstack
       rules       = connection.list_port_forwarding_rules(nil, true)
       public_list = connection.list_public_ip_addresses(true)
       result      = connection.list_object(params, "virtualmachine")
-      if locate_config_value(:public_ip)
-        result.each do |n| 
-          public_ip  = connection.get_server_public_ip(n, rules, public_list)
-          private_ip = n['nic'].select { |k| k['isdefault'] }       
-          public_ip ? n['ipaddress'] = public_ip : n['ipaddress'] = private_ip['ipaddress'] || "N/A" 
-        end
+      result.each do |n| 
+        public_ip  = connection.get_server_public_ip(n, rules, public_list) if locate_config_value(:public_ip)
+        private_ip = n['nic'].select { |k| k['isdefault'] }       
+        public_ip ? n['ipaddress'] = public_ip : n['ipaddress'] = private_ip['ipaddress'] || "N/A" 
       end
-      
+
       list_object(columns, result)
       
       ## 
