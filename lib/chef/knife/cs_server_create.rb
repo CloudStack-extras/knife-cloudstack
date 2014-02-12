@@ -347,7 +347,7 @@ module KnifeCloudstack
         template = connection.get_template(template_name, locate_config_value(:cloudstack_zone))
         template = connection.get_iso(template_name, locate_config_value(:cloudstack_zone)) unless template
         if !template
-          ui.error("Template: #{template_name} does not exist, sander")
+          ui.error("Template: #{template_name} does not exist!")
           exit 1
         end
         return template['ostypename'].scan('Windows').length > 0
