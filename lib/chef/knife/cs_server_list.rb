@@ -45,6 +45,12 @@ module KnifeCloudstack
            :short => "-a ACTION",
            :long => "--action ACTION",
            :description => "start, stop or destroy the instances in your result"
+           
+    option :public_ip,
+           :long => "--[no-]public-ip",
+           :description => "Show or don't show the public IP for server in your result",
+           :boolean => true,
+           :default => true
 
     def run
       validate_base_options
@@ -66,17 +72,19 @@ module KnifeCloudstack
       params['name']    = locate_config_value(:name)    if locate_config_value(:name)
       
       ##
-      # Get the public IP address if possible.
+      # Get the public IP address if possible, except when the option --no-public-ip is given.
 
       rules       = connection.list_port_forwarding_rules(nil, true)
       public_list = connection.list_public_ip_addresses(true)
       result      = connection.list_object(params, "virtualmachine")
-      result.each do |n| 
-        public_ip  = connection.get_server_public_ip(n, rules, public_list)
-        private_ip = n['nic'].select { |k| k['isdefault'] }       
-        public_ip ? n['ipaddress'] = public_ip : n['ipaddress'] = private_ip['ipaddress'] || "N/A" 
+      if locate_config_value(:public_ip)
+        result.each do |n| 
+          public_ip  = connection.get_server_public_ip(n, rules, public_list)
+          private_ip = n['nic'].select { |k| k['isdefault'] }       
+          public_ip ? n['ipaddress'] = public_ip : n['ipaddress'] = private_ip['ipaddress'] || "N/A" 
+        end
       end
-         
+      
       list_object(columns, result)
       
       ## 
