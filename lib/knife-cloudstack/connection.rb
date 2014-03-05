@@ -81,17 +81,14 @@ module CloudstackClient
           'command' => 'listVirtualMachines',
           'name' => name
       }
-      # if @project_id
-      #   params['projectId'] = @project_id
-      # end
       json = send_request(params)
       machines = json['virtualmachine']
 
       if !machines || machines.empty? then
         return nil
       end
-
-      machines.first
+      machine = machines.select { |item| name == item['name'] }
+      machine.first
     end
 
     ##
@@ -174,14 +171,14 @@ module CloudstackClient
 
       if host_name then
         if get_server(host_name) then
-          puts "Error: Server '#{host_name}' already exists."
+          puts "\nError: Server '#{host_name}' already exists."
           exit 1
         end
       end
 
       service = get_service_offering(service_name)
       if !service then
-        puts "Error: Service offering '#{service_name}' is invalid"
+        puts "\nError: Service offering '#{service_name}' is invalid"
         exit 1
       end
 
@@ -189,14 +186,14 @@ module CloudstackClient
       template = get_iso(template_name, zone_name) unless template
 
       if !template then
-        puts "Error: Template / ISO name: '#{template_name}' is invalid"
+        puts "\nError: Template / ISO name: '#{template_name}' is invalid"
         exit 1
       end
 
       if disk_name then
         disk = get_disk_offering(disk_name)
         if !disk then
-          puts "Error: Disk offering '#{disk_name}' is invalid"
+          puts "\nError: Disk offering '#{disk_name}' is invalid"
           exit 1
         end
       end
@@ -204,7 +201,7 @@ module CloudstackClient
       zone = zone_name ? get_zone(zone_name) : get_default_zone
       if !zone then
         msg = zone_name ? "Zone '#{zone_name}' is invalid" : "No default zone found"
-        puts "Error: #{msg}"
+        puts "\nError: #{msg}"
         exit 1
       end
 
@@ -218,7 +215,7 @@ module CloudstackClient
           network_names.each do |name|
             network = get_network(name)
             if !network then
-              puts "Error: Network '#{name}' not found"
+              puts "\nError: Network '#{name}' not found"
             end
             networks << get_network(name)
           end
@@ -228,7 +225,7 @@ module CloudstackClient
           networks << get_default_network(zone['id'])
         end
         if networks.empty? then
-          puts "No default network found"
+          puts "\nError: No default network found"
           exit 1
         end
         network_ids = networks.map { |network|
@@ -270,7 +267,7 @@ module CloudstackClient
     def delete_server(name)
       server = get_server(name)
       if !server || !server['id'] then
-        puts "Error: Virtual machine '#{name}' does not exist"
+        puts "\nError: Virtual machine '#{name}' does not exist"
         exit 1
       end
 
@@ -290,7 +287,7 @@ module CloudstackClient
     def stop_server(name, forced=nil)
       server = get_server(name)
       if !server || !server['id'] then
-        puts "Error: Virtual machine '#{name}' does not exist"
+        puts "\nError: Virtual machine '#{name}' does not exist"
         exit 1
       end
 
@@ -311,7 +308,7 @@ module CloudstackClient
     def start_server(name)
       server = get_server(name)
       if !server || !server['id'] then
-        puts "Error: Virtual machine '#{name}' does not exist"
+        puts "\nError: Virtual machine '#{name}' does not exist"
         exit 1
       end
 
@@ -331,7 +328,7 @@ module CloudstackClient
     def reboot_server(name)
       server = get_server(name)
       if !server || !server['id'] then
-        puts "Error: Virtual machine '#{name}' does not exist"
+        puts "\nError: Virtual machine '#{name}' does not exist"
         exit 1
       end
 
