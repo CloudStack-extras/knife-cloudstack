@@ -60,7 +60,10 @@ module KnifeCloudstack
 
     def run
       validate_base_options
-
+      if @name_args.first.nil?
+        ui.error "Please specify json file eg: knife cs stack create JSON_FILE"
+        exit 1
+      end
       file_path = File.expand_path(@name_args.first)
       unless File.exist?(file_path) then
         ui.error "Stack file '#{file_path}' not found. Please check the path."
@@ -98,6 +101,12 @@ module KnifeCloudstack
       cmd = KnifeCloudstack::CsServerCreate.new([server[:name]])
       # configure and run command
       # TODO: validate parameters
+      cmd.config[:cloudstack_url] = config[:cloudstack_url]
+      cmd.config[:cloudstack_api_key] = config[:cloudstack_api_key]
+      cmd.config[:cloudstack_secret_key] = config[:cloudstack_secret_key]
+      cmd.config[:cloudstack_proxy] = config[:cloudstack_proxy]
+      cmd.config[:cloudstack_no_ssl_verify] = config[:cloudstack_no_ssl_verify]
+      cmd.config[:cloudstack_project] = config[:cloudstack_project]
       cmd.config[:ssh_user] = config[:ssh_user]
       cmd.config[:ssh_password] = config[:ssh_password]
       cmd.config[:ssh_port] = config[:ssh_port] || "22" # Chef::Config[:knife][:ssh_port]

@@ -16,8 +16,12 @@
 # limitations under the License.
 #
 
+require 'chef/knife/cs_base'
+
 module KnifeCloudstack
   class CsStackDelete < Chef::Knife
+
+    include Chef::Knife::KnifeCloudstackBase
 
     deps do
       require 'chef/json_compat'
@@ -30,25 +34,11 @@ module KnifeCloudstack
 
     banner "knife cs stack delete JSON_FILE (options)"
 
-    option :cloudstack_url,
-           :short => "-U URL",
-           :long => "--cloudstack-url URL",
-           :description => "The CloudStack endpoint URL",
-           :proc => Proc.new { |url| Chef::Config[:knife][:cloudstack_url] = url }
-
-    option :cloudstack_api_key,
-           :short => "-A KEY",
-           :long => "--cloudstack-api-key KEY",
-           :description => "Your CloudStack API key",
-           :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_api_key] = key }
-
-    option :cloudstack_secret_key,
-           :short => "-K SECRET",
-           :long => "--cloudstack-secret-key SECRET",
-           :description => "Your CloudStack secret key",
-           :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
-
     def run
+      if @name_args.first.nil?
+        ui.error "Please specify json file eg: knife cs stack delete JSON_FILE"
+        exit 1
+      end
       file_path = File.expand_path(@name_args.first)
       unless File.exist?(file_path) then
         ui.error "Stack file '#{file_path}' not found. Please check the path."
