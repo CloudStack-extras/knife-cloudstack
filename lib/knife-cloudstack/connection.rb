@@ -273,7 +273,8 @@ module CloudstackClient
 
       params = {
           'command' => 'destroyVirtualMachine',
-          'id' => server['id']
+          'id' => server['id'],
+          'expunge' => true
       }
 
       json = send_async_request(params)
