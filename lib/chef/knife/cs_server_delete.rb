@@ -58,7 +58,7 @@ module KnifeCloudstack
         if result
           print "#{ui.color("Waiting for deletion", :magenta)}"
           disassociate_virtual_ip_address server
-          connection.delete_server hostname
+          connection.delete_server(hostname, false)
           puts "\n"
           ui.msg("Deleted server #{hostname}")
 

@@ -45,7 +45,10 @@ module KnifeCloudstack
            :short => "-a ACTION",
            :long => "--action ACTION",
            :description => "start, stop or destroy the instances in your result"
-           
+
+    option :expunge,
+           :long => "--expunge",
+           :description => "If used with --action destroy, will cause the server to be expunged"
     option :public_ip,
            :long => "--[no-]public-ip",
            :description => "Show or don't show the public IP for server in your result",
@@ -70,7 +73,9 @@ module KnifeCloudstack
       params['listall'] = locate_config_value(:listall) if locate_config_value(:listall)
       params['keyword'] = locate_config_value(:keyword) if locate_config_value(:keyword)
       params['name']    = locate_config_value(:name)    if locate_config_value(:name)
-      
+      params['expunge'] = locate_config_value(:expunge) if locate_config_value(:expunge)
+      params['expunge'] = false if params['expunge'].nil?
+     
       ##
       # Get the public IP address if possible, except when the option --no-public-ip is given.
 
@@ -89,7 +94,7 @@ module KnifeCloudstack
       # Executing actions against the list results that are returned.
 
       if locate_config_value(:action)
-        connection_result.each do |r|
+        result.each do |r|
           hostname = r['name'] 
           case locate_config_value(:action).downcase
           when "start" then
@@ -115,7 +120,7 @@ module KnifeCloudstack
             result = confirm_action("Do you really want to destroy this server ")
             if result then
               print "#{ui.color("Waiting for demolition", :magenta)}"
-              connection.delete_server(hostname)
+              connection.delete_server(hostname, params['expunge'])
               puts "\n"
               ui.msg("Destroyed server #{hostname}")
             end
