@@ -70,6 +70,7 @@ module KnifeCloudstack
     def delete_server(server_name)
       cmd = KnifeCloudstack::CsServerDelete.new([server_name])
       cmd.config[:yes] = true
+      cmd.config[:expunge] = true
       cmd.run_with_pretty_exceptions
     end
 

@@ -264,7 +264,7 @@ module CloudstackClient
     # Deletes the server with the specified name.
     #
 
-    def delete_server(name)
+    def delete_server(name, expunge)
       server = get_server(name)
       if !server || !server['id'] then
         puts "\nError: Virtual machine '#{name}' does not exist"
@@ -273,7 +273,8 @@ module CloudstackClient
 
       params = {
           'command' => 'destroyVirtualMachine',
-          'id' => server['id']
+          'id' => server['id'],
+          'expunge' => expunge
       }
 
       json = send_async_request(params)
