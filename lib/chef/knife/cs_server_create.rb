@@ -241,7 +241,7 @@ module KnifeCloudstack
 
       # This little peace of code sets the Chef node-name to the VM name when a node-name is not specifically given
       unless locate_config_value :chef_node_name
-        Chef::Config[:knife][:chef_node_name] = @name_args.first
+        config[:chef_node_name] = @name_args.first
       end
 
       if @windows_image and locate_config_value(:kerberos_realm)
@@ -269,7 +269,7 @@ module KnifeCloudstack
 
       params['keypair'] = locate_config_value :keypair  if locate_config_value :keypair
       params['displayname'] = if locate_config_value :set_display_name and locate_config_value :chef_node_name then locate_config_value :chef_node_name else hostname end
-      params['ipaddress'] = locate_config_value(:ik_private_ip) if locate_config_value(:ik_private_ip) 
+      params['ipaddress'] = locate_config_value(:ik_private_ip) if locate_config_value(:ik_private_ip)
 
       server = connection.create_server(
           hostname,
@@ -585,9 +585,9 @@ module KnifeCloudstack
         ui.error("Unsupported Bootstrapping Protocol. Supported : winrm, ssh")
         exit 1
       end
-      bootstrap.config[:chef_node_name] = config[:chef_node_name] || server['id']
-      bootstrap.config[:encrypted_data_bag_secret] = config[:encrypted_data_bag_secret]
-      bootstrap.config[:encrypted_data_bag_secret_file] = config[:encrypted_data_bag_secret_file]
+      bootstrap.config[:chef_node_name] = locate_config_value(:chef_node_name) || server["name"]
+      bootstrap.config[:encrypted_data_bag_secret] = locate_config_value(:secret)
+      bootstrap.config[:encrypted_data_bag_secret_file] = locate_config_value(:secret_file)
       bootstrap_common_params(bootstrap)
     end
 
