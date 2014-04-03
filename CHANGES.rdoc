@@ -1,5 +1,12 @@
 = Changes
 
+== 2014-03-03 (0.0.17)
+* Added support for --isdynamicallyscalable for <tt>cs template register</tt> (Sander Botman, 3 Apr 2014)
+* Added support for AAG for <tt>cs server create</tt> (John E. Vincent, 2 Apr 2014)
+* Bugfix: on winrm bootstrap (Sander van Harmelen, 26 Mar 2014)
+* Added support for --expunge for destroying server (Ian Southam, 19 Mar 2014)
+* Bugfix: cosmetic changes on error output (Sander Botman, 5 Mar 2014)
+
 == 2014-02-12 (0.0.16)
 * Added support for --no-public-ip for <tt>cs server list</tt> (Sander Botman, 12 Feb 2014)
 * Added support for secret and secret_file in <tt>cs server create</tt> (Jeremy Baumont, 10 Feb 2014)
