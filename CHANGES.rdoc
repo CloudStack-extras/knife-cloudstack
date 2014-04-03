@@ -1,6 +1,6 @@
 = Changes
 
-== 2014-03-03 (0.0.17)
+== 2014-03-04 (0.0.17)
 * Added support for --isdynamicallyscalable for <tt>cs template register</tt> (Sander Botman, 3 Apr 2014)
 * Added support for --anti-affinity-groups for <tt>cs server create</tt> (John E. Vincent, 2 Apr 2014)
 * Bugfix: on winrm bootstrap (Sander van Harmelen, 26 Mar 2014)
