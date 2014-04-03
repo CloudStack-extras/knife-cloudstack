@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name = %q{knife-cloudstack}
   s.version = "0.0.17"
-  s.date = %q{2014-02-12}
+  s.date = %q{2014-04-03}
   s.authors = ['Ryan Holmes', 'KC Braunschweig', 'John E. Vincent', 'Chirag Jog', 'Sander Botman']
   s.email = ['rholmes@edmunds.com', 'kcbraunschweig@gmail.com', 'lusis.org+github.com@gmail.com', 'chirag.jog@me.com', 'sbotman@schubergphilis.com']
   s.summary = %q{A knife plugin for the CloudStack API}
