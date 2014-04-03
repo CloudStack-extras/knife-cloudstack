@@ -73,6 +73,12 @@ module KnifeCloudstack
 	   :boolean => true,
 	   :default => false
 
+    option :isdynamicallyscalable,
+           :long => "--isdynamicallyscalable",
+           :description => "Is the template dynamically scalable. Default: NO",
+           :boolean => true,
+           :default => false
+
     option :featured,
            :long => "--[no-]featured",
 	   :description => "Is the tempalte featured? Default: NO",
@@ -159,6 +165,7 @@ module KnifeCloudstack
         'zoneid' => zoneid,
         'bits' => locate_config_value(:bits),
       }
+      params['isdynamicallyscalable'] = locate_config_value(:isdynamicallyscalable) if locate_config_value(:isdynamicallyscalable)
       params['isextractable'] = locate_config_value(:isextractable) if locate_config_value(:isextractable)
       params['ispublic'] = locate_config_value(:public) if locate_config_value(:public)
       params['isfeatured'] = locate_config_value(:featured) if locate_config_value(:featured)
