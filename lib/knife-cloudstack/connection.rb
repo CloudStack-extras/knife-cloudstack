@@ -72,7 +72,7 @@ module CloudstackClient
       end
       project['id']
     end
-  
+
     ##
     # Finds the server with the specified name.
 
@@ -103,7 +103,7 @@ module CloudstackClient
       return ssh_rule['ipaddress'] if ssh_rule
 
       winrm_rule = get_winrm_port_forwarding_rule(server, cached_rules)
-      return winrm_rule['ipaddress'] if winrm_rule 
+      return winrm_rule['ipaddress'] if winrm_rule
 
       #check for static NAT
       if cached_nat
@@ -679,7 +679,7 @@ module CloudstackClient
     end
 
     def list_public_ip_addresses(listall=false)
-      params = { 'command' => 'listPublicIpAddresses' } 
+      params = { 'command' => 'listPublicIpAddresses' }
       params['listall'] = listall
 
       json = send_request(params)
@@ -793,8 +793,8 @@ module CloudstackClient
             r['publicport'] == '22'
       }.first
     end
- 
-    ## 
+
+    ##
     # Gets the WINRM port forwarding rule for the specified server.
 
     def get_winrm_port_forwarding_rule(server, cached_rules=nil)
@@ -875,16 +875,16 @@ module CloudstackClient
       uri = URI.parse(url)
 
       http = http_client_builder.new(uri.host, uri.port)
- 
+
       if uri.scheme == "https"
         http.use_ssl = true
         # Still need to do some testing on SSL, so will fix this later
         if @no_ssl_verify
-          http.verify_mode = OpenSSL::SSL::VERIFY_NONE 
+          http.verify_mode = OpenSSL::SSL::VERIFY_NONE
         else
-          http.verify_mode = OpenSSL::SSL::VERIFY_NONE 
+          http.verify_mode = OpenSSL::SSL::VERIFY_NONE
         end
-      end 
+      end
       request = Net::HTTP::Get.new(uri.request_uri)
       response = http.request(request)
 
