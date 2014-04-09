@@ -49,9 +49,9 @@ class Chef
 
       def output_format(json)
         if locate_config_value(:format) =~ /^j/i
-          json_hash = {}; 
+          json_hash = {};
           json.each { |k| json_hash.merge!( k['id'] => k) }
-          puts JSON.pretty_generate(json_hash) 
+          puts JSON.pretty_generate(json_hash)
           exit 0
         end
       end
@@ -85,16 +85,16 @@ class Chef
         object_list = []
         if locate_config_value(:fields)
           locate_config_value(:fields).split(',').each { |n| object_list << ui.color(("#{n}").strip, :bold) }
-        else 
+        else
           columns.each do |column|
-            n = (column.split(':').first).strip 
+            n = (column.split(':').first).strip
             object_list << (ui.color("#{n}", :bold) || 'N/A')
           end
         end
 
         n_columns = object_list.count
         object_list = [] if locate_config_value(:noheader)
-   
+
         object.each do |r|
           if locate_config_value(:fields)
             locate_config_value(:fields).downcase.split(',').each { |n| object_list << ((r[("#{n}").strip]).to_s || 'N/A') }
