@@ -118,7 +118,7 @@ module KnifeCloudstack
       cmd.config[:cloudstack_project] = config[:cloudstack_project]
       cmd.config[:ssh_user] = config[:ssh_user]
       cmd.config[:ssh_password] = config[:ssh_password]
-      cmd.config[:ssh_port] = config[:ssh_port] || Chef::Config[:knife][:ssh_port] || "22"
+      cmd.config[:ssh_port] = server[:ssh_port] || locate_config_value(:ssh_port) || "22"
       cmd.config[:identity_file] = config[:identity_file]
       cmd.config[:keypair] = server[:keypair]
       cmd.config[:cloudstack_template] = server[:template] if server[:template]
@@ -143,6 +143,7 @@ module KnifeCloudstack
     end
 
     def run_actions(actions)
+      return if actions.nil? || actions.empty?
       puts "\n"
       ui.msg("Processing actions...")
       sleep 1 # pause for e.g. chef solr indexing
