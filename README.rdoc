@@ -311,6 +311,8 @@ Displays all the volumes that are currently available within the cloudstack envi
 Creates a "stack" of servers based on a JSON definition file. Simple orchestration can be performed by
 specifying one or more actions to be executed after a server (or group of servers) is created.
 
+<tt>--skip-existing</tt>        Skip erroring on any servers already created in the stack (default is false)
+
 ==== Example Stack Definition File:
 
     {
