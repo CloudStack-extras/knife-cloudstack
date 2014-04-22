@@ -1,3 +1,9 @@
 pkg
 dist
 make*
+*.gem
+*.rbc
+*.lock
+.bundle
+.config
+.idea
