@@ -88,6 +88,10 @@ module KnifeCloudstack
            :description => "The CloudStack disk offering name",
            :proc => Proc.new { |d| Chef::Config[:knife][:cloudstack_disk] = d }
 
+    option :size,
+           :long => "--size SIZE",
+           :description => "The arbitrary size (GB) for the DATADISK volume"
+
     option :cloudstack_hypervisor,
            :long => '--cloudstack-hypervisor HYPERVISOR',
            :description => "The CloudStack hypervisor type for the server"
@@ -276,6 +280,7 @@ module KnifeCloudstack
       params['affinitygroupnames'] = locate_config_value :aag if locate_config_value :aag
       params['displayname'] = if locate_config_value :set_display_name and locate_config_value :chef_node_name then locate_config_value :chef_node_name else hostname end
       params['ipaddress'] = locate_config_value(:ik_private_ip) if locate_config_value(:ik_private_ip)
+      params['size'] = locate_config_value(:size) if locate_config_value(:size)
 
       server = connection.create_server(
           hostname,
