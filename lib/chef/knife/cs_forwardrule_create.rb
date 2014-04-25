@@ -52,10 +52,8 @@ module KnifeCloudstack
       locate_config_value(:openfirewall) ? params['openfirewall'] = 'true' : params['openfirewall'] = 'false'
 
       # Lookup all server objects.
-      connection_result = connection.list_object(
-        "listVirtualMachines",
-        "virtualmachine"
-      )
+      params_for_list_object = {  'command' => 'listVirtualMachines' }
+      connection_result = connection.list_object(params_for_list_object, "virtualmachine")
 
       # Lookup the hostname in the connection result
       server = {}
