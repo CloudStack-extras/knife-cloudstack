@@ -206,9 +206,9 @@ module KnifeCloudstack
            :default => []
 
     option :aag,
-	        :long => "--anti-affinity-groups GROUP_NAME",
-          :description => "Comma separated list of anti-affinity group names",
-          :default => false
+           :long => "--anti-affinity-groups GROUP_NAME",
+           :description => "Comma separated list of anti-affinity group names",
+           :default => false
 
     option :fw_rules,
            :short => "-f PORT_RULES",

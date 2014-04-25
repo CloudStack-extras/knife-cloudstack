@@ -63,8 +63,8 @@ module KnifeCloudstack
           ui.msg("Deleted server #{hostname}")
 
           # delete chef client and node
-          node_name = connection.get_server_fqdn server
-          delete_chef = confirm_action("Do you want to delete the chef node and client '#{node_name}")
+          node_name = hostname  # connection.get_server_fqdn server ## server create doesn't add fqdn!
+          delete_chef = confirm_action("Do you want to delete the chef node and client '#{node_name}'")
           if delete_chef
             delete_node node_name
             delete_client node_name
@@ -76,7 +76,7 @@ module KnifeCloudstack
 
     def show_object_details(s, connection, rules)
       return if locate_config_value(:yes)
-      
+
       object_fields = []
       object_fields << ui.color("Name:", :cyan)
       object_fields << s['name'].to_s

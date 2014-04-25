@@ -58,6 +58,11 @@ module KnifeCloudstack
            :long => "--identity-file IDENTITY_FILE",
            :description => "The SSH identity file used for authentication"
 
+    option :skip_existing,
+           :long => "--skip-existing",
+           :default => false,
+           :description => "Skip creating existing server(s)"
+
     def run
       validate_base_options
       if @name_args.first.nil?
@@ -82,9 +87,13 @@ module KnifeCloudstack
           # create server(s)
           names = server[:name].split(/[\s,]+/)
           names.each do |n|
-            s = Mash.new(server)
-            s[:name] = n
-            create_server(s)
+            if (config[:skip_existing] && connection.get_server(n))
+              ui.msg(ui.color("\nServer #{n} already exists; skipping create...", :yellow))
+            else
+              s = Mash.new(server)
+              s[:name] = n
+              create_server(s)
+            end
           end
 
         end
@@ -109,7 +118,7 @@ module KnifeCloudstack
       cmd.config[:cloudstack_project] = config[:cloudstack_project]
       cmd.config[:ssh_user] = config[:ssh_user]
       cmd.config[:ssh_password] = config[:ssh_password]
-      cmd.config[:ssh_port] = config[:ssh_port] || "22" # Chef::Config[:knife][:ssh_port]
+      cmd.config[:ssh_port] = server[:ssh_port] || locate_config_value(:ssh_port) || "22"
       cmd.config[:identity_file] = config[:identity_file]
       cmd.config[:keypair] = server[:keypair]
       cmd.config[:cloudstack_template] = server[:template] if server[:template]
@@ -117,11 +126,11 @@ module KnifeCloudstack
       cmd.config[:cloudstack_zone] = server[:zone] if server[:zone]
       server.has_key?(:public_ip) ? cmd.config[:public_ip] = server[:public_ip] : cmd.config[:no_public_ip] = true
       cmd.config[:ik_private_ip] = server[:private_ip] if server[:private_ip]
-      cmd.config[:bootstrap] = server[:bootstrap] if server.has_key?(:bootstrap) 
-      cmd.config[:bootstrap_protocol] = server[:bootstrap_protocol] || "ssh"  
-      cmd.config[:distro] = server[:distro] || "chef-full"  
-      cmd.config[:template_file] = server[:template_file] if server.has_key?(:template_file)  
-      cmd.config[:no_host_key_verify] = server[:no_host_key_verify] if server.has_key?(:no_host_key_verify)  
+      cmd.config[:bootstrap] = server[:bootstrap] if server.has_key?(:bootstrap)
+      cmd.config[:bootstrap_protocol] = server[:bootstrap_protocol] || "ssh"
+      cmd.config[:distro] = server[:distro] || "chef-full"
+      cmd.config[:template_file] = server[:template_file] if server.has_key?(:template_file)
+      cmd.config[:no_host_key_verify] = server[:no_host_key_verify] if server.has_key?(:no_host_key_verify)
       cmd.config[:cloudstack_networks] = server[:networks].split(/[\s,]+/) if server[:networks]
       cmd.config[:run_list] = server[:run_list].split(/[\s,]+/) if server[:run_list]
       cmd.config[:port_rules] = server[:port_rules].split(/[\s,]+/) if server[:port_rules]
@@ -134,6 +143,7 @@ module KnifeCloudstack
     end
 
     def run_actions(actions)
+      return if actions.nil? || actions.empty?
       puts "\n"
       ui.msg("Processing actions...")
       sleep 1 # pause for e.g. chef solr indexing
@@ -183,7 +193,6 @@ module KnifeCloudstack
     end
 
     def knife_ssh(host_list, command)
-
       ssh = Chef::Knife::Ssh.new
       ssh.name_args = [host_list, command]
       ssh.config[:ssh_user] = config[:ssh_user]
@@ -203,7 +212,6 @@ module KnifeCloudstack
     end
 
     def knife_ssh_action(query, command)
-
       public_ips = find_public_ips(query)
       return if public_ips.nil? || public_ips.empty?
       host_list = public_ips.join(' ')
@@ -218,7 +226,6 @@ module KnifeCloudstack
           ssh.run
         end
       end
-
     end
 
     def http_request(url)
@@ -228,7 +235,6 @@ module KnifeCloudstack
         ip = public_ip_for_host(server_name)
         url = url.sub(/\$\{#{server_name}\}/, ip)
       end
-
 
       puts "HTTP Request: #{url}"
       puts `curl -s -m 5 #{url}`
@@ -270,24 +276,6 @@ module KnifeCloudstack
 
     def get_environment
       current_stack[:environment]
-    end
-
-    def destroy_all(domain, excludes=[])
-      servers = connection.list_servers || []
-      servers.each do |s|
-        excluded = false
-        excludes.each { |val|
-          if s['name'] =~ /#{val}/ then
-            excluded = true
-            next
-          end
-        }
-        next if excluded
-        nodename = "#{s['name']}.#{domain}"
-        system "knife cs server delete #{s['name']} -y"
-        system "knife client delete #{nodename} -y"
-        system "knife node delete #{nodename} -y"
-      end
     end
 
     def print_local_hosts
