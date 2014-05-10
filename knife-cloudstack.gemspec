@@ -1,18 +1,27 @@
-Gem::Specification.new do |s|
-  s.name = %q{knife-cloudstack}
-  s.version = "0.0.17"
-  s.date = %q{2014-04-03}
-  s.authors = ['Ryan Holmes', 'KC Braunschweig', 'John E. Vincent', 'Chirag Jog', 'Sander Botman']
-  s.email = ['rholmes@edmunds.com', 'kcbraunschweig@gmail.com', 'lusis.org+github.com@gmail.com', 'chirag.jog@me.com', 'sbotman@schubergphilis.com']
-  s.summary = %q{A knife plugin for the CloudStack API}
-  s.homepage = %q{http://cloudstack.org/}
-  s.description = %q{A Knife plugin to create, list and manage CloudStack servers}
+# coding: utf-8
+lib = File.expand_path('../lib', __FILE__)
+$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
+require 'knife-cs/version'
 
-  s.has_rdoc = false
-  s.extra_rdoc_files = ["README.rdoc", "CHANGES.rdoc", "LICENSE" ]
+Gem::Specification.new do |spec|
+  spec.name          = "knife-cloudstack"
+  spec.version       = Knife::Cloudstack::VERSION
+  spec.authors       = ["Sander Botman"]
+  spec.email         = ["sbotman@schubergphilis.com"]
+  spec.summary       = %q{CloudStack Support for Chef's Knife Command}
+  spec.description   = %q{CloudStack Support for Chef's Knife Command using knife-cloud}
+  spec.homepage      = ""
+  spec.license       = "Apache 2.0"
 
-  s.add_dependency "chef", ">= 0.10.0"
-  s.add_dependency "knife-windows", ">= 0"
-  s.require_path = 'lib'
-  s.files = ["CHANGES.rdoc","README.rdoc", "LICENSE"] + Dir.glob("lib/**/*")
+  spec.files         = `git ls-files -z`.split("\x0")
+  spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
+  spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
+  spec.require_paths = ["lib"]
+
+  spec.add_development_dependency "bundler", "~> 1.5"
+  spec.add_development_dependency "rake"
+
+  spec.add_dependency "fog", ">= 1.10.0"
+  spec.add_dependency "chef", ">= 0.10.10"
+  spec.add_dependency "knife-windows"
 end

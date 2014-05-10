@@ -1,6 +1,6 @@
 #
 # Author:: Sander Botman (<sbotman@schubergphilis.com>)
-# Copyright:: Copyright (c) 2013 Sander Botman.
+# Copyright:: Copyright (c) 2014
 # License:: Apache License, Version 2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,15 +16,22 @@
 # limitations under the License.
 #
 
+require 'chef/knife'
+
 class Chef
   class Knife
-    module KnifeCloudstackBase
+    module CsBase
 
+      # :nodoc:
+      # Would prefer to do this in a rational way, but can't be done b/c of
+      # Mixlib::CLI's design :(
       def self.included(includer)
         includer.class_eval do
 
           deps do
-            require 'knife-cloudstack/connection'
+            require 'fog'
+            require 'readline'
+            require 'chef/json_compat'
           end
 
           option :cloudstack_url,
@@ -44,56 +51,70 @@ class Chef
                  :long => "--cloudstack-secret-key SECRET",
                  :description => "Your CloudStack secret key",
                  :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
-
-          option :cloudstack_project,
-                 :short => "-P PROJECT_NAME",
-                 :long => '--cloudstack-project PROJECT_NAME',
-                 :description => "Cloudstack Project in which to create server",
-                 :proc => Proc.new { |v| Chef::Config[:knife][:cloudstack_project] = v },
-                 :default => nil
-
-          option :cloudstack_no_ssl_verify,
-                 :long => '--cloudstack-no-ssl-verify',
-                 :description => "Disable certificate verify on SSL",
-                 :boolean => true
-
-          option :cloudstack_proxy,
-                 :long => '--cloudstack-proxy PROXY',
-                 :description => "Enable proxy configuration for cloudstack api access"
-
-          def validate_base_options
-            unless locate_config_value :cloudstack_url
-              ui.error "Cloudstack URL not specified"
-              exit 1
-            end
-            unless locate_config_value :cloudstack_api_key
-              ui.error "Cloudstack API key not specified"
-              exit 1
-            end
-            unless locate_config_value :cloudstack_secret_key
-              ui.error "Cloudstack Secret key not specified"
-              exit 1
-            end
-          end
-
-          def connection
-            @connection ||= CloudstackClient::Connection.new(
-              locate_config_value(:cloudstack_url),
-              locate_config_value(:cloudstack_api_key),
-              locate_config_value(:cloudstack_secret_key),
-              locate_config_value(:cloudstack_project),
-              locate_config_value(:cloudstack_no_ssl_verify),
-              locate_config_value(:cloudstack_proxy)
-            )
-          end
-
-          def locate_config_value(key)
-            key = key.to_sym
-            config[key] || Chef::Config[:knife][key] || nil
-          end 
-
         end
       end
+
+
+      def connection
+        @connection ||= begin
+          cloudstack_uri =  URI.parse(Chef::Config[:knife][:cloudstack_url])
+          connection = Fog::Compute.new(
+              :provider              => :cloudstack,
+              :cloudstack_api_key    => Chef::Config[:knife][:cloudstack_api_key],
+              :cloudstack_secret_access_key => Chef::Config[:knife][:cloudstack_secret_key],
+              :cloudstack_host       => cloudstack_uri.host,
+              :cloudstack_port       => cloudstack_uri.port,
+              :cloudstack_path       => cloudstack_uri.path,
+              :cloudstack_scheme     => cloudstack_uri.scheme
+          )
+        end
+      end
+
+      def locate_config_value(key)
+        key = key.to_sym
+        config[key] || Chef::Config[:knife][key]
+      end
+
+      def msg_pair(label, value, color=:cyan)
+        if value && !value.to_s.empty?
+          puts "#{ui.color(label, color)}: #{value}"
+        end
+      end
+
+      def is_image_windows?
+        image_info = connection.images.get(@server.image_id)
+        return image_info.platform == 'windows'
+      end
+
+      def validate!
+        errors = []
+        # simple validation for the moment, we need to impove this later.
+
+        if locate_config_value(:cloudstack_url).nil?
+          errors << "Please provide the API url within the configuration or with the option -U"
+        end
+
+        if locate_config_value(:cloudstack_api_key).nil?
+          errors << "Please provide the API key within the configuration or with the option -A"
+        end
+
+        if locate_config_value(:cloudstack_secret_key).nil?
+          errors << "Please provide the secret key within the configuration or with the option -K"
+        end
+
+        if errors.each{|e| ui.error(e)}.any?
+          exit 1
+        end
+      end
+
+    end
+
+    def iam_name_from_profile(profile)
+      # The IAM profile object only contains the name as part of the arn
+      if profile && profile.key?('arn')
+        name = profile['arn'].split('/')[-1]
+      end
+      name ||= ''
     end
   end
 end

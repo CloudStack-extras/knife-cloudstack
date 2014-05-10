@@ -1,8 +1,6 @@
 #
-# Author:: Ryan Holmes (<rholmes@edmunds.com>)
 # Author:: Sander Botman (<sbotman@schubergphilis.com>)
-# Copyright:: Copyright (c) 2011 Edmunds, Inc.
-# Copyright:: Copyright (c) 2013 Sander Botman.
+# Copyright:: Copyright (c) 2014
 # License:: Apache License, Version 2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,150 +16,137 @@
 # limitations under the License.
 #
 
-require 'chef/knife'
-require 'chef/knife/cs_baselist'
+require 'chef/knife/cs_base'
 
-module KnifeCloudstack
-  class CsServerList < Chef::Knife
+class Chef
+  class Knife
+    class CsServerList < Knife
 
-    include Chef::Knife::KnifeCloudstackBaseList
+      include Chef::Knife::CsBase
 
-    banner "knife cs server list (options)"
+      banner "knife cs server list (options)"
 
-    option :listall,
-           :long => "--listall",
-           :description => "List all the accounts",
-           :boolean => true
+      option :id,
+             :short => "-i",
+             :long => "--id",
+             :boolean => true,
+             :default => false,
+             :description => "Display the ID's instead of the names in output"
 
-    option :name,
-           :long => "--name NAME",
-           :description => "Specify hostname to list"
+      option :tags,
+             :short => "-t TAG1,TAG2",
+             :long => "--tags TAG1,TAG2",
+             :description => "List of tags to output"
 
-    option :keyword,
-           :long => "--keyword NAME",
-           :description => "Specify part of instancename to list"
-
-    option :action,
-           :short => "-a ACTION",
-           :long => "--action ACTION",
-           :description => "start, stop or destroy the instances in your result"
-
-    option :expunge,
-           :long => "--expunge",
-           :description => "If used with --action destroy, will cause the server to be expunged"
-    option :public_ip,
-           :long => "--[no-]public-ip",
-           :description => "Show or don't show the public IP for server in your result",
-           :boolean => true,
-           :default => true
-
-    def run
-      validate_base_options
- 
-      columns = [
-        'Name       :name',
-        'Public IP  :ipaddress',
-        'Service    :serviceofferingname',
-        'Template   :templatename',
-        'State      :state',
-        'Instance   :instancename',
-        'Hypervisor :hostname'
-      ]
-
-      params = { 'command' => "listVirtualMachines" }
-      params['filter']  = locate_config_value(:filter)  if locate_config_value(:filter)
-      params['listall'] = locate_config_value(:listall) if locate_config_value(:listall)
-      params['keyword'] = locate_config_value(:keyword) if locate_config_value(:keyword)
-      params['name']    = locate_config_value(:name)    if locate_config_value(:name)
-      params['expunge'] = locate_config_value(:expunge) if locate_config_value(:expunge)
-      params['expunge'] = false if params['expunge'].nil?
-     
-      ##
-      # Get the public IP address if possible, except when the option --no-public-ip is given.
-
-      rules       = connection.list_port_forwarding_rules(nil, true)
-      public_list = connection.list_public_ip_addresses(true)
-      result      = connection.list_object(params, "virtualmachine")
-      result.each do |n|
-        public_ip = connection.get_server_public_ip(n, rules, public_list) if locate_config_value(:public_ip)
-        private_ip = (n['nic'].select { |k| k['isdefault'] }).first
-        public_ip ? n['ipaddress'] = public_ip : n['ipaddress'] = private_ip['ipaddress'] || "N/A"
+      def fcolor(flavor)
+        case flavor
+          when /.*micro.*/i
+            fcolor = :blue
+          when /.*small.*/i
+            fcolor = :magenta
+          when /.*medium.*/i
+            fcolor = :cyan
+          when /.*large.*/i
+            fcolor = :green
+          when /.*xlarge.*/i
+            fcolor = :red
+        end
       end
 
-      list_object(columns, result)
-      
-      ## 
-      # Executing actions against the list results that are returned.
+      def azcolor(az)
+        case az
+          when /a$/
+            color = :blue
+          when /b$/
+            color = :green
+          when /c$/
+            color = :red
+          when /d$/
+            color = :magenta
+          else
+            color = :cyan
+        end
+      end
 
-      if locate_config_value(:action)
-        result.each do |r|
-          hostname = r['name'] 
-          case locate_config_value(:action).downcase
-          when "start" then
-            show_object_details(r, connection, rules)
-            result = confirm_action("Do you really want to start this server ")
-            if result then 
-              print "#{ui.color("Waiting for startup", :magenta)}"
-	      connection.start_server(hostname)
-              puts "\n"
-              ui.msg("Started server #{hostname}")
-            end 
-          when "stop" then 
-            show_object_details(r, connection, rules)
-            result = confirm_action("Do you really want to stop this server ")
-            if result then 
-              print "#{ui.color("Waiting for shutdown", :magenta)}"
-              connection.stop_server(hostname)
-              puts "\n"
-              ui.msg("Shutdown server #{hostname}")
-            end 
-          when "destroy" then 
-            show_object_details(r, connection, rules)
-            result = confirm_action("Do you really want to destroy this server ")
-            if result then
-              print "#{ui.color("Waiting for demolition", :magenta)}"
-              connection.delete_server(hostname, params['expunge'])
-              puts "\n"
-              ui.msg("Destroyed server #{hostname}")
+      def groups_with_ids(groups)
+        groups.map{|g|
+          "#{g} (#{@group_id_hash[g]})"
+        }
+      end
+
+      def vpc_with_name(vpc_id)
+        this_vpc = @vpcs.select{|v| v.id == vpc_id }.first
+        if this_vpc.tags["Name"]
+          vpc_name = this_vpc.tags["Name"]
+          "#{vpc_name} (#{vpc_id})"
+        else
+          vpc_id
+        end
+      end
+
+      def private_ip_address(server)
+        return nil if server.nics.empty?
+        default_nic = server.nics.select {|n| n['isdefault'] == true }.first
+        return nil if default_nic.nil? || default_nic.empty?
+        default_nic['ipaddress']
+      end
+
+
+      def run
+        $stdout.sync = true
+
+        validate!
+
+        server_list = [
+
+            if config[:id]
+              ui.color('ID', :bold)
+            else
+              ui.color('Name', :bold)
+            end,
+
+            ui.color('Public IP', :bold),
+            ui.color('Private IP', :bold),
+
+            ui.color('Service', :bold),
+            ui.color('Image', :bold),
+            ui.color('Zone', :bold),
+            ui.color('State', :bold)
+
+        ].flatten.compact
+
+        output_column_count = server_list.length
+
+        connection.servers.all.each do |server|
+
+          config[:id] ? server_list << server.id.to_s : server_list << server.name.to_s
+
+          # Still need to fix the public IP's (need to call the API for all forwards and filter on ssh/winrm sessions or something)
+          server_list << "pub_ip" # public_ip_address(server).to_s || "unknown"
+          server_list << private_ip_address(server).to_s || "unknown"
+
+          config[:id] ? server_list << server.flavor_id.to_s : server_list << server.flavor_name.to_s
+          config[:id] ? server_list << server.image_id.to_s : server_list << server.image_name.to_s
+          config[:id] ? server_list << server.zone_id.to_s : server_list << server.zone_name.to_s
+
+          server_list << begin
+            state = server.state.to_s.downcase
+            case state
+              when 'destroyed', 'expunging'
+                ui.color(state, :purple)
+              when 'shutting-down','terminated','stopping','stopped'
+                ui.color(state, :red)
+              when 'pending'
+                ui.color(state, :yellow)
+              else
+                ui.color(state, :green)
             end
           end
         end
+
+        puts ui.list(server_list, :uneven_columns_across, output_column_count)
+
       end
     end
-  
-    def show_object_details(s, connection, rules)
-      return if locate_config_value(:yes)
-
-      object_fields = []
-      object_fields << ui.color("Name:", :cyan)
-      object_fields << s['name'].to_s
-      object_fields << ui.color("Public IP:", :cyan)
-      object_fields << (connection.get_server_public_ip(s, rules) || '')
-      object_fields << ui.color("Service:", :cyan)
-      object_fields << s['serviceofferingname'].to_s
-      object_fields << ui.color("Template:", :cyan)
-      object_fields << s['templatename']
-      object_fields << ui.color("Domain:", :cyan)
-      object_fields << s['domain']
-      object_fields << ui.color("Zone:", :cyan)
-      object_fields << s['zonename']
-      object_fields << ui.color("State:", :cyan)
-      object_fields << s['state']
-
-      puts "\n"
-      puts ui.list(object_fields, :uneven_columns_across, 2)
-      puts "\n"
-    end
-
-    def confirm_action(question)
-      return true if locate_config_value(:yes)
-      result = ui.ask_question(question, :default => "Y" )
-      if result == "Y" || result == "y" then 
-        return true 
-      else 
-        return false
-      end
-    end
-
   end
 end
