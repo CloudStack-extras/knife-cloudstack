@@ -469,6 +469,45 @@ module CloudstackClient
     end
 
     ##
+    # Finds the volume with the specified name.
+    #
+
+    def get_volume(name)
+      params = {
+          'command' => 'listVolumes',
+          'name' => name
+      }
+      json = send_request(params)
+      volumes = json['volume']
+
+      if !volumes || volumes.empty? then
+        return nil
+      end
+      volume = volumes.select { |item| name == item['name'] }
+      volume.first
+    end
+
+    ##
+    # Deletes the volume with the specified name.
+    #
+
+    def delete_volume(name)
+      volume = get_volume(name)
+      if !volume || !volume['id'] then
+        puts "\nError: Volume '#{name}' does not exist"
+        exit 1
+      end
+
+      params = {
+          'command' => 'deleteVolume',
+          'id' => volume['id']
+      }
+
+      json = send_request(params)
+      json['success']
+    end
+
+    ##
     # Lists all templates that match the specified filter.
     #
     # Allowable filter values are:
