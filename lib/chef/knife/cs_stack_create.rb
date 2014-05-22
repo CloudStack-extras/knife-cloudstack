@@ -156,6 +156,8 @@ module KnifeCloudstack
               knife_ssh_action(*args)
             when 'http_request'
               http_request(args)
+            when 'run_list_add'
+              run_list_add(*args)
             when 'run_list_remove'
               run_list_remove(*args)
             when 'sleep'
@@ -238,6 +240,16 @@ module KnifeCloudstack
 
       puts "HTTP Request: #{url}"
       puts `curl -s -m 5 #{url}`
+    end
+
+    def run_list_add(query, entry)
+      nodes = search_nodes(query)
+      return unless nodes
+
+      nodes.each do |n|
+        cmd = Chef::Knife::NodeRunListAdd.new([n.name, entry])
+        cmd.run_with_pretty_exceptions
+      end
     end
 
     def run_list_remove(query, entry)
