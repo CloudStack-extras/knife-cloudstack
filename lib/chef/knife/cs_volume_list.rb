@@ -44,6 +44,7 @@ module KnifeCloudstack
 
       columns = [
         'Name    :name',
+        'ID      :id',
         'Account :account',
         'Domain  :domain',
         'State   :state',
@@ -56,7 +57,7 @@ module KnifeCloudstack
       params['listall'] = locate_config_value(:listall) if locate_config_value(:listall)
       params['keyword'] = locate_config_value(:keyword) if locate_config_value(:keyword)
       params['name']    = locate_config_value(:name)    if locate_config_value(:name)
-      
+
       result = connection.list_object(params, "volume")
       list_object(columns, result)
     end
