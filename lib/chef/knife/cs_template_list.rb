@@ -48,6 +48,7 @@ module KnifeCloudstack
 
       columns = [
         'Name    :name',
+        'ID      :id',
         'Size    :size',
         'Zone    :zonename',
         'Public  :ispublic',
