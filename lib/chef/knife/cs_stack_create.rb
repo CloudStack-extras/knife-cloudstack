@@ -162,6 +162,7 @@ module KnifeCloudstack
               run_list_remove(*args)
             when 'sleep'
               dur = args || 5
+              ui.msg("> sleeping for #{dur} seconds")
               sleep dur
           end
         end
@@ -238,33 +239,39 @@ module KnifeCloudstack
         url = url.sub(/\$\{#{server_name}\}/, ip)
       end
 
-      puts "HTTP Request: #{url}"
-      puts `curl -s -m 5 #{url}`
+      ui.msg("HTTP Request: #{url}")
+      ui.msg(`curl -s -m 5 #{url}`)
     end
 
-    def run_list_add(query, entry)
+    def run_list_add(query, *entries)
+      ui.msg("> adding #{entries} to run_list")
       nodes = search_nodes(query)
       return unless nodes
 
       nodes.each do |n|
-        cmd = Chef::Knife::NodeRunListAdd.new([n.name, entry])
-        cmd.run_with_pretty_exceptions
+        entries.each do |e|
+          cmd = Chef::Knife::NodeRunListAdd.new([n.name, e])
+          cmd.run_with_pretty_exceptions
+        end
       end
     end
 
-    def run_list_remove(query, entry)
+    def run_list_remove(query, *entries)
+      ui.msg("> removing #{entries} from run_list")
       nodes = search_nodes(query)
       return unless nodes
 
       nodes.each do |n|
-        cmd = Chef::Knife::NodeRunListRemove.new([n.name, entry])
-        cmd.run_with_pretty_exceptions
+        entries.each do |e|
+          cmd = Chef::Knife::NodeRunListRemove.new([n.name, e])
+          cmd.run_with_pretty_exceptions
+        end
       end
     end
 
     def find_public_ips(query)
       hostnames = search_nodes(query, 'hostname')
-      puts "Found hostnames: #{hostnames.inspect}"
+      ui.msg("Found hostnames: #{hostnames.inspect}")
       ips = hostnames.map { |h|
         public_ip_for_host h
       }
