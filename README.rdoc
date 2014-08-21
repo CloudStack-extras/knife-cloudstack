@@ -170,6 +170,9 @@ A template can be specified when creating a new server by passing the template n
 === knife cs template create
 Creates a template based on a volumeID
 
+=== knife cs template update
+Update the permissions of a template based on a name and zone
+
 === knife cs template extract
 Returns a link where an extractable template can be downloaded
 
