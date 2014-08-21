@@ -37,7 +37,7 @@ module KnifeCloudstack
 
     option :zone,
            :long => "--zone NAME",
-	   :description => "Name of the zone to extract the template in"
+	         :description => "Name of the zone to extract the template in"
 
     def run
       validate_base_options
@@ -57,7 +57,7 @@ module KnifeCloudstack
       if ! zonename
       then
         ui.error "No zone specified"
-	exit 1
+	      exit 1
       end
 
       print "#{ui.color("Extracting template: #{templatename}", :magenta)}\n"
@@ -69,25 +69,25 @@ module KnifeCloudstack
       )
       if ! zone then
         ui.error "Zone #{zonename} not found"
-	exit 1
+	    exit 1
       end
 
       Chef::Log.debug("Getting template")
 
       template = connection.get_template(
-        templatename,
+        templatename, zone
       )
       if ! template then
         ui.error "Template #{templatename} not found"
-	exit 1
+	      exit 1
       end
 
       Chef::Log.debug("Extracting template")
       params = {
         'command' => 'extractTemplate',
-	'id' => template["id"],
-	'mode' => "HTTP_DOWNLOAD",
-	'zoneid' => zone["id"]
+	      'id' => template["id"],
+	      'mode' => "HTTP_DOWNLOAD",
+	      'zoneid' => zone["id"]
       }
       json = connection.send_async_request(params)
 
@@ -95,8 +95,8 @@ module KnifeCloudstack
       	url = json["template"]["url"]
         print "\n#{url}\n"
       else
-	ui.error "Template extraction failed.\n"
-	exit 1
+	      ui.error "Template extraction failed.\n"
+	      exit 1
       end
     end
 

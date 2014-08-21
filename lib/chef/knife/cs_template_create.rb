@@ -104,7 +104,7 @@ module KnifeCloudstack
       params['ispublic'] = locate_config_value(:ispublic) if locate_config_value(:ispublic)
       params['isfeatured'] = locate_config_value(:isfeatured) if locate_config_value(:isfeatured)
       params['passwordenabled'] = locate_config_value(:passwordenabled) if locate_config_value(:passwordenabled)
-      params['extractable'] = locate_config_value(:extractable) if locate_config_value(:extractable)
+      params['isextractable'] = locate_config_value(:extractable) if locate_config_value(:extractable)
       json = connection.send_request(params)
 
       if ! json then
