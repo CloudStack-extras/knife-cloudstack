@@ -69,7 +69,7 @@ module KnifeCloudstack
       )
       if ! zone then
         ui.error "Zone #{zonename} not found"
-	    exit 1
+	      exit 1
       end
 
       Chef::Log.debug("Getting template")
