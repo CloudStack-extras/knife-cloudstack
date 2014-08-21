@@ -73,9 +73,9 @@ module KnifeCloudstack
 	   :default => true
 
     option :extractable,
-           :logn => "--[no-]extractable",
+           :long => "--[no-]extractable",
 	   :description => "Make the template extractable after creation",
-	   :boolean => "true",
+	   :boolean => true,
 	   :default => false
 
     def run
