@@ -56,27 +56,27 @@ module KnifeCloudstack
 
     option :ispublic,
            :long => "--[no-]public",
-	   :description => "Make the template public after creation",
-	   :boolean => true,
-	   :default => false
+           :description => "Make the template public after creation",
+           :boolean => true,
+           :default => false
 
     option :isfeatured,
            :long => "--[no-]featured",
-	   :description => "Make the template featured after creation",
-	   :boolean => true,
-	   :default => false
+	         :description => "Make the template featured after creation",
+	         :boolean => true,
+	         :default => false
 
     option :passwordenabled,
            :long => "--[no-]passwordenabled",
-	   :description => "Make the template password reset enabled  after creation",
-	   :boolean => true,
-	   :default => true
+	         :description => "Make the template password reset enabled  after creation",
+	         :boolean => true,
+	         :default => true
 
     option :extractable,
            :long => "--[no-]extractable",
-	   :description => "Make the template extractable after creation",
-	   :boolean => true,
-	   :default => false
+	         :description => "Make the template extractable after creation",
+	         :boolean => true,
+	         :default => false
 
     def run
       validate_base_options
@@ -109,7 +109,7 @@ module KnifeCloudstack
 
       if ! json then
         ui.error("Unable to create template")
-	exit 1
+	      exit 1
       end
 
       print "Template #{json['id']} is being created in the background\n";

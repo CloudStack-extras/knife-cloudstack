@@ -75,7 +75,7 @@ module KnifeCloudstack
       Chef::Log.debug("Getting template")
 
       template = connection.get_template(
-        templatename, zone
+        templatename, zonename
       )
       if ! template then
         ui.error "Template #{templatename} not found"
