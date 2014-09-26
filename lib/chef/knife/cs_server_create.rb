@@ -235,6 +235,11 @@ module KnifeCloudstack
            :description => "Set the same server display name as Chef node name.",
            :boolean => true,
            :default => false
+           
+    option :bootstrap_wget_options,
+        :long        => "--bootstrap-wget-options OPTIONS",
+        :description => "Add options to wget when installing chef-client",
+        :proc        => Proc.new { |wo| Chef::Config[:knife][:bootstrap_wget_options] = wo }
 
 
     def run
@@ -610,6 +615,7 @@ module KnifeCloudstack
       bootstrap.config[:template_file] = locate_config_value(:template_file)
       bootstrap.config[:first_boot_attributes] = locate_config_value(:first_boot_attributes)
       bootstrap.config[:environment] = locate_config_value(:environment)
+      bootstrap.config[:bootstrap_wget_options] = locate_config_value(:bootstrap_wget_options)
       bootstrap
     end
 
