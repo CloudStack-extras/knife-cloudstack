@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name = %q{knife-cloudstack}
-  s.version = "0.0.17"
-  s.date = %q{2014-04-03}
+  s.version = "0.0.18"
+  s.date = %q{2014-12-29}
   s.authors = ['Ryan Holmes', 'KC Braunschweig', 'John E. Vincent', 'Chirag Jog', 'Sander Botman']
   s.email = ['rholmes@edmunds.com', 'kcbraunschweig@gmail.com', 'lusis.org+github.com@gmail.com', 'chirag.jog@me.com', 'sbotman@schubergphilis.com']
   s.summary = %q{A knife plugin for the CloudStack API}
@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.has_rdoc = false
   s.extra_rdoc_files = ["README.rdoc", "CHANGES.rdoc", "LICENSE" ]
 
-  s.add_dependency "chef", ">= 0.10.0"
+  s.add_dependency "chef", "~> 11.0"
   s.add_dependency "knife-windows", ">= 0"
   s.require_path = 'lib'
   s.files = ["CHANGES.rdoc","README.rdoc", "LICENSE"] + Dir.glob("lib/**/*")

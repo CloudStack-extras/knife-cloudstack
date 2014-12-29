@@ -1,5 +1,19 @@
 = Changes
 
+== 2014-12-29 (0.0.18)
+* Chef 12 has been released and installation of the plugin fails on certain components while it tries to install the latest chef-gem.
+  We are pinning this version on chef 11.0 and we will make the new version 0.1.0 chef 12 compatible.
+  If you have a urgent need for this, please drop us a line. (Sander Botman 29 Dec 2014)
+* Added support for --bootstrap-wget-options for <tt>cs server create</tt> (Deepak Sihag 25 Sep 2014)
+* Added subcommand: <tt>cs volume delete</tt> (Muga Nishizawa 7 May 2014)
+* Bugfix: within the README (Warren Bain 15 Apr 2014)
+* Added support for --size for <tt>cs server create</tt> (Muga Nishizawa 14 Apr 2014)
+* Bugfix: list_object method calls by invalid typed parameters (Muga Nishizawa 11 Apr 2014)
+* Bugfix: flexibility around ssh port configuration (Warren Bain 9 Apr 2014)
+* Bugfix: cosmetic fix to options indenting (Warren Bain 9 Apr 2014)
+* Bugfix: remove fqdn from node name when deleting server (Warren Bain 9 Apr 2014)
+* Bugfix: fix whitespace (Warren Bain 9 Apr 2014)
+
 == 2014-03-04 (0.0.17)
 * Added support for --isdynamicallyscalable for <tt>cs template register</tt> (Sander Botman, 3 Apr 2014)
 * Added support for --anti-affinity-groups for <tt>cs server create</tt> (John E. Vincent, 2 Apr 2014)
