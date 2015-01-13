@@ -236,8 +236,8 @@ module CloudstackClient
             'command' => 'deployVirtualMachine',
             'serviceOfferingId' => service['id'],
             'templateId' => template['id'],
-            'zoneId' => zone['id'],
-            'networkids' => network_ids.join(',')
+            'zoneId' => zone['id']
+#            'networkids' => network_ids.join(',')
         }
 
       else
