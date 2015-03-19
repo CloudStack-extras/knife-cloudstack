@@ -1,4 +1,7 @@
 = Changes
+== 2015-03-19 (0.0.19)
+* Added support for --boostrap-proxy for <tt>cs server create</tt> (Rutger Te Nijenhuis 19 Feb 2015)
+* Bugfix: no implicit conversion of String into Integer error, if no Nic present (Frank Louwers 19 Mar 2015)
 
 == 2014-12-29 (0.0.18)
 * Chef 12 has been released and installation of the plugin fails on certain components while it tries to install the latest chef-gem.
