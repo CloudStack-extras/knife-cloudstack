@@ -114,6 +114,9 @@ module CloudstackClient
       if ip_addr
         return ip_addr['ipaddress']
       end
+      if nic.empty?
+        return []
+      end
       nic['ipaddress'] || []
     end
 
