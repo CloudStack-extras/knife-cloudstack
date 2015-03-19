@@ -235,12 +235,17 @@ module KnifeCloudstack
            :description => "Set the same server display name as Chef node name.",
            :boolean => true,
            :default => false
+
+    option :bootstrap_proxy,
+           :long => "--bootstrap-proxy PROXY_URL",
+           :description => "The proxy server for the node being bootstrapped",
+           :proc => Proc.new { |p| Chef::Config[:knife][:bootstrap_proxy] = p }
+
            
     option :bootstrap_wget_options,
         :long        => "--bootstrap-wget-options OPTIONS",
         :description => "Add options to wget when installing chef-client",
         :proc        => Proc.new { |wo| Chef::Config[:knife][:bootstrap_wget_options] = wo }
-
 
     def run
       validate_base_options
@@ -616,6 +621,7 @@ module KnifeCloudstack
       bootstrap.config[:first_boot_attributes] = locate_config_value(:first_boot_attributes)
       bootstrap.config[:environment] = locate_config_value(:environment)
       bootstrap.config[:bootstrap_wget_options] = locate_config_value(:bootstrap_wget_options)
+      bootstrap.config[:bootstrap_proxy] = locate_config_value(:bootstrap_proxy)
       bootstrap
     end
 
