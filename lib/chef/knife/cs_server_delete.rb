@@ -47,11 +47,7 @@ module KnifeCloudstack
 
         if server['state'] == 'Destroyed' then
           ui.warn("Server '#{hostname}' already destroyed")
-	  expunge = confirm_action("Server '#{hostname}' already destroyed, do you want to expunge it?")
-          if expunge then
-            connection.delete_server(hostname, true)
-            next
-          end
+          connection.delete_server(hostname, true) if confirm_action("Server '#{hostname}' already destroyed, do you want to expunge it?")
           next
         end
 
