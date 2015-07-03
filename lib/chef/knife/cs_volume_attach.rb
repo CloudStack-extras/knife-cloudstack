@@ -61,12 +61,10 @@ module KnifeCloudstack
         'virtualmachineid' => vm['id']
       }
 
-      json = connection.send_request(params)
+      json = connection.send_async_request(params)
       exit_with_error 'Unable to attach volume' unless json
 
-      puts "Volume #{volumename} is being attached in the background"
-
-      json['jobid']
+      puts "Volume #{volumename} is now attached to #{json['volume']['vmname']}"
     end
   end # class
 end

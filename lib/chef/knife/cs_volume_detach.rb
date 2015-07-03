@@ -51,12 +51,11 @@ module KnifeCloudstack
         'id' => volume['id']
       }
 
-      json = connection.send_request(params)
+      json = connection.send_async_request(params)
       exit_with_error 'Unable to detach volume' unless json
 
-      puts "Volume #{volumename} is being detached in the background"
+      puts "Volume #{volumename} is now detached."
 
-      json['jobid']
     end
   end # class
 end
