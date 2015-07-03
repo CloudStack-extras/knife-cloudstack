@@ -1,4 +1,12 @@
 = Changes
+== 2015-??-?? (0.0.21)
+* Added subcommand: <tt>cs volume attach</tt> (David Bruce 3 Jul 2015)
+* Added subcommand: <tt>cs volume detach</tt> (David Bruce 3 Jul 2015)
+
+== 2015-04-24 (0.0.20)
+* Added support for expunge option for <tt>cs server destroy</tt> (Anton Opgenoort 24 Mar 2015)
+* Added support for Chef 12 Client (Sander Botman 24 Apr 2015)
+
 == 2015-03-19 (0.0.19)
 * Added support for --boostrap-proxy for <tt>cs server create</tt> (Rutger Te Nijenhuis 19 Feb 2015)
 * Bugfix: no implicit conversion of String into Integer error, if no Nic present (Frank Louwers 19 Mar 2015)
