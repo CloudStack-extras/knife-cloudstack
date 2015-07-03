@@ -92,6 +92,11 @@ class Chef
             config[key] || Chef::Config[:knife][key] || nil
           end 
 
+          def exit_with_error(error)
+            ui.error error
+            exit 1
+          end
+
         end
       end
     end
