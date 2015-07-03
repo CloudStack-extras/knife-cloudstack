@@ -97,6 +97,10 @@ class Chef
             exit 1
           end
 
+          def valid_cs_name?(name)
+            !!(name && /^[a-zA-Z0-9][a-zA-Z0-9_\-#]*$/.match(name))
+          end
+
         end
       end
     end
