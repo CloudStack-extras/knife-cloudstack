@@ -5,7 +5,7 @@ Gem::Specification.new do |s|
   s.authors = ['Ryan Holmes', 'KC Braunschweig', 'John E. Vincent', 'Chirag Jog', 'Sander Botman']
   s.email = ['rholmes@edmunds.com', 'kcbraunschweig@gmail.com', 'lusis.org+github.com@gmail.com', 'chirag.jog@me.com', 'sbotman@schubergphilis.com']
   s.summary = %q{A knife plugin for the CloudStack API}
-  s.homepage = %q{http://cloudstack.org/}
+  s.homepage = %q{https://github.com/CloudStack-extras/knife-cloudstack}
   s.description = %q{A Knife plugin to create, list and manage CloudStack servers}
 
   s.has_rdoc = false
