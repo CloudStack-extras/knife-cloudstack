@@ -1,7 +1,8 @@
 = Changes
-== 2015-??-?? (0.0.21)
+== 2016-03-18 (0.1.0)
 * Added subcommand: <tt>cs volume attach</tt> (David Bruce 3 Jul 2015)
 * Added subcommand: <tt>cs volume detach</tt> (David Bruce 3 Jul 2015)
+* Removed gem depedency (Fred Neubauer 18 Mar 2016)
 
 == 2015-04-24 (0.0.20)
 * Added support for expunge option for <tt>cs server destroy</tt> (Anton Opgenoort 24 Mar 2015)
