@@ -50,7 +50,6 @@ module KnifeCloudstack
       require 'knife-cloudstack/connection'
       require 'winrm'
       require 'httpclient'
-      require 'em-winrm'
       Chef::Knife::Bootstrap.load_deps
     end
 
