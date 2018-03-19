@@ -137,7 +137,8 @@ module KnifeCloudstack
 
     option :secret_file,
            :long => "--secret-file SECRET_FILE",
-           :description => "The path to the file that contains the encryption key."
+           :description => "The path to the file that contains the encryption key.",
+           :proc => lambda { |secret_file| Chef::Config[:knife][:secret_file] = secret_file }
 
     option :secret,
            :long => "--secret SECRET",
