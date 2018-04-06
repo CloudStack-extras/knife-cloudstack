@@ -4,6 +4,7 @@
 # Author:: Sander Botman (<sbotman@schubergphilis.com>)
 # Author:: Frank Breedijk (<fbreedijk@schubergphilis.com>)
 # Author:: Sander van Harmelen (<svanharmelen@schubergphilis.com>)
+# Author:: Robbert-Jan Sperna Weiland (<rspernaweiland@schubergphilis.com>)
 # Copyright:: Copyright (c) 2011 Edmunds, Inc.
 # License:: Apache License, Version 2.0
 #
@@ -705,6 +706,18 @@ module CloudstackClient
       }
       json = send_request(params)
       json['zone'] || []
+    end
+    
+    ##
+    # Finds networkid associated with public router IP
+    def get_networkid_from_ip_address(ip_address)
+      params = {
+        'command' => 'listPublicIpAddresses',
+        'ipaddress' => ip_address
+      }
+      json = send_request(params)
+      return nil unless json['associatednetworkid']
+      json['associatednetworkid'].first
     end
 
     ##

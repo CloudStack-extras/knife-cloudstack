@@ -1,5 +1,6 @@
 #
 # Author:: Sander Botman (<sbotman@schubergphilis.com>)
+# Author:: Robbert-Jan Sperna Weiland (<rspernaweiland@schubergphilis.com>)
 # Copyright:: Copyright (c) 2013 Sander Botman.
 # License:: Apache License, Version 2.0
 #
@@ -28,7 +29,7 @@ module KnifeCloudstack
       Chef::Knife.load_deps
     end
 
-    banner "knife cs forwardrule create hostname 8080:8090:TCP"
+    banner "knife cs forwardrule create hostname 8080:8090:TCP (options)"
 
     option :openfirewall,
            :long => "--openfirewall",
@@ -39,6 +40,10 @@ module KnifeCloudstack
            :long => "--sync",
            :description => "Execute command as sync request",
            :boolean => true
+
+    option :vrip,
+           :long => "--vrip PUBLIC_ROUTER_IP",
+           :description => "Public IP associated with virtual router to expose the external port on. Use this to indicate the server has an internal IP that needs to be exposed on the router's public IP."
 
     def run
 
@@ -64,19 +69,27 @@ module KnifeCloudstack
         exit 1
       end
 
-      # Lookup the public ip address of the server
-      server_public_address = connection.get_server_public_ip(server)
-      ip_address = connection.get_public_ip_address(server_public_address)
-
-      if ip_address.nil? || ip_address['id'].nil?
-        ui.error "Cannot find public ip address for hostname: #{hostname}."
-        exit 1
+      if locate_config_value(:vrip)
+        Chef::Log.debug("Forwarding rule for VPC.")
+        server['nic'].each do |nic|
+          params['vmguestip'] = nic['ipaddress']
+        end
+        ip_address = {}
+        ip_address['ipaddress'] = config[:vrip]
+      else
+        Chef::Log.debug("Forwarding rule for public IP on server")
+        server_address = connection.get_server_public_ip(server)
+        ip_address = connection.get_public_ip_address(server_address)
+  
+        if ip_address.nil? || ip_address['id'].nil?
+          ui.error "Cannot find public ip address for hostname: #{hostname}."
+          exit 1
+        end
       end
- 
+
       @name_args.each do |rule|
         create_port_forwarding_rule(ip_address, server['id'], rule, connection, params)
       end
-
     end
  
     def create_port_forwarding_rule(ip_address, server_id, rule, connection, other_params)
@@ -90,7 +103,25 @@ module KnifeCloudstack
         'protocol' => protocol
       }
 
-      if ip_address['isstaticnat'] == 'true'
+      if other_params['vmguestip']
+        # VPC based network
+        # Find networkid associated with ip_address
+        other_params['networkid'] = connection.get_networkid_from_ip_address(ip_address['ipaddress'])
+
+        # Find id of public router IP
+        public_ip = connection.get_public_ip_address(ip_address['ipaddress'])
+        params['ipaddressId'] = public_ip['id']
+        
+        other_params['command'] = 'createPortForwardingRule'
+        other_params['privatePort'] = private_port
+        other_params['privateEndPort'] = private_port
+        other_params['publicPort'] = public_port
+        other_params['publicEndPort'] = public_port
+        other_params['virtualMachineId'] = server_id
+
+        Chef::Log.debug("Creating port Forwarding Rule for router ip 
+          #{ip_address['ipaddress']} with protocol: #{protocol}, public port: #{public_port}")
+      elsif ip_address['isstaticnat'] == 'true'
         other_params['command'] = 'createIpForwardingRule'
         other_params['startport'] = public_port
         other_params['endport'] = public_port
