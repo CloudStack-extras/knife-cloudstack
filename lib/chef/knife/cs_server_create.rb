@@ -247,6 +247,10 @@ module KnifeCloudstack
         :description => "Add options to wget when installing chef-client",
         :proc        => Proc.new { |wo| Chef::Config[:knife][:bootstrap_wget_options] = wo }
 
+    option :security_groups,
+           :long => "--security-groups SECURITY_GROUPS",
+           :description => "Comma separated list of security rules, e.g. 'f8fe00cf-f5c1-409d-8c7e-0d6bdcebe736,a7c4b500-a6ca-4258-8187-f160cd43a422'"
+
     def run
       validate_base_options
 
@@ -291,6 +295,7 @@ module KnifeCloudstack
       params['displayname'] = if locate_config_value :set_display_name and locate_config_value :chef_node_name then locate_config_value :chef_node_name else hostname end
       params['ipaddress'] = locate_config_value(:ik_private_ip) if locate_config_value(:ik_private_ip)
       params['size'] = locate_config_value(:size) if locate_config_value(:size)
+      params['securitygroupids'] = locate_config_value(:security_groups) if locate_config_value(:security_groups)
 
       server = connection.create_server(
           hostname,
